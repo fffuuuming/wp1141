@@ -16,17 +16,6 @@ export interface Provider {
     supportedTokens: string[];
 }
 
-export interface SwapQuote {
-    fromToken: Token;
-    toToken: Token;
-    fromAmount: number;
-    toAmount: number;
-    provider: Provider;
-    fee: number;
-    priceImpact: number;
-    minimumReceived: number;
-}
-
 export interface SwapState {
     payToken: Token;
     receiveToken: Token;

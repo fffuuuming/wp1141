@@ -1,15 +1,13 @@
-import { SwapService } from './swapService.js';
-import { TOKENS, PROVIDERS } from './data.js';
+import { TOKENS } from './tokens.js';
+import { PROVIDERS } from './providers.js';
 import { SwapState, Token, Provider } from './types.js';
 
 class SwapApp {
-    private swapService: SwapService;
     private state: SwapState;
     private currentModal: 'token' | 'provider' | null = null;
     private currentTokenType: 'pay' | 'receive' | null = null;
 
     constructor() {
-        this.swapService = new SwapService(TOKENS, PROVIDERS);
         this.state = {
             payToken: TOKENS[0], // ETH
             receiveToken: TOKENS[1], // BTC
@@ -53,11 +51,6 @@ class SwapApp {
             const target = e.target as HTMLInputElement;
             this.state.payAmount = parseFloat(target.value) || 0;
             this.calculateSwap();
-        });
-
-        // Review button
-        document.getElementById('reviewButton')?.addEventListener('click', () => {
-            this.reviewSwap();
         });
 
         // Modal close buttons
@@ -124,7 +117,7 @@ class SwapApp {
     private renderTokenList(container: HTMLElement, type: 'pay' | 'receive'): void {
         const currentToken = type === 'pay' ? this.state.payToken : this.state.receiveToken;
         
-        container.innerHTML = this.swapService.getAllTokens().map(token => `
+        container.innerHTML = TOKENS.map(token => `
             <div class="token-item ${token.symbol === currentToken.symbol ? 'selected' : ''}" 
                  data-symbol="${token.symbol}">
                 <img src="${token.icon}" alt="${token.symbol}" class="token-icon">
@@ -147,7 +140,7 @@ class SwapApp {
     }
 
     private renderProviderList(container: HTMLElement): void {
-        const supportedProviders = this.swapService.getSupportedProviders(
+        const supportedProviders = this.getSupportedProviders(
             this.state.payToken.symbol, 
             this.state.receiveToken.symbol
         );
@@ -177,8 +170,15 @@ class SwapApp {
         });
     }
 
+    private getSupportedProviders(fromToken: string, toToken: string): Provider[] {
+        return PROVIDERS.filter(provider => 
+            provider.supportedTokens.includes(fromToken) && 
+            provider.supportedTokens.includes(toToken)
+        );
+    }
+
     private selectToken(symbol: string, type: 'pay' | 'receive'): void {
-        const token = this.swapService.getToken(symbol);
+        const token = TOKENS.find(t => t.symbol === symbol);
         if (!token) return;
 
         if (type === 'pay') {
@@ -193,7 +193,7 @@ class SwapApp {
     }
 
     private selectProvider(id: string): void {
-        const provider = this.swapService.getProvider(id);
+        const provider = PROVIDERS.find(p => p.id === id);
         if (!provider) return;
 
         this.state.provider = provider;
@@ -219,14 +219,17 @@ class SwapApp {
             return;
         }
 
-        const quote = this.swapService.getSwapQuote(
-            this.state.payToken,
-            this.state.receiveToken,
-            this.state.payAmount,
-            this.state.provider
-        );
-
-        this.state.receiveAmount = quote.toAmount;
+        // Calculate conversion rate based on token prices
+        // rate = fromToken.price / toToken.price
+        const rate = this.state.payToken.price / this.state.receiveToken.price;
+        const toAmount = this.state.payAmount * rate;
+        const fee = (toAmount * this.state.provider.fee) / 100;
+        this.state.receiveAmount = toAmount - fee;
+        
+        // Debug logging
+        console.log(`Converting ${this.state.payAmount} ${this.state.payToken.symbol} ($${this.state.payToken.price}) to ${this.state.receiveToken.symbol} ($${this.state.receiveToken.price})`);
+        console.log(`Rate: ${rate}, To Amount: ${toAmount}, Fee: ${fee}, Final: ${this.state.receiveAmount}`);
+        
         this.updateUI();
     }
 
@@ -267,39 +270,38 @@ class SwapApp {
         }
 
         if (receiveAmountDisplay) {
-            receiveAmountDisplay.textContent = this.swapService.formatTokenAmount(this.state.receiveAmount);
+            receiveAmountDisplay.textContent = this.formatTokenAmount(this.state.receiveAmount);
         }
 
         if (payFiatAmount) {
-            const fiatValue = this.swapService.calculateFiatValue(this.state.payAmount, this.state.payToken);
-            payFiatAmount.textContent = this.swapService.formatCurrency(fiatValue);
+            const fiatValue = this.calculateFiatValue(this.state.payAmount, this.state.payToken);
+            payFiatAmount.textContent = this.formatCurrency(fiatValue);
         }
 
         if (receiveFiatAmount) {
-            const fiatValue = this.swapService.calculateFiatValue(this.state.receiveAmount, this.state.receiveToken);
-            receiveFiatAmount.textContent = this.swapService.formatCurrency(fiatValue);
+            const fiatValue = this.calculateFiatValue(this.state.receiveAmount, this.state.receiveToken);
+            receiveFiatAmount.textContent = this.formatCurrency(fiatValue);
         }
     }
 
-    private reviewSwap(): void {
-        const quote = this.swapService.getSwapQuote(
-            this.state.payToken,
-            this.state.receiveToken,
-            this.state.payAmount,
-            this.state.provider
-        );
+    private calculateFiatValue(amount: number, token: Token): number {
+        return amount * token.price;
+    }
 
-        const reviewMessage = `
-Swap Review:
-• Pay: ${this.state.payAmount} ${this.state.payToken.symbol} (${this.swapService.formatCurrency(this.swapService.calculateFiatValue(this.state.payAmount, this.state.payToken))})
-• Receive: ${this.swapService.formatTokenAmount(this.state.receiveAmount)} ${this.state.receiveToken.symbol} (${this.swapService.formatCurrency(this.swapService.calculateFiatValue(this.state.receiveAmount, this.state.receiveToken))})
-• Provider: ${this.state.provider.name}
-• Fee: ${this.swapService.formatCurrency(quote.fee)}
-• Price Impact: ${(quote.priceImpact * 100).toFixed(2)}%
-• Minimum Received: ${this.swapService.formatTokenAmount(quote.minimumReceived)} ${this.state.receiveToken.symbol}
-        `;
+    private formatCurrency(amount: number, decimals: number = 2): string {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: decimals,
+            maximumFractionDigits: decimals
+        }).format(amount);
+    }
 
-        alert(reviewMessage);
+    private formatTokenAmount(amount: number, decimals: number = 4): string {
+        return new Intl.NumberFormat('en-US', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: decimals
+        }).format(amount);
     }
 }
 

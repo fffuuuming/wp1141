@@ -8,15 +8,15 @@ A cryptocurrency swap simulation app built with HTML, CSS, and TypeScript. This 
 - **Multiple Providers**: Thorchain, Uniswap V3, 1inch, SushiSwap, Curve Finance
 - **Real-time Calculations**: Live swap quotes with fees and price impact
 - **Mobile-first Design**: Responsive interface optimized for mobile devices
-- **No Dependencies**: Pure HTML, CSS, and TypeScript (no frameworks)
+- **Type Safety**: TypeScript for better development experience
 
 ## Getting Started
 
 ### Prerequisites
 
 - Node.js (for TypeScript compilation)
-- Yarn package manager
 - A modern web browser
+- A local web server (required for ES modules)
 
 ### Installation
 
@@ -26,19 +26,19 @@ git clone <repository-url>
 cd crypto-swap-simulator
 ```
 
-2. Install dependencies:
+2. Install TypeScript globally (if not already installed):
 ```bash
-yarn install
+npm install -g typescript
 ```
 
-3. Build the project:
+3. Compile TypeScript:
 ```bash
-yarn build
+tsc
 ```
 
 4. Start a local server:
 ```bash
-yarn start
+python3 -m http.server 8000
 ```
 
 5. Open your browser and navigate to `http://localhost:8000`
@@ -47,7 +47,7 @@ yarn start
 
 To watch for changes and automatically rebuild:
 ```bash
-yarn dev
+tsc --watch
 ```
 
 ## Usage
@@ -61,22 +61,23 @@ yarn dev
 
 ```
 ├── src/
-│   ├── app.ts          # Main application logic
+│   ├── app.ts          # Main TypeScript application logic
 │   ├── types.ts        # TypeScript type definitions
-│   ├── data.ts         # Token and provider data
-│   └── swapService.ts  # Swap calculation service
+│   ├── tokens.ts       # Token data and configurations
+│   └── providers.ts    # Provider data and configurations
 ├── dist/               # Compiled JavaScript output
 ├── index.html          # Main HTML file
 ├── styles.css          # CSS styles
-└── package.json        # Project configuration
+├── tsconfig.json       # TypeScript configuration
+└── README.md           # Project documentation
 ```
 
 ## Technologies Used
 
 - **HTML5**: Semantic markup
 - **CSS3**: Modern styling with flexbox and grid
-- **TypeScript**: Type-safe JavaScript
-- **Yarn**: Package management
+- **TypeScript**: Type-safe JavaScript with modern features
+- **ES Modules**: Modern JavaScript module system
 
 ## License
 
