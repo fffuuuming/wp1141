@@ -1,19 +1,35 @@
 # Dependencies
 node_modules/
 yarn.lock
+package-lock.json
 
-# Build outputs
-dist/
-*.js.map
+# Build outputs (for all homework directories)
+**/dist/
+**/*.js.map
+**/*.d.ts.map
 
-# IDE
+# TypeScript build outputs
+**/*.d.ts
+**/*.js
+!**/src/**/*.ts
+
+# IDE and Editor files
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
+.project
+.settings/
+.classpath
 
-# OS
+# OS generated files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
 # Logs
@@ -21,6 +37,7 @@ Thumbs.db
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+lerna-debug.log*
 
 # Runtime data
 pids
@@ -29,19 +46,23 @@ pids
 *.pid.lock
 
 # Coverage directory used by tools like istanbul
-coverage/
+**/coverage/
+**/.nyc_output
 
-# nyc test coverage
-.nyc_output
+# Test coverage
+**/coverage/
+**/.nyc_output
 
 # Dependency directories
 jspm_packages/
 
 # Optional npm cache directory
 .npm
+**/.npm
 
 # Optional eslint cache
 .eslintcache
+**/.eslintcache
 
 # Microbundle cache
 .rpt2_cache/
@@ -58,31 +79,50 @@ jspm_packages/
 # Yarn Integrity file
 .yarn-integrity
 
-# dotenv environment variables file
+# Environment variables
 .env
-.env.test
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+**/.env
+**/.env.local
 
-# parcel-bundler cache (https://parceljs.org/)
+# Cache directories
 .cache
 .parcel-cache
+**/.cache
+**/.parcel-cache
 
-# next.js build output
+# Framework build outputs
 .next
-
-# nuxt.js build output
 .nuxt
-
-# vuepress build output
 .vuepress/dist
+**/.next
+**/.nuxt
+**/.vuepress/dist
 
 # Serverless directories
 .serverless/
+**/.serverless/
 
 # FuseBox cache
 .fusebox/
+**/.fusebox/
 
 # DynamoDB Local files
 .dynamodb/
+**/.dynamodb/
 
 # TernJS port file
 .tern-port
+
+# Temporary files
+*.tmp
+*.temp
+**/*.tmp
+**/*.temp
+
+# Homework specific ignores (add as needed)
+# hw1/dist/  # Uncomment if you want to ignore hw1's dist folder
+# hw2/dist/  # Uncomment if you want to ignore hw2's dist folder
