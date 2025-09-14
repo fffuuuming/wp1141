@@ -1,0 +1,18 @@
+{
+  "name": "crypto-swap-simulator",
+  "version": "1.0.0",
+  "description": "A cryptocurrency swap simulation app built with HTML, CSS, and TypeScript",
+  "main": "dist/app.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "python3 -m http.server 8000",
+    "serve": "python3 -m http.server 8000"
+  },
+  "packageManager": "yarn@4.9.2",
+  "devDependencies": {
+    "@types/node": "^24.3.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
+  }
+}
