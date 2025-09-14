@@ -10,20 +10,36 @@ A cryptocurrency swap simulation app built with HTML, CSS, and TypeScript. This 
 - **Mobile-first Design**: Responsive interface optimized for mobile devices
 - **Type Safety**: TypeScript for better development experience
 
+## Prerequisites
+
+Before running this project, make sure you have the following installed:
+
+- **Node.js**
+- **npm** (comes with Node.js) - Package manager for JavaScript
+- **Git**
+
 ## 🚀 Quick Start
 
-1. Clone this repo
-2. Open terminal & cd to hw1
-3. Install dependency (typescript)
+1. **Clone the repository**
    ```bash
-   npm run install
+   git clone https://github.com/fffuuuming/wp1141.git
+   cd wp1141/hw1
    ```
-4. Build & run the project
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Build & start the server**
    ```bash
    npm run serve
    ```
-5. Open the browser to `http://localhost:8000`
-6. Remove build artifacts (Optional)
+
+4. **Open your browser**
+   Navigate to `http://localhost:8000` and start using the crypto swap simulator!
+
+5. **Clean up build artifacts** (Optional)
    ```bash
    npm run clean
    ```
@@ -37,7 +53,7 @@ hw1/
 │   ├── types.ts        # TypeScript type definitions
 │   ├── tokens.ts       # Token data and configurations
 │   └── providers.ts    # Provider data and configurations
-├── dist/               # Compiled JavaScript output (ignored by git)
+├── dist/               # Compiled JavaScript output (included for deployment)
 ├── node_modules/       # Dependencies (ignored by git)
 ├── index.html          # Main HTML file
 ├── styles.css          # CSS styles
