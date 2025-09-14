@@ -5,6 +5,7 @@ package-lock.json
 
 # Build outputs (for all homework directories)
 **/dist/
+!hw1/dist/
 **/*.js.map
 **/*.d.ts.map
 
