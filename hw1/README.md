@@ -1,14 +1,27 @@
 # Crypto Swap Simulator
 
-A cryptocurrency swap simulation app built with HTML, CSS, and TypeScript. This app allows users to simulate token swaps between ETH, BTC, DAI, USDC, and USDT using various providers.
+A Crypto Swap Simulator that allows users to simulate token swaps between ETH, BTC, DAI, USDC, and USDT using various providers.
+
+## Why This Project?
+
+Introduces concepts of cryptocurrency trading, exchange rates, and fee calculations.
 
 ## Features
 
 - **Token Support**: ETH, BTC, DAI, USDC, USDT
 - **Multiple Providers**: Thorchain, Uniswap V3, 1inch, SushiSwap, Curve Finance
+   > Each provider has its own support token, for example, BTC is only supported by Thorchain
 - **Real-time Calculations**: Live swap quotes with fees and price impact
 - **Mobile-first Design**: Responsive interface optimized for mobile devices
 - **Type Safety**: TypeScript for better development experience
+
+### Content Structure
+The application content is carefully designed to be both functional and educational:
+
+- **Token Selection**: Users learn about different cryptocurrencies and their characteristics
+- **Provider Comparison**: Demonstrates how different DeFi protocols offer varying rates and fees
+- **Real-time Calculations**: Shows the impact of exchange rates and fees on swap outcomes
+- **Interactive Learning**: Users can experiment with different scenarios without financial risk
 
 ## Prerequisites
 
