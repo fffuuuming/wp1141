@@ -10,7 +10,7 @@ Introduces concepts of cryptocurrency trading, exchange rates, and fee calculati
 
 - **Token Support**: ETH, BTC, DAI, USDC, USDT
 - **Multiple Providers**: Thorchain, Uniswap V3, 1inch, SushiSwap, Curve Finance
-   > Each provider has its own support token, for example, BTC is only supported by Thorchain
+   > Each provider has its own support token, for example: BTC is only supported by Thorchain, and Curve only support stable coin (DAI, USDC, USDT)
 - **Real-time Calculations**: Live swap quotes with fees and price impact
 - **Mobile-first Design**: Responsive interface optimized for mobile devices
 - **Type Safety**: TypeScript for better development experience
