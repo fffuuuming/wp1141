@@ -270,7 +270,10 @@ class SwapApp {
         if (!selector) return;
 
         const name = selector.querySelector('.provider-name') as HTMLElement;
+        const icon = selector.querySelector('.lightning-icon') as HTMLElement;
+        
         if (name) name.textContent = this.state.provider.name;
+        if (icon) icon.textContent = this.state.provider.icon;
     }
 
     private updateAmounts(): void {
