@@ -1,0 +1,210 @@
+.settings-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 10px;
+  overflow: hidden;
+}
+
+.settings-container {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 20px;
+  padding: 20px 25px;
+  text-align: center;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  max-width: 600px;
+  width: 100%;
+  max-height: calc(100vh - 20px);
+  position: relative;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-title {
+  font-family: 'Permanent Marker', cursive;
+  font-size: 2.2rem;
+  color: #4ecdc4;
+  margin: 0 0 10px 0;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  position: relative;
+  display: inline-block;
+  text-shadow: 0 0 20px rgba(78, 205, 196, 0.6);
+  animation: titleGlow 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.title-underline {
+  width: 80%;
+  height: 3px;
+  background: linear-gradient(90deg, #4ecdc4, #44a08d);
+  margin: 0 auto 20px auto;
+  border-radius: 2px;
+  box-shadow: 0 0 10px rgba(78, 205, 196, 0.5);
+  flex-shrink: 0;
+}
+
+.settings-content {
+  margin-bottom: 15px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.setting-group {
+  margin-bottom: 20px;
+}
+
+.setting-label {
+  font-family: 'Permanent Marker', cursive;
+  font-size: 1.2rem;
+  color: #333;
+  display: block;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.speed-options,
+.board-size-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.speed-option,
+.board-size-option {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1));
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-family: 'Permanent Marker', cursive;
+  font-size: 1rem;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  backdrop-filter: blur(10px);
+}
+
+.speed-option:hover,
+.board-size-option:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+.speed-option:active,
+.board-size-option:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.speed-option.active,
+.board-size-option.active {
+  background: linear-gradient(135deg, #4ecdc4, #44a08d);
+  color: white;
+  box-shadow: 0 8px 25px rgba(78, 205, 196, 0.3);
+}
+
+.speed-option.default {
+  border: 2px solid #f39c12; /* Orange border for default speed */
+  position: relative;
+}
+
+.speed-option.default::before {
+  content: '⭐';
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  font-size: 0.8rem;
+  background: #f39c12;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.default-indicator {
+  font-size: 0.8rem;
+  opacity: 0.8;
+  font-style: italic;
+}
+
+
+.back-button {
+  background: linear-gradient(135deg, #9b59b6, #8e44ad);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  padding: 10px 20px;
+  font-family: 'Permanent Marker', cursive;
+  font-size: 1.2rem;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 25px rgba(155, 89, 182, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  backdrop-filter: blur(10px);
+  flex-shrink: 0;
+}
+
+.back-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 35px rgba(155, 89, 182, 0.4);
+}
+
+.back-button:active {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(155, 89, 182, 0.3);
+}
+
+@keyframes titleGlow {
+  0%, 100% { 
+    text-shadow: 0 0 20px rgba(78, 205, 196, 0.6);
+    transform: scale(1);
+  }
+  50% { 
+    text-shadow: 0 0 30px rgba(78, 205, 196, 0.8);
+    transform: scale(1.02);
+  }
+}
+
+@media (max-width: 480px) {
+  .settings-container {
+    padding: 15px 10px;
+    max-width: 95%;
+  }
+
+  .settings-title {
+    font-size: 1.8rem;
+  }
+
+  .speed-options,
+  .board-size-options {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .speed-option,
+  .board-size-option {
+    font-size: 0.9rem;
+    padding: 6px 10px;
+  }
+
+  .back-button {
+    font-size: 1rem;
+    padding: 8px 16px;
+  }
+}
