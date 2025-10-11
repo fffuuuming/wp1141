@@ -30,6 +30,7 @@ import {
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import QuickSearch from './QuickSearch';
 import DepartmentSearch from './DepartmentSearch';
+import type { CourseData } from './utils/csvParser';
 
 // 建立主題
 const theme = createTheme({
@@ -43,27 +44,6 @@ const theme = createTheme({
   },
 });
 
-// 課程資料介面
-interface Course {
-  serialNumber: string;
-  department: string;
-  courseCode: string;
-  class: string;
-  courseName: string;
-  expertise: string;
-  credits: number;
-  courseId: string;
-  semester: string;
-  requirement: string;
-  teacher: string;
-  addMethod: string;
-  timeClassroom: string;
-  totalCapacity: number;
-  restrictions: string;
-  remarks: string;
-  hasWebsite: boolean;
-}
-
 // 主應用程式元件
 function AppContent() {
   const navigate = useNavigate();
@@ -73,9 +53,9 @@ function AppContent() {
   const selectedTab = location.pathname === '/department' ? 'department' : 'quick';
   
   // 狀態管理
-  const [courses] = useState<Course[]>([]);
-  const [totalResults] = useState(0);
   const [currentPage] = useState(1);
+  const [searchResults, setSearchResults] = useState<CourseData[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   // 事件處理函數
   const handleTabChange = (_event: React.SyntheticEvent, newValue: string) => {
@@ -112,7 +92,7 @@ function AppContent() {
 
       {/* 路由內容 */}
       <Routes>
-        <Route path="/" element={<QuickSearch />} />
+        <Route path="/" element={<QuickSearch onSearchResultsChange={setSearchResults} onLoadingChange={setIsLoading} />} />
         <Route path="/department" element={<DepartmentSearch />} />
       </Routes>
 
@@ -121,7 +101,7 @@ function AppContent() {
         <CardContent>
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
             <Typography variant="h6">
-              114-1 共查詢到 {totalResults} 筆課程:
+              114-1 共查詢到 {searchResults.length} 筆課程:
             </Typography>
             <Box>
               <IconButton><ChevronLeftIcon /></IconButton>
@@ -157,43 +137,64 @@ function AppContent() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {courses.length === 0 ? (
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={18} align="center">
+                      載入課程數據中...
+                    </TableCell>
+                  </TableRow>
+                ) : searchResults.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={18} align="center">
                       暫無課程資料
                     </TableCell>
                   </TableRow>
                 ) : (
-                  courses.map(course => (
-                    <TableRow key={course.serialNumber}>
-                      <TableCell>{course.serialNumber}</TableCell>
-                      <TableCell>{course.department}</TableCell>
-                      <TableCell>{course.courseCode}</TableCell>
-                      <TableCell>{course.class}</TableCell>
-                      <TableCell>
-                        <Link href="#" onClick={() => viewCourseOutline(course.courseId)}>
-                          {course.courseName}
-                        </Link>
-                      </TableCell>
-                      <TableCell>{course.expertise}</TableCell>
-                      <TableCell>{course.credits}</TableCell>
-                      <TableCell>{course.courseId}</TableCell>
-                      <TableCell>{course.semester}</TableCell>
-                      <TableCell>{course.requirement}</TableCell>
-                      <TableCell>{course.teacher}</TableCell>
-                      <TableCell>{course.addMethod}</TableCell>
-                      <TableCell>{course.timeClassroom}</TableCell>
-                      <TableCell>{course.totalCapacity}</TableCell>
-                      <TableCell>{course.restrictions}</TableCell>
-                      <TableCell>{course.remarks}</TableCell>
-                      <TableCell>
-                        {course.hasWebsite && <WebIcon />}
-                      </TableCell>
-                      <TableCell>
-                        <Checkbox />
-                      </TableCell>
-                    </TableRow>
-                  ))
+                  searchResults.map((course, index) => {
+                    // 組合課號：dpt_abbr + cou_teacno
+                    const courseNumber = `${course.dpt_abbr || ''}${course.cou_teacno || ''}`;
+                    
+                    return (
+                      <TableRow key={`${course.cou_code}-${index}`}>
+                        <TableCell>{course.ser_no || ''}</TableCell>
+                        <TableCell></TableCell>
+                        <TableCell>{courseNumber}</TableCell>
+                        <TableCell>{course.class || ''}</TableCell>
+                        <TableCell sx={{ color: 'primary.main', cursor: 'pointer' }}>
+                          {course.cou_cname || ''}
+                        </TableCell>
+                        <TableCell></TableCell>
+                        <TableCell>{course.credit || ''}</TableCell>
+                        <TableCell>{course.cou_code || ''}</TableCell>
+                        <TableCell></TableCell>
+                        <TableCell></TableCell>
+                        <TableCell></TableCell>
+                        <TableCell></TableCell>
+                        <TableCell></TableCell>
+                        <TableCell>{course.tno || ''}</TableCell>
+                        <TableCell></TableCell>
+                        <TableCell>{course.mark || ''}</TableCell>
+                        <TableCell>
+                          <Box 
+                            sx={{ 
+                              width: 20, 
+                              height: 20, 
+                              backgroundColor: 'green', 
+                              color: 'white', 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'center',
+                              fontSize: '0.8rem',
+                              fontWeight: 'bold'
+                            }}
+                          >
+                            C
+                          </Box>
+                        </TableCell>
+                        <TableCell></TableCell>
+                      </TableRow>
+                    );
+                  })
                 )}
               </TableBody>
             </Table>

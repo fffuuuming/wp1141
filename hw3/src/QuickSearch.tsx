@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -19,6 +19,14 @@ import {
 import {
   Search as SearchIcon
 } from '@mui/icons-material';
+import { parseCSV, searchCoursesByName } from './utils/csvParser';
+import type { CourseData } from './utils/csvParser';
+
+// Props 介面
+interface QuickSearchProps {
+  onSearchResultsChange: (results: CourseData[]) => void;
+  onLoadingChange: (loading: boolean) => void;
+}
 
 // 時間區間資料
 const timeSlots = [
@@ -39,7 +47,7 @@ const timeSlots = [
   { value: 'D', time: '21:10~22:00' }
 ];
 
-function QuickSearch() {
+function QuickSearch({ onSearchResultsChange, onLoadingChange }: QuickSearchProps) {
   // 狀態管理
   const [searchMethod, setSearchMethod] = useState('courseName');
   const [keyword, setKeyword] = useState('');
@@ -47,6 +55,31 @@ function QuickSearch() {
   const [periodFilter, setPeriodFilter] = useState('unlimited');
   const [addMethodFilter, setAddMethodFilter] = useState('unlimited');
   const [pageSize, setPageSize] = useState(15);
+  
+  // 課程數據
+  const [courses, setCourses] = useState<CourseData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // 載入 CSV 數據
+  useEffect(() => {
+    const loadCourseData = async () => {
+      try {
+        onLoadingChange(true);
+        const response = await fetch('/hw3-ntucourse-data-1002.csv');
+        const csvText = await response.text();
+        const parsedCourses = parseCSV(csvText);
+        setCourses(parsedCourses);
+        setIsLoading(false);
+        onLoadingChange(false);
+      } catch (error) {
+        console.error('載入課程數據失敗:', error);
+        setIsLoading(false);
+        onLoadingChange(false);
+      }
+    };
+
+    loadCourseData();
+  }, [onLoadingChange]);
 
   // 事件處理函數
   const handleSearchMethodChange = (event: any) => {
@@ -74,10 +107,16 @@ function QuickSearch() {
   };
 
   const handleSearch = () => {
-    console.log('快速搜尋:', { searchMethod, keyword, timeFilter, periodFilter, addMethodFilter });
+    if (searchMethod === 'courseName' && keyword.trim()) {
+      const results = searchCoursesByName(courses, keyword);
+      onSearchResultsChange(results);
+    } else {
+      onSearchResultsChange([]);
+    }
   };
 
   return (
+    <Box>
     <Card sx={{ mb: 3 }}>
       <CardContent sx={{ py: 2 }}>
         <Typography variant="h6" gutterBottom sx={{ fontSize: '1.1rem', mb: 2 }}>
@@ -242,6 +281,7 @@ function QuickSearch() {
         </Box>
       </CardContent>
     </Card>
+  </Box>
   );
 }
 
