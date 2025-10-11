@@ -18,6 +18,7 @@ import {
   Refresh as RefreshIcon
 } from '@mui/icons-material';
 import { useSearchResults, usePagination } from '../../hooks';
+import { formatTimeClassroom } from '../../utils/timeClassroomFormatter';
 import type { CourseData } from '../../types';
 
 interface CourseTableRowProps {
@@ -44,7 +45,7 @@ function CourseTableRow({ course, index }: CourseTableRowProps) {
       <TableCell></TableCell>
       <TableCell></TableCell>
       <TableCell></TableCell>
-      <TableCell></TableCell>
+      <TableCell>{formatTimeClassroom(course)}</TableCell>
       <TableCell>{course.tno || ''}</TableCell>
       <TableCell></TableCell>
       <TableCell>{course.mark || ''}</TableCell>
