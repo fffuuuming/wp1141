@@ -89,6 +89,12 @@ export interface SearchFilters {
   periodFilter: FilterType;
   addMethodFilter: FilterType;
   pageSize: number;
+  // 選中的星期選項
+  selectedWeekdays: string[];
+  // 選中的節次選項
+  selectedPeriods: string[];
+  // 選中的加選方式選項
+  selectedAddMethods: string[];
 }
 
 // 快速搜尋狀態介面

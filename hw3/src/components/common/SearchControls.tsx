@@ -26,8 +26,9 @@ export function SearchControls({
   searchMethod,
   keyword,
   onSearchMethodChange,
-  onKeywordChange
-}: Omit<SearchControlsProps, 'pageSize' | 'onPageSizeChange' | 'onSearch'>) {
+  onKeywordChange,
+  onSearch
+}: Omit<SearchControlsProps, 'pageSize' | 'onPageSizeChange'>) {
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
       <Typography variant="body2" sx={{ minWidth: 'fit-content', fontSize: '0.875rem' }}>
@@ -54,6 +55,11 @@ export function SearchControls({
         size="small"
         value={keyword}
         onChange={(e) => onKeywordChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            onSearch();
+          }
+        }}
         sx={{ flex: 1, maxWidth: 300 }}
         InputProps={{
           endAdornment: (

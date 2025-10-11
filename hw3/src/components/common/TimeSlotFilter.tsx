@@ -14,9 +14,16 @@ import { TIME_SLOTS } from '../../constants';
 interface TimeSlotFilterProps {
   filterType: FilterType;
   onFilterChange: (value: FilterType) => void;
+  selectedPeriods?: string[];
+  onPeriodChange?: (period: string, checked: boolean) => void;
 }
 
-export function TimeSlotFilter({ filterType, onFilterChange }: TimeSlotFilterProps) {
+export function TimeSlotFilter({ 
+  filterType, 
+  onFilterChange, 
+  selectedPeriods = [], 
+  onPeriodChange 
+}: TimeSlotFilterProps) {
   return (
     <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
       <Typography variant="body2" sx={{ minWidth: 'fit-content', fontSize: '0.875rem', mt: 0.5 }}>
@@ -40,7 +47,13 @@ export function TimeSlotFilter({ filterType, onFilterChange }: TimeSlotFilterPro
             {TIME_SLOTS.map(slot => (
               <FormControlLabel
                 key={slot.value}
-                control={<Checkbox size="small" />}
+                control={
+                  <Checkbox 
+                    size="small" 
+                    checked={selectedPeriods.includes(slot.value)}
+                    onChange={(e) => onPeriodChange?.(slot.value, e.target.checked)}
+                  />
+                }
                 label={`${slot.value} ${slot.time}`}
                 sx={{ 
                   '& .MuiFormControlLabel-label': { fontSize: '0.7rem' },

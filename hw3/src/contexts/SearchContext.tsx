@@ -52,7 +52,10 @@ export function SearchProvider({ children }: { children: ReactNode }) {
       timeFilter: 'unlimited',
       periodFilter: 'unlimited',
       addMethodFilter: 'unlimited',
-      pageSize: 15
+      pageSize: 15,
+      selectedWeekdays: [],
+      selectedPeriods: [],
+      selectedAddMethods: []
     }
   });
 
@@ -65,7 +68,10 @@ export function SearchProvider({ children }: { children: ReactNode }) {
       timeFilter: 'unlimited',
       periodFilter: 'unlimited',
       addMethodFilter: 'unlimited',
-      pageSize: 15
+      pageSize: 15,
+      selectedWeekdays: [],
+      selectedPeriods: [],
+      selectedAddMethods: []
     }
   });
 

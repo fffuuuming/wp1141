@@ -18,6 +18,8 @@ interface FilterSectionProps {
   showOptions?: boolean;
   options?: string[];
   optionType?: 'weekdays' | 'addMethods' | 'custom';
+  selectedOptions?: string[];
+  onOptionChange?: (option: string, checked: boolean) => void;
 }
 
 export function FilterSection({
@@ -26,7 +28,9 @@ export function FilterSection({
   onFilterChange,
   showOptions = false,
   options = [],
-  optionType = 'custom'
+  optionType = 'custom',
+  selectedOptions = [],
+  onOptionChange
 }: FilterSectionProps) {
   const getOptions = () => {
     switch (optionType) {
@@ -61,7 +65,13 @@ export function FilterSection({
           {getOptions().map(option => (
             <FormControlLabel
               key={option}
-              control={<Checkbox size="small" />}
+              control={
+                <Checkbox 
+                  size="small" 
+                  checked={selectedOptions.includes(option)}
+                  onChange={(e) => onOptionChange?.(option, e.target.checked)}
+                />
+              }
               label={option}
               sx={{ '& .MuiFormControlLabel-label': { fontSize: '0.75rem' } }}
             />

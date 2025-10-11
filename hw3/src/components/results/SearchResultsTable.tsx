@@ -10,7 +10,8 @@ import {
   TableHead,
   TableRow,
   Paper,
-  IconButton
+  IconButton,
+  Link
 } from '@mui/material';
 import {
   ChevronLeft as ChevronLeftIcon,
@@ -43,8 +44,31 @@ function CourseTableRow({ course, index }: CourseTableRowProps) {
       <TableCell>{course.cou_code || ''}</TableCell>
       <TableCell></TableCell>
       <TableCell></TableCell>
-      <TableCell></TableCell>
-      <TableCell></TableCell>
+      <TableCell>
+        {course.tea_cname && course.tea_cname.trim() !== '' ? (
+          <Link
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              // 這裡可以添加點擊教師的處理邏輯
+              console.log('教師:', course.tea_cname, '課程:', course.cou_cname);
+            }}
+            sx={{ 
+              color: 'primary.main', 
+              textDecoration: 'underline',
+              cursor: 'pointer',
+              '&:hover': {
+                color: 'primary.dark'
+              }
+            }}
+          >
+            {course.tea_cname}
+          </Link>
+        ) : (
+          ''
+        )}
+      </TableCell>
+      <TableCell>{course.co_select || ''}</TableCell>
       <TableCell>{formatTimeClassroom(course)}</TableCell>
       <TableCell>{course.tno || ''}</TableCell>
       <TableCell></TableCell>

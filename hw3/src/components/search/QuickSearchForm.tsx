@@ -13,6 +13,7 @@ export function QuickSearchForm() {
     handleSearchMethodChange,
     handleKeywordChange,
     handleFilterChange,
+    handleOptionChange,
     performSearch
   } = useQuickSearch();
 
@@ -29,6 +30,7 @@ export function QuickSearchForm() {
           keyword={searchState.keyword}
           onSearchMethodChange={handleSearchMethodChange}
           onKeywordChange={handleKeywordChange}
+          onSearch={performSearch}
         />
 
         {/* 過濾器區域 */}
@@ -40,12 +42,16 @@ export function QuickSearchForm() {
             onFilterChange={(value: any) => handleFilterChange('timeFilter', value)}
             showOptions={true}
             optionType="weekdays"
+            selectedOptions={searchState.filters.selectedWeekdays}
+            onOptionChange={(option, checked) => handleOptionChange('selectedWeekdays', option, checked)}
           />
 
           {/* 節次過濾器 */}
           <TimeSlotFilter
             filterType={searchState.filters.periodFilter}
             onFilterChange={(value: any) => handleFilterChange('periodFilter', value)}
+            selectedPeriods={searchState.filters.selectedPeriods}
+            onPeriodChange={(period, checked) => handleOptionChange('selectedPeriods', period, checked)}
           />
 
           {/* 加選方式過濾器 */}
@@ -55,6 +61,8 @@ export function QuickSearchForm() {
             onFilterChange={(value: any) => handleFilterChange('addMethodFilter', value)}
             showOptions={true}
             optionType="addMethods"
+            selectedOptions={searchState.filters.selectedAddMethods}
+            onOptionChange={(option, checked) => handleOptionChange('selectedAddMethods', option, checked)}
           />
         </Box>
 
