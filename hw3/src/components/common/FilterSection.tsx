@@ -45,13 +45,11 @@ export function FilterSection({
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-      <Typography variant="body2" sx={{ minWidth: 'fit-content', fontSize: '0.875rem' }}>
-        {label}:
-      </Typography>
+      <Typography variant="body2" sx={{ minWidth: 'fit-content', fontSize: '0.875rem' }}>{label}:</Typography>
       <FormControl component="fieldset" size="small">
-        <RadioGroup 
-          row 
-          value={filterType} 
+        <RadioGroup
+          row
+          value={filterType}
           onChange={(e) => onFilterChange(e.target.value as FilterType)}
           sx={{ '& .MuiFormControlLabel-label': { fontSize: '0.8rem' } }}
         >
@@ -59,15 +57,15 @@ export function FilterSection({
           <FormControlLabel value="limited" control={<Radio size="small" />} label="限定" />
         </RadioGroup>
       </FormControl>
-      
+
       {showOptions && filterType === 'limited' && (
         <FormGroup row sx={{ ml: 2 }}>
           {getOptions().map(option => (
             <FormControlLabel
               key={option}
               control={
-                <Checkbox 
-                  size="small" 
+                <Checkbox
+                  size="small"
                   checked={selectedOptions.includes(option)}
                   onChange={(e) => onOptionChange?.(option, e.target.checked)}
                 />

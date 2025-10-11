@@ -1,105 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearch } from '../contexts/SearchContext';
-import type { CourseData, SearchMethod, CourseType } from '../types';
-import {
-  searchCoursesByName,
-  searchCoursesByTeacher,
-  searchCoursesByCode,
-  searchCoursesBySerialNumber,
-  searchCoursesById
-} from '../utils/csvParser';
-
-// 根據上課時間過濾課程
-function filterCoursesByTime(courses: CourseData[], selectedWeekdays: string[]): CourseData[] {
-  if (selectedWeekdays.length === 0) {
-    return courses;
-  }
-  
-  return courses.filter(course => {
-    // 檢查課程是否有在選中的星期上課
-    // 只要課程在任一選中的星期有上課，就保留
-    for (let i = 1; i <= 6; i++) {
-      const dayKey = `day${i}` as keyof CourseData;
-      const dayValue = course[dayKey] as string;
-      
-      if (dayValue && dayValue.trim() !== '') {
-        const weekday = WEEKDAYS[i.toString() as keyof typeof WEEKDAYS];
-
-        if (weekday && selectedWeekdays.includes(weekday)) {
-          return true;
-        }
-      }
-    }
-    return false;
-  });
-}
-
-// 根據節次過濾課程
-function filterCoursesByPeriod(courses: CourseData[], selectedPeriods: string[]): CourseData[] {
-  if (selectedPeriods.length === 0) {
-    return courses;
-  }
-  
-  return courses.filter(course => {
-    // 檢查課程是否有在選中的節次上課
-    // 只要課程在任一選中的節次有上課，就保留
-    for (let i = 1; i <= 6; i++) {
-      const dayKey = `day${i}` as keyof CourseData;
-      const dayValue = course[dayKey] as string;
-      
-      if (dayValue && dayValue.trim() !== '') {
-        // 將節次字符串轉換為字符數組，每個字符代表一個節次
-        const periods = dayValue.split('').filter(period => period.trim() !== '');
-        
-        // 檢查是否有任何節次匹配
-        for (const period of periods) {
-          if (selectedPeriods.includes(period)) {
-            return true;
-          }
-        }
-      }
-    }
-    return false;
-  });
-}
-
-// 根據加選方式過濾課程
-function filterCoursesByAddMethod(courses: CourseData[], selectedAddMethods: string[]): CourseData[] {
-  if (selectedAddMethods.length === 0) {
-    return courses;
-  }
-  
-  return courses.filter(course => {
-    // 檢查課程的加選方式是否在選中的選項中
-    const coSelect = course.co_select;
-    
-    if (coSelect && coSelect.trim() !== '') {
-      // 將選中的加選方式類別轉換為對應的數字
-      const addMethodNumbers = selectedAddMethods.map(method => {
-        switch (method) {
-          case '第1類': return '1';
-          case '第2類': return '2';
-          case '第3類': return '3';
-          default: return method;
-        }
-      });
-      
-      return addMethodNumbers.includes(coSelect);
-    }
-    
-    return false;
-  });
-}
-
-// 星期對應的中文
-const WEEKDAYS = {
-  '1': '週一',
-  '2': '週二',
-  '3': '週三',
-  '4': '週四',
-  '5': '週五',
-  '6': '週六'
-};
+import type { SearchMethod, CourseType } from '../types';
+import { useSearchLogic } from './useSearchLogic';
 
 // 課程數據載入 Hook
 export function useCourseData() {
@@ -136,6 +38,8 @@ export function useQuickSearch() {
     appState 
   } = useSearch();
 
+  const { performSearch } = useSearchLogic();
+
   const handleSearchMethodChange = useCallback((method: SearchMethod) => {
     setQuickSearchState(prev => ({ ...prev, searchMethod: method }));
   }, [setQuickSearchState]);
@@ -171,72 +75,21 @@ export function useQuickSearch() {
     });
   }, [setQuickSearchState]);
 
-  const performSearch = useCallback(() => {
-    console.log('執行搜尋:', quickSearchState);
-    console.log('可用課程數量:', appState.courses.length);
-    
-    if (!quickSearchState.keyword.trim()) {
-      console.log('關鍵字為空，清空結果');
-      updateSearchResults([]);
-      return;
-    }
-
-    let results: CourseData[] = [];
-    
-    switch (quickSearchState.searchMethod) {
-      case 'courseName':
-        console.log('使用課程名稱搜尋:', quickSearchState.keyword);
-        results = searchCoursesByName(appState.courses, quickSearchState.keyword);
-        console.log('課程名稱搜尋結果:', results.length, '筆');
-        break;
-      case 'teacherName':
-        results = searchCoursesByTeacher(appState.courses, quickSearchState.keyword);
-        break;
-      case 'courseCode':
-        results = searchCoursesByCode(appState.courses, quickSearchState.keyword);
-        break;
-      case 'serialNumber':
-        results = searchCoursesBySerialNumber(appState.courses, quickSearchState.keyword);
-        break;
-      case 'courseId':
-        results = searchCoursesById(appState.courses, quickSearchState.keyword);
-        break;
-      default:
-        results = [];
-    }
-    
-    console.log('搜尋後結果:', results.length, '筆');
-    
-    // 應用時間過濾器
-    if (quickSearchState.filters.timeFilter === 'limited') {
-      console.log('應用時間過濾器，選中的星期:', quickSearchState.filters.selectedWeekdays);
-      results = filterCoursesByTime(results, quickSearchState.filters.selectedWeekdays);
-      console.log('時間過濾後結果:', results.length, '筆');
-    }
-    
-    // 應用節次過濾器
-    if (quickSearchState.filters.periodFilter === 'limited') {
-      console.log('應用節次過濾器，選中的節次:', quickSearchState.filters.selectedPeriods);
-      results = filterCoursesByPeriod(results, quickSearchState.filters.selectedPeriods);
-      console.log('節次過濾後結果:', results.length, '筆');
-    }
-    
-    // 應用加選方式過濾器
-    if (quickSearchState.filters.addMethodFilter === 'limited') {
-      console.log('應用加選方式過濾器，選中的加選方式:', quickSearchState.filters.selectedAddMethods);
-      results = filterCoursesByAddMethod(results, quickSearchState.filters.selectedAddMethods);
-      console.log('加選方式過濾後結果:', results.length, '筆');
-    }
-    
-    console.log('最終搜尋結果:', results.length, '筆');
+  const executeSearch = useCallback(() => {
+    const results = performSearch(
+      appState.courses,
+      quickSearchState.searchMethod,
+      quickSearchState.keyword,
+      quickSearchState.filters
+    );
     updateSearchResults(results);
-  }, [quickSearchState, appState.courses, updateSearchResults]);
+  }, [performSearch, appState.courses, quickSearchState, updateSearchResults]);
 
   // 自動觸發搜尋當過濾器變化時
   useEffect(() => {
     // 只有在有搜尋關鍵字時才自動觸發搜尋
     if (quickSearchState.keyword.trim()) {
-      performSearch();
+      executeSearch();
     }
   }, [
     quickSearchState.filters.timeFilter,
@@ -253,7 +106,7 @@ export function useQuickSearch() {
     handleKeywordChange,
     handleFilterChange,
     handleOptionChange,
-    performSearch
+    performSearch: executeSearch
   };
 }
 
@@ -384,3 +237,7 @@ export function useSearchResults() {
     clearResults
   };
 }
+
+// 導出新的共用 Hooks
+export { useSearchLogic } from './useSearchLogic';
+export { useCourseFilters } from './useCourseFilters';

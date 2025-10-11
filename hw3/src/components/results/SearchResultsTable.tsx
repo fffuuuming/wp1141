@@ -10,8 +10,7 @@ import {
   TableHead,
   TableRow,
   Paper,
-  IconButton,
-  Link
+  IconButton
 } from '@mui/material';
 import {
   ChevronLeft as ChevronLeftIcon,
@@ -19,81 +18,7 @@ import {
   Refresh as RefreshIcon
 } from '@mui/icons-material';
 import { useSearchResults, usePagination } from '../../hooks';
-import { formatTimeClassroom } from '../../utils/timeClassroomFormatter';
-import type { CourseData } from '../../types';
-
-interface CourseTableRowProps {
-  course: CourseData;
-  index: number;
-}
-
-function CourseTableRow({ course, index }: CourseTableRowProps) {
-  const courseNumber = `${course.dpt_abbr || ''}${course.cou_teacno || ''}`;
-  
-  return (
-    <TableRow key={`${course.cou_code}-${index}`}>
-      <TableCell>{course.ser_no || ''}</TableCell>
-      <TableCell></TableCell>
-      <TableCell>{courseNumber}</TableCell>
-      <TableCell>{course.class || ''}</TableCell>
-      <TableCell sx={{ color: 'primary.main', cursor: 'pointer' }}>
-        {course.cou_cname || ''}
-      </TableCell>
-      <TableCell></TableCell>
-      <TableCell>{course.credit || ''}</TableCell>
-      <TableCell>{course.cou_code || ''}</TableCell>
-      <TableCell></TableCell>
-      <TableCell></TableCell>
-      <TableCell>
-        {course.tea_cname && course.tea_cname.trim() !== '' ? (
-          <Link
-            href="#"
-            onClick={(e) => {
-              e.preventDefault();
-              // 這裡可以添加點擊教師的處理邏輯
-              console.log('教師:', course.tea_cname, '課程:', course.cou_cname);
-            }}
-            sx={{ 
-              color: 'primary.main', 
-              textDecoration: 'underline',
-              cursor: 'pointer',
-              '&:hover': {
-                color: 'primary.dark'
-              }
-            }}
-          >
-            {course.tea_cname}
-          </Link>
-        ) : (
-          ''
-        )}
-      </TableCell>
-      <TableCell>{course.co_select || ''}</TableCell>
-      <TableCell>{formatTimeClassroom(course)}</TableCell>
-      <TableCell>{course.tno || ''}</TableCell>
-      <TableCell></TableCell>
-      <TableCell>{course.mark || ''}</TableCell>
-      <TableCell>
-        <Box 
-          sx={{ 
-            width: 20, 
-            height: 20, 
-            backgroundColor: 'green', 
-            color: 'white', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            fontSize: '0.8rem',
-            fontWeight: 'bold'
-          }}
-        >
-          C
-        </Box>
-      </TableCell>
-      <TableCell></TableCell>
-    </TableRow>
-  );
-}
+import { CourseTableRow } from '../common/CourseTableRow';
 
 export function SearchResultsTable() {
   const { searchResults, isLoading } = useSearchResults();
@@ -162,7 +87,15 @@ export function SearchResultsTable() {
                 </TableRow>
               ) : (
                 currentPageData.map((course, index) => (
-                  <CourseTableRow key={`${course.cou_code}-${index}`} course={course} index={index} />
+                  <CourseTableRow 
+                    key={`${course.cou_code}-${index}`} 
+                    course={course} 
+                    index={index}
+                    onTeacherClick={(teacherName, courseName) => {
+                      console.log('教師:', teacherName, '課程:', courseName);
+                    }}
+                    showAddButton={false}
+                  />
                 ))
               )}
             </TableBody>

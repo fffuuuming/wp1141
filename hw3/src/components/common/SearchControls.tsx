@@ -15,10 +15,8 @@ import { SEARCH_METHOD_OPTIONS } from '../../constants';
 interface SearchControlsProps {
   searchMethod: SearchMethod;
   keyword: string;
-  pageSize: number;
   onSearchMethodChange: (method: SearchMethod) => void;
   onKeywordChange: (keyword: string) => void;
-  onPageSizeChange: (size: number) => void;
   onSearch: () => void;
 }
 
@@ -28,7 +26,7 @@ export function SearchControls({
   onSearchMethodChange,
   onKeywordChange,
   onSearch
-}: Omit<SearchControlsProps, 'pageSize' | 'onPageSizeChange'>) {
+}: SearchControlsProps) {
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
       <Typography variant="body2" sx={{ minWidth: 'fit-content', fontSize: '0.875rem' }}>
