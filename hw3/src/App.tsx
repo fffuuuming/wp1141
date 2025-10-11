@@ -1,36 +1,12 @@
-import React, { useState } from 'react';
 import {
   ThemeProvider,
   createTheme,
-  CssBaseline,
-  Container,
-  Typography,
-  Box,
-  Tabs,
-  Tab,
-  Card,
-  CardContent,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  IconButton,
-  Link,
-  Checkbox
+  CssBaseline
 } from '@mui/material';
-import {
-  ChevronLeft as ChevronLeftIcon,
-  ChevronRight as ChevronRightIcon,
-  Refresh as RefreshIcon,
-  Web as WebIcon
-} from '@mui/icons-material';
-import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import QuickSearch from './QuickSearch';
-import DepartmentSearch from './DepartmentSearch';
-import type { CourseData } from './utils/csvParser';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { SearchProvider } from './contexts/SearchContext';
+import { AppLayout, QuickSearchForm, DepartmentSearchForm, SearchResultsTable } from './components';
+import { useCourseData } from './hooks';
 
 // 建立主題
 const theme = createTheme({
@@ -44,164 +20,31 @@ const theme = createTheme({
   },
 });
 
-// 主應用程式元件
-function AppContent() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  
-  // 根據當前路徑決定選中的 tab
-  const selectedTab = location.pathname === '/department' ? 'department' : 'quick';
-  
-  // 狀態管理
-  const [currentPage] = useState(1);
-  const [searchResults, setSearchResults] = useState<CourseData[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+// 數據載入組件
+function DataLoader() {
+  useCourseData(); // 觸發數據載入
+  return null;
+}
 
-  // 事件處理函數
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: string) => {
-    if (newValue === 'department') {
-      navigate('/department');
-    } else {
-      navigate('/');
-    }
-  };
-
-  const viewCourseOutline = (courseId: string) => {
-    console.log('查看課程大綱:', courseId);
-  };
-
+// 快速搜尋頁面
+function QuickSearchPage() {
   return (
-    <Container maxWidth="xl" sx={{ py: 3 }}>
-      {/* 頂部導航 */}
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          台大課程網
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          您現在的位置: 課程網頁查詢 &gt; {selectedTab === 'department' ? '系所查詢首頁' : '快速查詢首頁'}
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          114-1修課學分數上下限規定
-        </Typography>
-        
-        <Tabs value={selectedTab} onChange={handleTabChange} sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tab label="快速" value="quick" />
-          <Tab label="系所" value="department" />
-        </Tabs>
-      </Box>
+    <>
+      <DataLoader />
+      <QuickSearchForm />
+      <SearchResultsTable />
+    </>
+  );
+}
 
-      {/* 路由內容 */}
-      <Routes>
-        <Route path="/" element={<QuickSearch onSearchResultsChange={setSearchResults} onLoadingChange={setIsLoading} />} />
-        <Route path="/department" element={<DepartmentSearch />} />
-      </Routes>
-
-      {/* 課程搜尋結果區域 */}
-      <Card>
-        <CardContent>
-          <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-            <Typography variant="h6">
-              114-1 共查詢到 {searchResults.length} 筆課程:
-            </Typography>
-            <Box>
-              <IconButton><ChevronLeftIcon /></IconButton>
-              <Typography component="span">第{currentPage}頁</Typography>
-              <IconButton><ChevronRightIcon /></IconButton>
-              <IconButton><RefreshIcon /></IconButton>
-            </Box>
-          </Box>
-
-          {/* 課程結果表格 */}
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>流水號</TableCell>
-                  <TableCell>授課對象</TableCell>
-                  <TableCell>課號</TableCell>
-                  <TableCell>班次</TableCell>
-                  <TableCell>課程名稱</TableCell>
-                  <TableCell>領域專長</TableCell>
-                  <TableCell>學分</TableCell>
-                  <TableCell>課程識別碼</TableCell>
-                  <TableCell>全/半年</TableCell>
-                  <TableCell>必/選修</TableCell>
-                  <TableCell>授課教師</TableCell>
-                  <TableCell>加選方式</TableCell>
-                  <TableCell>時間教室</TableCell>
-                  <TableCell>總人數</TableCell>
-                  <TableCell>選課限制條件</TableCell>
-                  <TableCell>備註</TableCell>
-                  <TableCell>課程網頁</TableCell>
-                  <TableCell>本學期我預計要選的課程</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={18} align="center">
-                      載入課程數據中...
-                    </TableCell>
-                  </TableRow>
-                ) : searchResults.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={18} align="center">
-                      暫無課程資料
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  searchResults.map((course, index) => {
-                    // 組合課號：dpt_abbr + cou_teacno
-                    const courseNumber = `${course.dpt_abbr || ''}${course.cou_teacno || ''}`;
-                    
-                    return (
-                      <TableRow key={`${course.cou_code}-${index}`}>
-                        <TableCell>{course.ser_no || ''}</TableCell>
-                        <TableCell></TableCell>
-                        <TableCell>{courseNumber}</TableCell>
-                        <TableCell>{course.class || ''}</TableCell>
-                        <TableCell sx={{ color: 'primary.main', cursor: 'pointer' }}>
-                          {course.cou_cname || ''}
-                        </TableCell>
-                        <TableCell></TableCell>
-                        <TableCell>{course.credit || ''}</TableCell>
-                        <TableCell>{course.cou_code || ''}</TableCell>
-                        <TableCell></TableCell>
-                        <TableCell></TableCell>
-                        <TableCell></TableCell>
-                        <TableCell></TableCell>
-                        <TableCell></TableCell>
-                        <TableCell>{course.tno || ''}</TableCell>
-                        <TableCell></TableCell>
-                        <TableCell>{course.mark || ''}</TableCell>
-                        <TableCell>
-                          <Box 
-                            sx={{ 
-                              width: 20, 
-                              height: 20, 
-                              backgroundColor: 'green', 
-                              color: 'white', 
-                              display: 'flex', 
-                              alignItems: 'center', 
-                              justifyContent: 'center',
-                              fontSize: '0.8rem',
-                              fontWeight: 'bold'
-                            }}
-                          >
-                            C
-                          </Box>
-                        </TableCell>
-                        <TableCell></TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </CardContent>
-      </Card>
-    </Container>
+// 系所搜尋頁面
+function DepartmentSearchPage() {
+  return (
+    <>
+      <DataLoader />
+      <DepartmentSearchForm />
+      <SearchResultsTable />
+    </>
   );
 }
 
@@ -210,9 +53,16 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Router>
-        <AppContent />
-      </Router>
+      <SearchProvider>
+        <Router>
+          <AppLayout>
+            <Routes>
+              <Route path="/" element={<QuickSearchPage />} />
+              <Route path="/department" element={<DepartmentSearchPage />} />
+            </Routes>
+          </AppLayout>
+        </Router>
+      </SearchProvider>
     </ThemeProvider>
   );
 }
