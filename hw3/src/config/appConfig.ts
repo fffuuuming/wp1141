@@ -28,7 +28,7 @@ export const appConfig = {
   ui: {
     defaultPageSize: 15,
     maxPageSize: 100,
-    notificationDuration: 3000,
+    notificationDuration: 750,
     animationDuration: 200
   }
 } as const;

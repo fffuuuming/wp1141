@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
 import type { CourseData, PlannedCourse } from '../types';
+import { getCourseUniqueId } from '../utils/courseUtils';
 
 // Context 介面
 interface PlannedCoursesContextType {
@@ -20,10 +21,11 @@ export function PlannedCoursesProvider({ children }: { children: ReactNode }) {
   // 添加課程到預計要選的列表
   const addCourseToPlanned = useCallback((course: CourseData) => {
     setPlannedCourses(prev => {
-      // 檢查是否已經存在（使用流水號比對）
-      const exists = prev.some(pc => pc.ser_no === course.ser_no);
+      // 檢查是否已經存在（使用流水號+授課對象組合比對）
+      const courseUniqueId = getCourseUniqueId(course);
+      const exists = prev.some(pc => getCourseUniqueId(pc) === courseUniqueId);
       if (exists) {
-        console.log('課程已經在預計要選的列表中:', course.cou_cname);
+        console.log('課程已經在預計要選的列表中:', course.cou_cname, `(${courseUniqueId})`);
         return prev;
       }
 
@@ -34,15 +36,15 @@ export function PlannedCoursesProvider({ children }: { children: ReactNode }) {
         serialNumber: prev.length + 1
       };
 
-      console.log('成功添加課程到預計要選的列表:', course.cou_cname);
+      console.log('成功添加課程到預計要選的列表:', course.cou_cname, `(${courseUniqueId})`);
       return [...prev, newPlannedCourse];
     });
   }, []);
 
   // 從預計要選的列表中移除課程
-  const removeCourseFromPlanned = useCallback((courseId: string) => {
+  const removeCourseFromPlanned = useCallback((courseUniqueId: string) => {
     setPlannedCourses(prev => {
-      const filtered = prev.filter(course => course.cou_code !== courseId);
+      const filtered = prev.filter(course => getCourseUniqueId(course) !== courseUniqueId);
       // 重新編號
       return filtered.map((course, index) => ({
         ...course,
@@ -56,9 +58,9 @@ export function PlannedCoursesProvider({ children }: { children: ReactNode }) {
     setPlannedCourses([]);
   }, []);
 
-  // 檢查課程是否已在預計要選的列表中（使用流水號比對）
+  // 檢查課程是否已在預計要選的列表中（使用流水號+授課對象組合比對）
   const isCourseInPlanned = useCallback((courseId: string) => {
-    return plannedCourses.some(course => course.ser_no === courseId);
+    return plannedCourses.some(course => getCourseUniqueId(course) === courseId);
   }, [plannedCourses]);
 
   const value: PlannedCoursesContextType = {

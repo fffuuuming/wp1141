@@ -14,7 +14,7 @@ export function Notification({
   message,
   severity,
   onClose,
-  autoHideDuration = 3000
+  autoHideDuration = 750
 }: NotificationProps) {
   return (
     <Snackbar

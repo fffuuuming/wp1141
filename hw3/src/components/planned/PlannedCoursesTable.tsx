@@ -20,6 +20,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import type { PlannedCourse } from '../../types';
 import { formatTimeClassroom } from '../../utils/timeClassroomFormatter';
+import { DEPARTMENT_OPTIONS } from '../../constants/course';
+import { getCourseUniqueId } from '../../utils/courseUtils';
 import { CourseScheduleTable } from './CourseScheduleTable';
 
 interface PlannedCoursesTableProps {
@@ -121,7 +123,7 @@ export function PlannedCoursesTable({
                   <TableRow key={`${course.cou_code}-${index}`}>
                     <TableCell>{course.serialNumber}</TableCell>
                     <TableCell>{course.ser_no || ''}</TableCell>
-                    <TableCell></TableCell>
+                    <TableCell>{DEPARTMENT_OPTIONS[course.dpt_code || ''] || course.dpt_code || ''}</TableCell>
                     <TableCell>{`${course.dpt_abbr || ''}${course.cou_teacno || ''}`}</TableCell>
                     <TableCell>{course.class || ''}</TableCell>
                     <TableCell sx={{ color: 'primary.main', cursor: 'pointer' }}>
@@ -175,7 +177,7 @@ export function PlannedCoursesTable({
                     <TableCell>
                       <IconButton
                         size="small"
-                        onClick={() => onRemoveCourse(course.cou_code)}
+                        onClick={() => onRemoveCourse(getCourseUniqueId(course))}
                         sx={{ 
                           color: 'error.main',
                           '&:hover': {

@@ -63,3 +63,9 @@ export {
   isProduction,
   isTest
 } from './env';
+
+// 課程工具
+export {
+  generateCourseId,
+  getCourseUniqueId
+} from './courseUtils';

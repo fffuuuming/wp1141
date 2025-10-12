@@ -21,6 +21,7 @@ import {
 import { useSearchResults, usePagination } from '../../hooks';
 import { usePlannedCourses } from '../../contexts/PlannedCoursesContext';
 import { useNotification } from '../../hooks/useNotification';
+import { getCourseUniqueId } from '../../utils/courseUtils';
 import { CourseTableRow } from '../common/CourseTableRow';
 import { Notification } from '../common/Notification';
 
@@ -33,7 +34,8 @@ const SearchResultsTable = memo(() => {
   const currentPageData = useMemo(() => getCurrentPageData(), [getCurrentPageData]);
 
   const handleAddToPlanned = useCallback((course: any) => {
-    if (isCourseInPlanned(course.ser_no)) {
+    const courseUniqueId = getCourseUniqueId(course);
+    if (isCourseInPlanned(courseUniqueId)) {
       showWarning('此課程已經選擇');
     } else {
       addCourseToPlanned(course);

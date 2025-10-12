@@ -60,9 +60,9 @@ export function DepartmentSearchForm() {
               displayEmpty
             >
               <MenuItem value="">全部</MenuItem>
-              {DEPARTMENT_OPTIONS.map(dept => (
-                <MenuItem key={dept.code} value={dept.code}>
-                  {dept.name}
+              {Object.entries(DEPARTMENT_OPTIONS).map(([code, name]) => (
+                <MenuItem key={code} value={code}>
+                  {code} {name}
                 </MenuItem>
               ))}
             </Select>

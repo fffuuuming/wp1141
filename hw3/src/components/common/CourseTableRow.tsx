@@ -7,6 +7,7 @@ import {
   Button
 } from '@mui/material';
 import { formatTimeClassroom } from '../../utils/timeClassroomFormatter';
+import { DEPARTMENT_OPTIONS } from '../../constants/course';
 import type { CourseData } from '../../types';
 
 interface CourseTableRowProps {
@@ -42,7 +43,7 @@ const CourseTableRow = memo<CourseTableRowProps>(({
   return (
     <TableRow key={`${course.cou_code}-${index}`}>
       <TableCell>{course.ser_no || ''}</TableCell>
-      <TableCell></TableCell>
+      <TableCell>{DEPARTMENT_OPTIONS[course.dpt_code || ''] || course.dpt_code || ''}</TableCell>
       <TableCell>{courseNumber}</TableCell>
       <TableCell>{course.class || ''}</TableCell>
       <TableCell sx={{ color: 'primary.main', cursor: 'pointer' }}>
