@@ -1,28 +1,24 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
-import type { 
-  CourseData, 
-  AppState, 
-  QuickSearchState, 
-  DepartmentSearchState,
-  PaginationInfo 
-} from '../types';
-import { parseCSV } from '../utils/csvParser';
+import { createContext, useContext, type ReactNode } from 'react';
+import { AppStateProvider, useAppState } from './AppStateContext';
+import { SearchStateProvider, useSearchState } from './SearchStateContext';
+import { PaginationProvider, usePagination } from './PaginationContext';
+import type { CourseData } from '../types';
 
-// Context 介面
+// Context 介面 - 現在作為組合多個 Context 的統一介面
 interface SearchContextType {
   // 應用程式狀態
-  appState: AppState;
-  setAppState: React.Dispatch<React.SetStateAction<AppState>>;
+  appState: ReturnType<typeof useAppState>['appState'];
+  setAppState: ReturnType<typeof useAppState>['setAppState'];
   
   // 搜尋狀態
-  quickSearchState: QuickSearchState;
-  setQuickSearchState: React.Dispatch<React.SetStateAction<QuickSearchState>>;
-  departmentSearchState: DepartmentSearchState;
-  setDepartmentSearchState: React.Dispatch<React.SetStateAction<DepartmentSearchState>>;
+  quickSearchState: ReturnType<typeof useSearchState>['quickSearchState'];
+  setQuickSearchState: ReturnType<typeof useSearchState>['setQuickSearchState'];
+  departmentSearchState: ReturnType<typeof useSearchState>['departmentSearchState'];
+  setDepartmentSearchState: ReturnType<typeof useSearchState>['setDepartmentSearchState'];
   
   // 分頁資訊
-  paginationInfo: PaginationInfo;
-  setPaginationInfo: React.Dispatch<React.SetStateAction<PaginationInfo>>;
+  paginationInfo: ReturnType<typeof usePagination>['paginationInfo'];
+  setPaginationInfo: ReturnType<typeof usePagination>['setPaginationInfo'];
   
   // 操作方法
   updateSearchResults: (results: CourseData[]) => void;
@@ -34,109 +30,56 @@ interface SearchContextType {
 // 創建 Context
 const SearchContext = createContext<SearchContextType | undefined>(undefined);
 
-// Provider 組件
+// Provider 組件 - 組合多個 Provider
 export function SearchProvider({ children }: { children: ReactNode }) {
-  // 應用程式狀態
-  const [appState, setAppState] = useState<AppState>({
-    searchResults: [],
-    isLoading: false,
-    currentPage: 1,
-    courses: []
-  });
+  return (
+    <AppStateProvider>
+      <SearchStateProvider>
+        <PaginationProvider>
+          <SearchContextProvider>{children}</SearchContextProvider>
+        </PaginationProvider>
+      </SearchStateProvider>
+    </AppStateProvider>
+  );
+}
 
-  // 快速搜尋狀態
-  const [quickSearchState, setQuickSearchState] = useState<QuickSearchState>({
-    searchMethod: 'courseName',
-    keyword: '',
-    filters: {
-      timeFilter: 'unlimited',
-      periodFilter: 'unlimited',
-      addMethodFilter: 'unlimited',
-      pageSize: 15,
-      selectedWeekdays: [],
-      selectedPeriods: [],
-      selectedAddMethods: []
-    }
-  });
+// 內部 Provider 組件，用於組合所有 Context 的值
+function SearchContextProvider({ children }: { children: ReactNode }) {
+  const appStateContext = useAppState();
+  const searchStateContext = useSearchState();
+  const paginationContext = usePagination();
 
-  // 系所搜尋狀態
-  const [departmentSearchState, setDepartmentSearchState] = useState<DepartmentSearchState>({
-    college: '',
-    department: '',
-    requirementType: 'all',
-    filters: {
-      timeFilter: 'unlimited',
-      periodFilter: 'unlimited',
-      addMethodFilter: 'unlimited',
-      pageSize: 15,
-      selectedWeekdays: [],
-      selectedPeriods: [],
-      selectedAddMethods: []
-    }
-  });
+  // 更新搜尋結果 - 同時更新應用程式狀態和分頁資訊
+  const updateSearchResults = (results: CourseData[]) => {
+    appStateContext.updateSearchResults(results);
+    paginationContext.updatePagination(results.length, paginationContext.paginationInfo.itemsPerPage);
+  };
 
-  // 分頁資訊
-  const [paginationInfo, setPaginationInfo] = useState<PaginationInfo>({
-    currentPage: 1,
-    totalPages: 1,
-    totalItems: 0,
-    itemsPerPage: 15
-  });
-
-  // 更新搜尋結果
-  const updateSearchResults = useCallback((results: CourseData[]) => {
-    setAppState(prev => ({ ...prev, searchResults: results }));
-    
-    // 更新分頁資訊
-    const totalPages = Math.ceil(results.length / paginationInfo.itemsPerPage);
-    setPaginationInfo(prev => ({
-      ...prev,
-      totalPages,
-      totalItems: results.length,
-      currentPage: 1
-    }));
-  }, [paginationInfo.itemsPerPage]);
-
-  // 更新載入狀態
-  const updateLoadingState = useCallback((loading: boolean) => {
-    setAppState(prev => ({ ...prev, isLoading: loading }));
-  }, []);
-
-  // 載入課程數據
-  const loadCourseData = useCallback(async () => {
-    try {
-      updateLoadingState(true);
-      const response = await fetch('/hw3-ntucourse-data-1002.csv');
-      const csvText = await response.text();
-      
-      const parsedCourses = parseCSV(csvText);
-      
-      setAppState(prev => ({ ...prev, courses: parsedCourses }));
-      updateLoadingState(false);
-    } catch (error) {
-      console.error('載入課程數據失敗:', error);
-      updateLoadingState(false);
-    }
-  }, [updateLoadingState]);
-
-  // 重置搜尋
-  const resetSearch = useCallback(() => {
-    setAppState(prev => ({ ...prev, searchResults: [], currentPage: 1 }));
-    setPaginationInfo(prev => ({ ...prev, currentPage: 1, totalPages: 1, totalItems: 0 }));
-  }, []);
+  // 重置搜尋 - 同時重置應用程式狀態和分頁資訊
+  const resetSearch = () => {
+    appStateContext.resetSearch();
+    paginationContext.updatePagination(0, paginationContext.paginationInfo.itemsPerPage);
+  };
 
   const value: SearchContextType = {
-    appState,
-    setAppState,
-    quickSearchState,
-    setQuickSearchState,
-    departmentSearchState,
-    setDepartmentSearchState,
-    paginationInfo,
-    setPaginationInfo,
+    // 應用程式狀態
+    appState: appStateContext.appState,
+    setAppState: appStateContext.setAppState,
+    
+    // 搜尋狀態
+    quickSearchState: searchStateContext.quickSearchState,
+    setQuickSearchState: searchStateContext.setQuickSearchState,
+    departmentSearchState: searchStateContext.departmentSearchState,
+    setDepartmentSearchState: searchStateContext.setDepartmentSearchState,
+    
+    // 分頁資訊
+    paginationInfo: paginationContext.paginationInfo,
+    setPaginationInfo: paginationContext.setPaginationInfo,
+    
+    // 操作方法
     updateSearchResults,
-    updateLoadingState,
-    loadCourseData,
+    updateLoadingState: appStateContext.updateLoadingState,
+    loadCourseData: appStateContext.loadCourseData,
     resetSearch
   };
 
