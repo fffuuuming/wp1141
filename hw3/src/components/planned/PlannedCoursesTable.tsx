@@ -11,7 +11,11 @@ import {
   TableRow,
   Paper,
   IconButton,
-  Button
+  Button,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel
 } from '@mui/material';
 import {
   Delete as DeleteIcon,
@@ -45,10 +49,14 @@ export function PlannedCoursesTable({
     navigate('/');
   };
 
+  const handleGoToSelectionResults = () => {
+    navigate('/selection-results');
+  };
+
   return (
     <>
-      {/* 返回按鈕 */}
-      <Box sx={{ mb: 2 }}>
+      {/* 返回按鈕和選課結果按鈕 */}
+      <Box sx={{ mb: 2, display: 'flex', gap: 2 }}>
         <Button
           variant="outlined"
           startIcon={<ArrowBackIcon />}
@@ -59,6 +67,17 @@ export function PlannedCoursesTable({
           }}
         >
           返回課程查詢
+        </Button>
+        <Button
+          variant="contained"
+          color="secondary"
+          onClick={handleGoToSelectionResults}
+          sx={{
+            textTransform: 'none',
+            fontSize: '0.875rem'
+          }}
+        >
+          選課結果
         </Button>
       </Box>
 
@@ -103,18 +122,33 @@ export function PlannedCoursesTable({
                 <TableCell>備註</TableCell>
                 <TableCell>課程網頁</TableCell>
                 <TableCell>本學期我預計要選的課程</TableCell>
+                <TableCell>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+                    <span>匯入最終課程</span>
+                    <Typography 
+                      variant="caption" 
+                      sx={{ 
+                        color: '#d32f2f', 
+                        fontWeight: 'bold',
+                        fontSize: '0.7rem'
+                      }}
+                    >
+                      下好離手！
+                    </Typography>
+                  </Box>
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={18} align="center">
+                  <TableCell colSpan={19} align="center">
                     載入課程數據中...
                   </TableCell>
                 </TableRow>
               ) : plannedCourses.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={18} align="center">
+                  <TableCell colSpan={19} align="center">
                     暫無課程資料
                   </TableCell>
                 </TableRow>
@@ -188,6 +222,36 @@ export function PlannedCoursesTable({
                       >
                         <DeleteIcon fontSize="small" />
                       </IconButton>
+                    </TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <FormControl size="small" sx={{ minWidth: 80 }}>
+                          <InputLabel>志願序</InputLabel>
+                          <Select
+                            value={1}
+                            label="志願序"
+                            sx={{ fontSize: '0.875rem' }}
+                          >
+                            {Array.from({ length: 100 }, (_, i) => i + 1).map((num) => (
+                              <MenuItem key={num} value={num} sx={{ fontSize: '0.875rem' }}>
+                                {num}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                        <Button
+                          variant="contained"
+                          size="small"
+                          sx={{
+                            fontSize: '0.75rem',
+                            textTransform: 'none',
+                            px: 1.5,
+                            py: 0.5
+                          }}
+                        >
+                          匯入
+                        </Button>
+                      </Box>
                     </TableCell>
                   </TableRow>
                 ))

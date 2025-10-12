@@ -120,20 +120,21 @@ export function SelectionResultsPage({
           }}>
             <TableHead>
               <TableRow sx={{ backgroundColor: '#4db6ac' }}>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem', py: 2, width: '10%' }}>流水號</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem', py: 2, width: '12%' }}>課號</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem', py: 2, width: '15%' }}>課程識別碼</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem', py: 2, width: '8%' }}>班次</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem', py: 2, width: '25%' }}>課程名稱</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem', py: 2, width: '8%' }}>學分</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem', py: 2, width: '15%' }}>教師姓名</TableCell>
-                <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem', py: 2, width: '7%' }}>備註</TableCell>
+              <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem', py: 2, width: '10%' }}>流水號</TableCell>
+              <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem', py: 2, width: '12%' }}>課號</TableCell>
+              <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem', py: 2, width: '15%' }}>課程識別碼</TableCell>
+              <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem', py: 2, width: '8%' }}>班次</TableCell>
+              <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem', py: 2, width: '25%' }}>課程名稱</TableCell>
+              <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem', py: 2, width: '8%' }}>學分</TableCell>
+              <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem', py: 2, width: '15%' }}>教師姓名</TableCell>
+              <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem', py: 2, width: '7%' }}>備註</TableCell>
+              <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: '1rem', py: 2, width: '8%' }}>志願序</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {selectedCourses.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} align="center" sx={{ py: 8 }}>
+                  <TableCell colSpan={9} align="center" sx={{ py: 8 }}>
                     <Typography variant="h5" color="text.secondary">
                       目前沒有選課記錄
                     </Typography>
@@ -158,6 +159,7 @@ export function SelectionResultsPage({
                     <TableCell sx={{ fontSize: '1rem', py: 2 }}>{course.credits || ''}</TableCell>
                     <TableCell sx={{ fontSize: '1rem', py: 2 }}>{course.instructorName || ''}</TableCell>
                     <TableCell sx={{ fontSize: '1rem', py: 2 }}>{course.remarks || ''}</TableCell>
+                    <TableCell sx={{ fontSize: '1rem', py: 2 }}>{course.priority || ''}</TableCell>
                   </TableRow>
                 ))
               )}
