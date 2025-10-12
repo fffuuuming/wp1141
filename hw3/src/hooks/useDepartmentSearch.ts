@@ -1,7 +1,8 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useSearchState } from '../contexts/SearchStateContext';
 import { useAppState } from '../contexts/AppStateContext';
 import { usePagination } from '../contexts/PaginationContext';
+import { useCourseFilters } from './useCourseFilters';
 import type { CourseType } from '../types';
 
 // 系所搜尋 Hook
@@ -17,9 +18,15 @@ export function useDepartmentSearch() {
   } = useAppState();
 
   const { changePageSize } = usePagination();
+  const { applyFilters } = useCourseFilters();
 
   const handleCollegeChange = useCallback((college: string) => {
-    setDepartmentSearchState(prev => ({ ...prev, college }));
+    setDepartmentSearchState(prev => ({ 
+      ...prev, 
+      college,
+      // 當選擇學院時，自動設置對應的系所
+      department: college
+    }));
   }, [setDepartmentSearchState]);
 
   const handleDepartmentChange = useCallback((department: string) => {
@@ -46,18 +53,28 @@ export function useDepartmentSearch() {
     }
   }, [setDepartmentSearchState, changePageSize, appState.searchResults.length]);
 
+  const handleOptionChange = useCallback((optionType: string, option: string, checked: boolean) => {
+    setDepartmentSearchState(prev => {
+      const currentOptions = prev.filters[optionType as keyof typeof prev.filters] as string[];
+      const newOptions = checked 
+        ? [...currentOptions, option]
+        : currentOptions.filter(opt => opt !== option);
+      
+      return {
+        ...prev,
+        filters: {
+          ...prev.filters,
+          [optionType]: newOptions
+        }
+      };
+    });
+  }, [setDepartmentSearchState]);
+
   const performSearch = useCallback(() => {
     // 實現系所搜尋邏輯
     let results = appState.courses;
     
-    // 根據學院篩選
-    if (departmentSearchState.college) {
-      results = results.filter(course => 
-        course.dpt_code && course.dpt_code.startsWith(departmentSearchState.college)
-      );
-    }
-    
-    // 根據系所篩選
+    // 只根據系所篩選（學院選擇只是為了方便用戶切換到系所選項）
     if (departmentSearchState.department) {
       results = results.filter(course => 
         course.dpt_code === departmentSearchState.department
@@ -70,12 +87,32 @@ export function useDepartmentSearch() {
       // 暫時跳過這個篩選
     }
     
+    // 應用過濾器（時間、節次、加選方式）
+    results = applyFilters(results, departmentSearchState.filters);
+    
     updateSearchResults(results);
     
     // 更新分頁信息，使用當前設定的每頁顯示筆數
     const pageSize = departmentSearchState.filters.pageSize || 15;
     changePageSize(pageSize, results.length);
-  }, [departmentSearchState, appState.courses, updateSearchResults, changePageSize]);
+  }, [departmentSearchState, appState.courses, updateSearchResults, changePageSize, applyFilters]);
+
+  // 自動觸發搜尋當過濾器變化時
+  useEffect(() => {
+    // 只有在有選擇系所時才自動觸發搜尋（學院選擇只是為了方便切換）
+    if (departmentSearchState.department) {
+      performSearch();
+    }
+  }, [
+    departmentSearchState.department,
+    departmentSearchState.requirementType,
+    departmentSearchState.filters.timeFilter,
+    departmentSearchState.filters.periodFilter,
+    departmentSearchState.filters.addMethodFilter,
+    departmentSearchState.filters.selectedWeekdays,
+    departmentSearchState.filters.selectedPeriods,
+    departmentSearchState.filters.selectedAddMethods
+  ]);
 
   return {
     searchState: departmentSearchState,
@@ -83,6 +120,7 @@ export function useDepartmentSearch() {
     handleDepartmentChange,
     handleRequirementTypeChange,
     handleFilterChange,
+    handleOptionChange,
     performSearch
   };
 }
