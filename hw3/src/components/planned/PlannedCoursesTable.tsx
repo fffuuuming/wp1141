@@ -133,6 +133,14 @@ export function PlannedCoursesTable({
         >
           (僅供參考,您仍需進入選課系統並匯入這些課程,以完成加選登記)
         </Typography>
+        <Typography 
+          variant="body2" 
+          color="error" 
+          align="center" 
+          sx={{ mb: 2 }}
+        >
+          (一旦匯入課程即表示您確定要加選，不得再更改)
+        </Typography>
       </Box>
 
       <Card>

@@ -122,7 +122,19 @@ export function SelectionResultsPage({
         >
           <Table sx={{ 
             width: '100%',
-            tableLayout: 'fixed'
+            tableLayout: 'fixed',
+            borderCollapse: 'separate',
+            borderSpacing: 0,
+            '& .MuiTableCell-root': {
+              borderRight: '1px solid #e0e0e0',
+              borderBottom: '1px solid #e0e0e0',
+              '&:last-child': {
+                borderRight: 'none'
+              }
+            },
+            '& .MuiTableRow-root:last-child .MuiTableCell-root': {
+              borderBottom: 'none'
+            }
           }}>
             <TableHead>
               <TableRow sx={{ backgroundColor: '#4db6ac' }}>
