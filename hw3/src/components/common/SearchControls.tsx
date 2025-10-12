@@ -84,10 +84,19 @@ export function SearchFooter({ pageSize, onPageSizeChange, onSearch }: SearchFoo
       <TextField
         type="number"
         value={pageSize}
-        onChange={(e) => onPageSizeChange(parseInt(e.target.value))}
+        onChange={(e) => onPageSizeChange(parseInt(e.target.value) || 15)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            onSearch();
+          }
+        }}
         size="small"
         sx={{ width: 60 }}
-        inputProps={{ style: { fontSize: '0.8rem' } }}
+        inputProps={{ 
+          style: { fontSize: '0.8rem' },
+          min: 1,
+          max: 1000
+        }}
       />
       <Button variant="contained" onClick={onSearch} size="small">
         查詢

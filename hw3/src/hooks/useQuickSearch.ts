@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import { useSearchState } from '../contexts/SearchStateContext';
 import { useAppState } from '../contexts/AppStateContext';
+import { usePagination } from '../contexts/PaginationContext';
 import type { SearchMethod } from '../types';
 import { useSearchLogic } from './useSearchLogic';
 
@@ -16,6 +17,7 @@ export function useQuickSearch() {
     appState 
   } = useAppState();
 
+  const { changePageSize } = usePagination();
   const { performSearch } = useSearchLogic();
 
   const handleSearchMethodChange = useCallback((method: SearchMethod) => {
@@ -34,7 +36,13 @@ export function useQuickSearch() {
         [filterType]: value
       }
     }));
-  }, [setQuickSearchState]);
+    
+    // 如果變更的是每頁顯示筆數，立即更新分頁信息
+    if (filterType === 'pageSize') {
+      const pageSize = typeof value === 'number' ? value : parseInt(value as string) || 15;
+      changePageSize(pageSize, appState.searchResults.length);
+    }
+  }, [setQuickSearchState, changePageSize, appState.searchResults.length]);
 
   const handleOptionChange = useCallback((optionType: string, option: string, checked: boolean) => {
     setQuickSearchState(prev => {
@@ -61,7 +69,11 @@ export function useQuickSearch() {
       quickSearchState.filters
     );
     updateSearchResults(results);
-  }, [performSearch, appState.courses, quickSearchState, updateSearchResults]);
+    
+    // 更新分頁信息，使用當前設定的每頁顯示筆數
+    const pageSize = quickSearchState.filters.pageSize || 15;
+    changePageSize(pageSize, results.length);
+  }, [performSearch, appState.courses, quickSearchState, updateSearchResults, changePageSize]);
 
   // 自動觸發搜尋當過濾器變化時
   useEffect(() => {

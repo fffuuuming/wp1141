@@ -18,7 +18,8 @@ import {
   ChevronRight as ChevronRightIcon,
   Refresh as RefreshIcon
 } from '@mui/icons-material';
-import { useSearchResults, usePagination } from '../../hooks';
+import { useSearchResults } from '../../hooks';
+import { usePaginationLogic } from '../../hooks/usePaginationLogic';
 import { usePlannedCourses } from '../../contexts/PlannedCoursesContext';
 import { useNotification } from '../../hooks/useNotification';
 import { getCourseUniqueId } from '../../utils/courseUtils';
@@ -27,7 +28,7 @@ import { Notification } from '../common/Notification';
 
 const SearchResultsTable = memo(() => {
   const { searchResults, isLoading } = useSearchResults();
-  const { paginationInfo, goToNextPage, goToPrevPage, getCurrentPageData } = usePagination();
+  const { paginationInfo, goToNextPage, goToPrevPage, getCurrentPageData } = usePaginationLogic();
   const { addCourseToPlanned, isCourseInPlanned } = usePlannedCourses();
   const { notification, showSuccess, showWarning, hideNotification } = useNotification();
 

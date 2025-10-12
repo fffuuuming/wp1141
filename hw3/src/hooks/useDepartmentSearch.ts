@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useSearchState } from '../contexts/SearchStateContext';
 import { useAppState } from '../contexts/AppStateContext';
+import { usePagination } from '../contexts/PaginationContext';
 import type { CourseType } from '../types';
 
 // 系所搜尋 Hook
@@ -14,6 +15,8 @@ export function useDepartmentSearch() {
     updateSearchResults,
     appState 
   } = useAppState();
+
+  const { changePageSize } = usePagination();
 
   const handleCollegeChange = useCallback((college: string) => {
     setDepartmentSearchState(prev => ({ ...prev, college }));
@@ -35,7 +38,13 @@ export function useDepartmentSearch() {
         [filterType]: value
       }
     }));
-  }, [setDepartmentSearchState]);
+    
+    // 如果變更的是每頁顯示筆數，立即更新分頁信息
+    if (filterType === 'pageSize') {
+      const pageSize = typeof value === 'number' ? value : parseInt(value as string) || 15;
+      changePageSize(pageSize, appState.searchResults.length);
+    }
+  }, [setDepartmentSearchState, changePageSize, appState.searchResults.length]);
 
   const performSearch = useCallback(() => {
     // 實現系所搜尋邏輯
@@ -62,7 +71,11 @@ export function useDepartmentSearch() {
     }
     
     updateSearchResults(results);
-  }, [departmentSearchState, appState.courses, updateSearchResults]);
+    
+    // 更新分頁信息，使用當前設定的每頁顯示筆數
+    const pageSize = departmentSearchState.filters.pageSize || 15;
+    changePageSize(pageSize, results.length);
+  }, [departmentSearchState, appState.courses, updateSearchResults, changePageSize]);
 
   return {
     searchState: departmentSearchState,
