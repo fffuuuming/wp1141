@@ -6,6 +6,7 @@ import {
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { SearchProvider } from './contexts/SearchContext';
 import { PlannedCoursesProvider } from './contexts/PlannedCoursesContext';
+import { SelectionResultsProvider } from './contexts/SelectionResultsContext';
 import { AppLayout, QuickSearchForm, DepartmentSearchForm, SearchResultsTable, PlannedCoursesPage, SelectionResultsPage } from './components';
 import { useCourseData } from './hooks';
 import { usePlannedCourses } from './contexts/PlannedCoursesContext';
@@ -52,15 +53,11 @@ function DepartmentSearchPage() {
 
 // 預計要選的課程頁面
 function PlannedCoursesPageWrapper() {
-  const { plannedCourses, removeCourseFromPlanned, removeAllCoursesFromPlanned } = usePlannedCourses();
+  const { plannedCourses, removeCourseFromPlanned } = usePlannedCourses();
   const isLoading = false;
 
   const handleRemoveCourse = (courseId: string) => {
     removeCourseFromPlanned(courseId);
-  };
-
-  const handleRemoveAllCourses = () => {
-    removeAllCoursesFromPlanned();
   };
 
   const handleTeacherClick = (teacherName: string, courseName: string) => {
@@ -73,7 +70,6 @@ function PlannedCoursesPageWrapper() {
       plannedCourses={plannedCourses}
       isLoading={isLoading}
       onRemoveCourse={handleRemoveCourse}
-      onRemoveAllCourses={handleRemoveAllCourses}
       onTeacherClick={handleTeacherClick}
     />
   );
@@ -100,16 +96,18 @@ function App() {
       <CssBaseline />
       <SearchProvider>
         <PlannedCoursesProvider>
-          <Router>
-            <AppLayout>
-              <Routes>
-                <Route path="/" element={<QuickSearchPage />} />
-                <Route path="/department" element={<DepartmentSearchPage />} />
-                <Route path="/planned-courses" element={<PlannedCoursesPageWrapper />} />
-                <Route path="/selection-results" element={<SelectionResultsPageWrapper />} />
-              </Routes>
-            </AppLayout>
-          </Router>
+          <SelectionResultsProvider>
+            <Router>
+              <AppLayout>
+                <Routes>
+                  <Route path="/" element={<QuickSearchPage />} />
+                  <Route path="/department" element={<DepartmentSearchPage />} />
+                  <Route path="/planned-courses" element={<PlannedCoursesPageWrapper />} />
+                  <Route path="/selection-results" element={<SelectionResultsPageWrapper />} />
+                </Routes>
+              </AppLayout>
+            </Router>
+          </SelectionResultsProvider>
         </PlannedCoursesProvider>
       </SearchProvider>
     </ThemeProvider>

@@ -22,17 +22,18 @@ import {
   ArrowBack as ArrowBackIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import type { PlannedCourse } from '../../types';
 import { formatTimeClassroom } from '../../utils/timeClassroomFormatter';
 import { DEPARTMENT_OPTIONS } from '../../constants/course';
 import { getCourseUniqueId } from '../../utils/courseUtils';
 import { CourseScheduleTable } from './CourseScheduleTable';
+import { useSelectionResults } from '../../contexts/SelectionResultsContext';
 
 interface PlannedCoursesTableProps {
   plannedCourses: PlannedCourse[];
   isLoading: boolean;
   onRemoveCourse: (courseId: string) => void;
-  onRemoveAllCourses: () => void;
   onTeacherClick?: (teacherName: string, courseName: string) => void;
 }
 
@@ -40,10 +41,11 @@ export function PlannedCoursesTable({
   plannedCourses,
   isLoading,
   onRemoveCourse,
-  onRemoveAllCourses,
   onTeacherClick
 }: PlannedCoursesTableProps) {
   const navigate = useNavigate();
+  const { addCourse, usedPriorities, isCourseImported } = useSelectionResults();
+  const [coursePriorities, setCoursePriorities] = useState<{ [key: string]: number }>({});
 
   const handleBackToSearch = () => {
     navigate('/');
@@ -53,10 +55,47 @@ export function PlannedCoursesTable({
     navigate('/selection-results');
   };
 
+  const handleRemoveAllCourses = () => {
+    // 只刪除未匯入的課程
+    const unimportedCourses = plannedCourses.filter(course => !isCourseImported(course));
+    
+    if (unimportedCourses.length === 0) {
+      return; // 如果沒有未匯入的課程，不執行任何操作
+    }
+    
+    // 刪除所有未匯入的課程
+    unimportedCourses.forEach(course => {
+      onRemoveCourse(getCourseUniqueId(course));
+    });
+  };
+
+  const handlePriorityChange = (courseId: string, priority: number) => {
+    setCoursePriorities(prev => ({
+      ...prev,
+      [courseId]: priority
+    }));
+  };
+
+  const handleImportCourse = async (course: PlannedCourse) => {
+    const courseId = getCourseUniqueId(course);
+    const priority = coursePriorities[courseId] || 1;
+    
+    const success = await addCourse(course, priority);
+    
+    if (success) {
+      // 清除該課程的志願序選擇
+      setCoursePriorities(prev => {
+        const newPriorities = { ...prev };
+        delete newPriorities[courseId];
+        return newPriorities;
+      });
+    }
+  };
+
   return (
     <>
       {/* 返回按鈕和選課結果按鈕 */}
-      <Box sx={{ mb: 2, display: 'flex', gap: 2 }}>
+      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
         <Button
           variant="outlined"
           startIcon={<ArrowBackIcon />}
@@ -208,50 +247,69 @@ export function PlannedCoursesTable({
                         C
                       </Box>
                     </TableCell>
+                            <TableCell>
+                              <IconButton
+                                size="small"
+                                onClick={() => onRemoveCourse(getCourseUniqueId(course))}
+                                disabled={isCourseImported(course)}
+                                sx={{ 
+                                  color: isCourseImported(course) ? 'grey.400' : 'error.main',
+                                  '&:hover': isCourseImported(course) ? {} : {
+                                    backgroundColor: 'error.light',
+                                    color: 'error.dark'
+                                  }
+                                }}
+                              >
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                            </TableCell>
                     <TableCell>
-                      <IconButton
-                        size="small"
-                        onClick={() => onRemoveCourse(getCourseUniqueId(course))}
-                        sx={{ 
-                          color: 'error.main',
-                          '&:hover': {
-                            backgroundColor: 'error.light',
-                            color: 'error.dark'
-                          }
-                        }}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <FormControl size="small" sx={{ minWidth: 80 }}>
-                          <InputLabel>志願序</InputLabel>
-                          <Select
-                            value={1}
-                            label="志願序"
-                            sx={{ fontSize: '0.875rem' }}
-                          >
-                            {Array.from({ length: 100 }, (_, i) => i + 1).map((num) => (
-                              <MenuItem key={num} value={num} sx={{ fontSize: '0.875rem' }}>
-                                {num}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
-                        <Button
-                          variant="contained"
-                          size="small"
-                          sx={{
-                            fontSize: '0.75rem',
-                            textTransform: 'none',
-                            px: 1.5,
-                            py: 0.5
+                      {isCourseImported(course) ? (
+                        <Typography 
+                          variant="body2" 
+                          sx={{ 
+                            color: 'grey.500', 
+                            fontWeight: 'bold',
+                            fontSize: '0.875rem',
+                            textAlign: 'center'
                           }}
                         >
-                          匯入
-                        </Button>
-                      </Box>
+                          已匯入
+                        </Typography>
+                      ) : (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <FormControl size="small" sx={{ minWidth: 80 }}>
+                            <InputLabel>志願序</InputLabel>
+                            <Select
+                              value={coursePriorities[getCourseUniqueId(course)] || 1}
+                              label="志願序"
+                              onChange={(e) => handlePriorityChange(getCourseUniqueId(course), Number(e.target.value))}
+                              sx={{ fontSize: '0.875rem' }}
+                            >
+                              {Array.from({ length: 100 }, (_, i) => i + 1)
+                                .filter(num => !usedPriorities.includes(num))
+                                .map((num) => (
+                                  <MenuItem key={num} value={num} sx={{ fontSize: '0.875rem' }}>
+                                    {num}
+                                  </MenuItem>
+                                ))}
+                            </Select>
+                          </FormControl>
+                          <Button
+                            variant="contained"
+                            size="small"
+                            onClick={() => handleImportCourse(course)}
+                            sx={{
+                              fontSize: '0.75rem',
+                              textTransform: 'none',
+                              px: 1.5,
+                              py: 0.5
+                            }}
+                          >
+                            匯入
+                          </Button>
+                        </Box>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))
@@ -263,18 +321,18 @@ export function PlannedCoursesTable({
         {/* 底部刪除所有記錄按鈕 */}
         {plannedCourses.length > 0 && (
           <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
-            <Button
-              variant="outlined"
-              color="error"
-              startIcon={<DeleteIcon />}
-              onClick={onRemoveAllCourses}
-              sx={{ 
-                fontSize: '0.875rem',
-                textTransform: 'none'
-              }}
-            >
-              刪除所有記錄
-            </Button>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      startIcon={<DeleteIcon />}
+                      onClick={handleRemoveAllCourses}
+                      sx={{ 
+                        fontSize: '0.875rem',
+                        textTransform: 'none'
+                      }}
+                    >
+                      刪除所有記錄
+                    </Button>
           </Box>
         )}
       </CardContent>

@@ -13,6 +13,7 @@ import {
   Container
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import { useSelectionResults } from '../../contexts/SelectionResultsContext';
 
 interface SelectionResultsPageProps {
   selectedCourses?: any[]; // 之後會定義具體的課程類型
@@ -20,10 +21,15 @@ interface SelectionResultsPageProps {
 }
 
 export function SelectionResultsPage({ 
-  selectedCourses = [], 
-  totalCredits = 0 
+  selectedCourses: propSelectedCourses, 
+  totalCredits: propTotalCredits 
 }: SelectionResultsPageProps) {
   const navigate = useNavigate();
+  const { selectedCourses: contextSelectedCourses, getTotalCredits } = useSelectionResults();
+  
+  // 使用context中的數據，如果沒有則使用props
+  const selectedCourses = contextSelectedCourses.length > 0 ? contextSelectedCourses : (propSelectedCourses || []);
+  const totalCredits = contextSelectedCourses.length > 0 ? getTotalCredits() : (propTotalCredits || 0);
 
   const handleBackToSearch = () => {
     navigate('/');
