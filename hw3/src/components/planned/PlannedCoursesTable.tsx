@@ -25,6 +25,7 @@ import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import type { PlannedCourse } from '../../types';
 import { formatTimeClassroom } from '../../utils/timeClassroomFormatter';
+import { formatCourseType } from '../../utils/courseTypeFormatter';
 import { DEPARTMENT_OPTIONS } from '../../constants/course';
 import { getCourseUniqueId } from '../../utils/courseUtils';
 import { CourseScheduleTable } from './CourseScheduleTable';
@@ -213,7 +214,7 @@ export function PlannedCoursesTable({
                     <TableCell>{course.credit || ''}</TableCell>
                     <TableCell>{course.cou_code || ''}</TableCell>
                     <TableCell></TableCell>
-                    <TableCell></TableCell>
+                    <TableCell>{formatCourseType(course.sel_code)}</TableCell>
                     <TableCell>
                       {course.tea_cname && course.tea_cname.trim() !== '' ? (
                         <Box

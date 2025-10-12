@@ -7,6 +7,7 @@ import {
   Button
 } from '@mui/material';
 import { formatTimeClassroom } from '../../utils/timeClassroomFormatter';
+import { formatCourseType } from '../../utils/courseTypeFormatter';
 import { DEPARTMENT_OPTIONS } from '../../constants/course';
 import type { CourseData } from '../../types';
 
@@ -52,7 +53,7 @@ const CourseTableRow = memo<CourseTableRowProps>(({
       <TableCell>{course.credit || ''}</TableCell>
       <TableCell>{course.cou_code || ''}</TableCell>
       <TableCell></TableCell>
-      <TableCell></TableCell>
+      <TableCell>{formatCourseType(course.sel_code)}</TableCell>
       <TableCell>
         {course.tea_cname && course.tea_cname.trim() !== '' ? (
           <Link

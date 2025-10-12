@@ -3,6 +3,7 @@ import { useSearchState } from '../contexts/SearchStateContext';
 import { useAppState } from '../contexts/AppStateContext';
 import { usePagination } from '../contexts/PaginationContext';
 import { useCourseFilters } from './useCourseFilters';
+import { formatCourseType } from '../utils/courseTypeFormatter';
 import type { CourseType } from '../types';
 
 // 系所搜尋 Hook
@@ -83,8 +84,15 @@ export function useDepartmentSearch() {
     
     // 根據課程類型篩選
     if (departmentSearchState.requirementType !== 'all') {
-      // 這裡需要根據實際的課程類型欄位來篩選
-      // 暫時跳過這個篩選
+      results = results.filter(course => {
+        const courseType = formatCourseType(course.sel_code);
+        if (departmentSearchState.requirementType === 'required') {
+          return courseType === '必修';
+        } else if (departmentSearchState.requirementType === 'elective') {
+          return courseType === '選修';
+        }
+        return true;
+      });
     }
     
     // 應用過濾器（時間、節次、加選方式）
