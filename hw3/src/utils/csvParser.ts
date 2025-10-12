@@ -1,14 +1,37 @@
 import type { CourseData } from '../types';
 
+// 正確解析CSV行，處理引號和逗號
+function parseCSVLine(line: string): string[] {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+  
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      result.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  
+  result.push(current.trim());
+  return result;
+}
+
 // 解析 CSV 字符串為 CourseData 陣列
 export function parseCSV(csvText: string): CourseData[] {
   const lines = csvText.trim().split('\n');
-  const headers = lines[0].split(',');
+  const headers = parseCSVLine(lines[0]);
   
   const courses: CourseData[] = [];
   
   for (let i = 1; i < lines.length; i++) {
-    const values = lines[i].split(',');
+    const values = parseCSVLine(lines[i]);
     const course: any = {};
     
     headers.forEach((header, index) => {

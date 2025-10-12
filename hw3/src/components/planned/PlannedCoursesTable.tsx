@@ -14,8 +14,10 @@ import {
   Button
 } from '@mui/material';
 import {
-  Delete as DeleteIcon
+  Delete as DeleteIcon,
+  ArrowBack as ArrowBackIcon
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import type { PlannedCourse } from '../../types';
 import { formatTimeClassroom } from '../../utils/timeClassroomFormatter';
 import { CourseScheduleTable } from './CourseScheduleTable';
@@ -35,8 +37,29 @@ export function PlannedCoursesTable({
   onRemoveAllCourses,
   onTeacherClick
 }: PlannedCoursesTableProps) {
+  const navigate = useNavigate();
+
+  const handleBackToSearch = () => {
+    navigate('/');
+  };
+
   return (
     <>
+      {/* 返回按鈕 */}
+      <Box sx={{ mb: 2 }}>
+        <Button
+          variant="outlined"
+          startIcon={<ArrowBackIcon />}
+          onClick={handleBackToSearch}
+          sx={{
+            textTransform: 'none',
+            fontSize: '0.875rem'
+          }}
+        >
+          返回課程查詢
+        </Button>
+      </Box>
+
       {/* 頁面標題和說明 */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4" component="h1" align="center" gutterBottom>
@@ -95,7 +118,7 @@ export function PlannedCoursesTable({
                 </TableRow>
               ) : (
                 plannedCourses.map((course, index) => (
-                  <TableRow key={`${course.cou_code}-${index}`} sx={{ backgroundColor: '#fffacd' }}>
+                  <TableRow key={`${course.cou_code}-${index}`}>
                     <TableCell>{course.serialNumber}</TableCell>
                     <TableCell>{course.ser_no || ''}</TableCell>
                     <TableCell></TableCell>

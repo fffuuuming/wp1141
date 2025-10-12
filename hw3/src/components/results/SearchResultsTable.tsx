@@ -18,13 +18,19 @@ import {
   Refresh as RefreshIcon
 } from '@mui/icons-material';
 import { useSearchResults, usePagination } from '../../hooks';
+import { usePlannedCourses } from '../../contexts/PlannedCoursesContext';
 import { CourseTableRow } from '../common/CourseTableRow';
 
 export function SearchResultsTable() {
   const { searchResults, isLoading } = useSearchResults();
   const { paginationInfo, goToNextPage, goToPrevPage, getCurrentPageData } = usePagination();
+  const { addCourseToPlanned, isCourseInPlanned } = usePlannedCourses();
 
   const currentPageData = getCurrentPageData();
+
+  const handleAddToPlanned = (course: any) => {
+    addCourseToPlanned(course);
+  };
 
   return (
     <Card>
@@ -94,7 +100,9 @@ export function SearchResultsTable() {
                     onTeacherClick={(teacherName, courseName) => {
                       console.log('教師:', teacherName, '課程:', courseName);
                     }}
-                    showAddButton={false}
+                    onAddToPlanned={handleAddToPlanned}
+                    showAddButton={true}
+                    isCourseInPlanned={isCourseInPlanned(course.ser_no)}
                   />
                 ))
               )}

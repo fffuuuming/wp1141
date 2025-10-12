@@ -2,10 +2,14 @@ import {
   TableCell,
   TableRow,
   Link,
-  Box
+  Box,
+  Button,
+  Snackbar,
+  Alert
 } from '@mui/material';
 import { formatTimeClassroom } from '../../utils/timeClassroomFormatter';
 import type { CourseData } from '../../types';
+import { useState } from 'react';
 
 interface CourseTableRowProps {
   course: CourseData;
@@ -13,6 +17,7 @@ interface CourseTableRowProps {
   onTeacherClick?: (teacherName: string, courseName: string) => void;
   onAddToPlanned?: (course: CourseData) => void;
   showAddButton?: boolean;
+  isCourseInPlanned?: boolean;
 }
 
 export function CourseTableRow({ 
@@ -20,8 +25,13 @@ export function CourseTableRow({
   index, 
   onTeacherClick,
   onAddToPlanned,
-  showAddButton = false 
+  showAddButton = false,
+  isCourseInPlanned = false
 }: CourseTableRowProps) {
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'warning'>('success');
+  
   const courseNumber = `${course.dpt_abbr || ''}${course.cou_teacno || ''}`;
   
   const handleTeacherClick = (e: React.MouseEvent) => {
@@ -32,9 +42,22 @@ export function CourseTableRow({
   };
 
   const handleAddToPlanned = () => {
-    if (onAddToPlanned) {
-      onAddToPlanned(course);
+    if (isCourseInPlanned) {
+      setSnackbarMessage('此課程已經選擇');
+      setSnackbarSeverity('warning');
+      setSnackbarOpen(true);
+    } else {
+      if (onAddToPlanned) {
+        onAddToPlanned(course);
+        setSnackbarMessage('已加入課程');
+        setSnackbarSeverity('success');
+        setSnackbarOpen(true);
+      }
     }
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbarOpen(false);
   };
   
   return (
@@ -95,28 +118,33 @@ export function CourseTableRow({
       </TableCell>
       <TableCell>
         {showAddButton && (
-          <Box
-            sx={{
-              width: 20,
-              height: 20,
-              backgroundColor: 'blue',
-              color: 'white',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '0.8rem',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              '&:hover': {
-                backgroundColor: 'blue.dark'
-              }
-            }}
+          <Button
+            variant="contained"
+            size="small"
             onClick={handleAddToPlanned}
+            sx={{
+              fontSize: '0.75rem',
+              textTransform: 'none',
+              px: 1,
+              py: 0.5,
+              minWidth: 'auto'
+            }}
           >
-            +
-          </Box>
+            加入
+          </Button>
         )}
       </TableCell>
+      
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity} sx={{ width: '100%' }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </TableRow>
   );
 }
