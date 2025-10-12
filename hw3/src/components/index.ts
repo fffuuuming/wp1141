@@ -12,3 +12,6 @@ export { SearchResultsTable } from './results/SearchResultsTable';
 
 // Layout components
 export { AppLayout, AppHeader } from './layout/AppLayout';
+
+// Planned courses components
+export { PlannedCoursesPage, PlannedCoursesTable, CourseScheduleTable } from './planned';

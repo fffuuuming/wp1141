@@ -127,3 +127,15 @@ export interface PaginationInfo {
   totalItems: number;
   itemsPerPage: number;
 }
+
+// 預計要選的課程介面
+export interface PlannedCourse extends CourseData {
+  addedAt: Date;
+  serialNumber: number; // 在預計要選列表中的序號
+}
+
+// 預計要選的課程狀態介面
+export interface PlannedCoursesState {
+  plannedCourses: PlannedCourse[];
+  isLoading: boolean;
+}
