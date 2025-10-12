@@ -1,3 +1,4 @@
+import React, { memo, useCallback } from 'react';
 import {
   TableCell,
   TableRow,
@@ -16,27 +17,27 @@ interface CourseTableRowProps {
   showAddButton?: boolean;
 }
 
-export function CourseTableRow({ 
+const CourseTableRow = memo<CourseTableRowProps>(({ 
   course, 
   index, 
   onTeacherClick,
   onAddToPlanned,
   showAddButton = false
-}: CourseTableRowProps) {
+}) => {
   const courseNumber = `${course.dpt_abbr || ''}${course.cou_teacno || ''}`;
   
-  const handleTeacherClick = (e: React.MouseEvent) => {
+  const handleTeacherClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     if (onTeacherClick && course.tea_cname) {
       onTeacherClick(course.tea_cname, course.cou_cname || '未知課程');
     }
-  };
+  }, [onTeacherClick, course.tea_cname, course.cou_cname]);
 
-  const handleAddToPlanned = () => {
+  const handleAddToPlanned = useCallback(() => {
     if (onAddToPlanned) {
       onAddToPlanned(course);
     }
-  };
+  }, [onAddToPlanned, course]);
   
   return (
     <TableRow key={`${course.cou_code}-${index}`}>
@@ -114,4 +115,8 @@ export function CourseTableRow({
       </TableCell>
     </TableRow>
   );
-}
+});
+
+CourseTableRow.displayName = 'CourseTableRow';
+
+export { CourseTableRow };

@@ -1,3 +1,4 @@
+import React, { memo, useCallback, useMemo } from 'react';
 import {
   FormControl,
   RadioGroup,
@@ -22,7 +23,7 @@ interface FilterSectionProps {
   onOptionChange?: (option: string, checked: boolean) => void;
 }
 
-export function FilterSection({
+const FilterSection = memo<FilterSectionProps>(({
   label,
   filterType,
   onFilterChange,
@@ -31,8 +32,8 @@ export function FilterSection({
   optionType = 'custom',
   selectedOptions = [],
   onOptionChange
-}: FilterSectionProps) {
-  const getOptions = () => {
+}) => {
+  const getOptions = useCallback(() => {
     switch (optionType) {
       case 'weekdays':
         return WEEKDAYS;
@@ -41,7 +42,17 @@ export function FilterSection({
       default:
         return options;
     }
-  };
+  }, [optionType, options]);
+
+  const availableOptions = useMemo(() => getOptions(), [getOptions]);
+
+  const handleFilterChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    onFilterChange(e.target.value as FilterType);
+  }, [onFilterChange]);
+
+  const handleOptionChange = useCallback((option: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    onOptionChange?.(option, e.target.checked);
+  }, [onOptionChange]);
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -50,7 +61,7 @@ export function FilterSection({
         <RadioGroup
           row
           value={filterType}
-          onChange={(e) => onFilterChange(e.target.value as FilterType)}
+          onChange={handleFilterChange}
           sx={{ '& .MuiFormControlLabel-label': { fontSize: '0.8rem' } }}
         >
           <FormControlLabel value="unlimited" control={<Radio size="small" />} label="不限" />
@@ -60,14 +71,14 @@ export function FilterSection({
 
       {showOptions && filterType === 'limited' && (
         <FormGroup row sx={{ ml: 2 }}>
-          {getOptions().map(option => (
+          {availableOptions.map(option => (
             <FormControlLabel
               key={option}
               control={
                 <Checkbox
                   size="small"
                   checked={selectedOptions.includes(option)}
-                  onChange={(e) => onOptionChange?.(option, e.target.checked)}
+                  onChange={handleOptionChange(option)}
                 />
               }
               label={option}
@@ -78,4 +89,8 @@ export function FilterSection({
       )}
     </Box>
   );
-}
+});
+
+FilterSection.displayName = 'FilterSection';
+
+export { FilterSection };

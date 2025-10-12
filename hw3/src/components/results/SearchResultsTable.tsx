@@ -1,3 +1,4 @@
+import { memo, useCallback, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -23,22 +24,39 @@ import { useNotification } from '../../hooks/useNotification';
 import { CourseTableRow } from '../common/CourseTableRow';
 import { Notification } from '../common/Notification';
 
-export function SearchResultsTable() {
+const SearchResultsTable = memo(() => {
   const { searchResults, isLoading } = useSearchResults();
   const { paginationInfo, goToNextPage, goToPrevPage, getCurrentPageData } = usePagination();
   const { addCourseToPlanned, isCourseInPlanned } = usePlannedCourses();
   const { notification, showSuccess, showWarning, hideNotification } = useNotification();
 
-  const currentPageData = getCurrentPageData();
+  const currentPageData = useMemo(() => getCurrentPageData(), [getCurrentPageData]);
 
-  const handleAddToPlanned = (course: any) => {
+  const handleAddToPlanned = useCallback((course: any) => {
     if (isCourseInPlanned(course.ser_no)) {
       showWarning('此課程已經選擇');
     } else {
       addCourseToPlanned(course);
       showSuccess('課程加入成功');
     }
-  };
+  }, [isCourseInPlanned, addCourseToPlanned, showWarning, showSuccess]);
+
+  const handleTeacherClick = useCallback((teacherName: string, courseName: string) => {
+    console.log('教師:', teacherName, '課程:', courseName);
+  }, []);
+
+  const tableRows = useMemo(() => 
+    currentPageData.map((course, index) => (
+      <CourseTableRow 
+        key={`${course.cou_code}-${index}`} 
+        course={course} 
+        index={index}
+        onTeacherClick={handleTeacherClick}
+        onAddToPlanned={handleAddToPlanned}
+        showAddButton={true}
+      />
+    )), [currentPageData, handleTeacherClick, handleAddToPlanned]
+  );
 
   return (
     <>
@@ -101,18 +119,7 @@ export function SearchResultsTable() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  currentPageData.map((course, index) => (
-                    <CourseTableRow 
-                      key={`${course.cou_code}-${index}`} 
-                      course={course} 
-                      index={index}
-                      onTeacherClick={(teacherName, courseName) => {
-                        console.log('教師:', teacherName, '課程:', courseName);
-                      }}
-                      onAddToPlanned={handleAddToPlanned}
-                      showAddButton={true}
-                    />
-                  ))
+                  tableRows
                 )}
               </TableBody>
             </Table>
@@ -129,4 +136,8 @@ export function SearchResultsTable() {
       />
     </>
   );
-}
+});
+
+SearchResultsTable.displayName = 'SearchResultsTable';
+
+export { SearchResultsTable };
