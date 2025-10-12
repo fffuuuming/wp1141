@@ -197,7 +197,7 @@ export function SelectionResultsPage({
               合計: {totalCredits}學分
             </Typography>
 
-            <Button
+            {/* <Button
               variant="contained"
               sx={{
                 backgroundColor: '#1976d2',
@@ -213,7 +213,7 @@ export function SelectionResultsPage({
               }}
             >
               上課時間表
-            </Button>
+            </Button> */}
           </Box>
         </Container>
       </Container>
