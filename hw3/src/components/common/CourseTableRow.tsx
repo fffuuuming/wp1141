@@ -48,7 +48,6 @@ const CourseTableRow = memo<CourseTableRowProps>(({
       <TableCell sx={{ color: 'primary.main', cursor: 'pointer' }}>
         {course.cou_cname || ''}
       </TableCell>
-      <TableCell></TableCell>
       <TableCell>{course.credit || ''}</TableCell>
       <TableCell>{course.cou_code || ''}</TableCell>
       <TableCell></TableCell>

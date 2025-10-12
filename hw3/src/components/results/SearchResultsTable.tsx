@@ -90,7 +90,6 @@ const SearchResultsTable = memo(() => {
                   <TableCell>課號</TableCell>
                   <TableCell>班次</TableCell>
                   <TableCell>課程名稱</TableCell>
-                  <TableCell>領域專長</TableCell>
                   <TableCell>學分</TableCell>
                   <TableCell>課程識別碼</TableCell>
                   <TableCell>全/半年</TableCell>
@@ -108,13 +107,13 @@ const SearchResultsTable = memo(() => {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={18} align="center">
+                    <TableCell colSpan={17} align="center">
                       載入課程數據中...
                     </TableCell>
                   </TableRow>
                 ) : currentPageData.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={18} align="center">
+                    <TableCell colSpan={17} align="center">
                       暫無課程資料
                     </TableCell>
                   </TableRow>
