@@ -6,7 +6,7 @@ import {
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { SearchProvider } from './contexts/SearchContext';
 import { PlannedCoursesProvider } from './contexts/PlannedCoursesContext';
-import { AppLayout, QuickSearchForm, DepartmentSearchForm, SearchResultsTable, PlannedCoursesPage } from './components';
+import { AppLayout, QuickSearchForm, DepartmentSearchForm, SearchResultsTable, PlannedCoursesPage, SelectionResultsPage } from './components';
 import { useCourseData } from './hooks';
 import { usePlannedCourses } from './contexts/PlannedCoursesContext';
 
@@ -79,6 +79,20 @@ function PlannedCoursesPageWrapper() {
   );
 }
 
+// 選課結果頁面
+function SelectionResultsPageWrapper() {
+  // TODO: 之後會從context或API獲取選課結果數據
+  const selectedCourses: any[] = [];
+  const totalCredits = 0;
+
+  return (
+    <SelectionResultsPage
+      selectedCourses={selectedCourses}
+      totalCredits={totalCredits}
+    />
+  );
+}
+
 // 主應用程式
 function App() {
   return (
@@ -92,6 +106,7 @@ function App() {
                 <Route path="/" element={<QuickSearchPage />} />
                 <Route path="/department" element={<DepartmentSearchPage />} />
                 <Route path="/planned-courses" element={<PlannedCoursesPageWrapper />} />
+                <Route path="/selection-results" element={<SelectionResultsPageWrapper />} />
               </Routes>
             </AppLayout>
           </Router>

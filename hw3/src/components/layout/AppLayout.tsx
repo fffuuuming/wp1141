@@ -19,9 +19,14 @@ export function AppHeader({ selectedTab, onTabChange }: AppHeaderProps) {
   const location = useLocation();
   
   const isPlannedCoursesPage = location.pathname === '/planned-courses';
+  const isSelectionResultsPage = location.pathname === '/selection-results';
   
   const handlePlannedCoursesClick = () => {
     navigate('/planned-courses');
+  };
+
+  const handleSelectionResultsClick = () => {
+    navigate('/selection-results');
   };
 
   return (
@@ -40,7 +45,7 @@ export function AppHeader({ selectedTab, onTabChange }: AppHeaderProps) {
         </Box>
         
         {/* 右上角按鈕區域 */}
-        {!isPlannedCoursesPage && (
+        {!isPlannedCoursesPage && !isSelectionResultsPage && (
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Button
               variant="contained"
@@ -54,11 +59,23 @@ export function AppHeader({ selectedTab, onTabChange }: AppHeaderProps) {
             >
               預計要選的課
             </Button>
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={handleSelectionResultsClick}
+              sx={{ 
+                fontSize: '0.875rem',
+                textTransform: 'none',
+                px: 2
+              }}
+            >
+              選課結果
+            </Button>
           </Box>
         )}
       </Box>
       
-      {!isPlannedCoursesPage && (
+      {!isPlannedCoursesPage && !isSelectionResultsPage && (
         <Tabs value={selectedTab} onChange={(_, newValue) => onTabChange(newValue)} sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tab label="快速" value="quick" />
           <Tab label="系所" value="department" />
@@ -78,6 +95,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   
   const selectedTab = location.pathname === '/department' ? 'department' : 'quick';
   const isPlannedCoursesPage = location.pathname === '/planned-courses';
+  const isSelectionResultsPage = location.pathname === '/selection-results';
   
   const handleTabChange = (newValue: string) => {
     if (newValue === 'department') {
@@ -88,9 +106,19 @@ export function AppLayout({ children }: AppLayoutProps) {
   };
 
   return (
-    <Container maxWidth="xl" sx={{ py: 3 }}>
-      {!isPlannedCoursesPage && <AppHeader selectedTab={selectedTab} onTabChange={handleTabChange} />}
-      {children}
-    </Container>
+    <>
+      {isSelectionResultsPage ? (
+        // 選課結果頁面：不使用Container限制，全寬顯示
+        <Box sx={{ width: '100%', minHeight: '100vh' }}>
+          {children}
+        </Box>
+      ) : (
+        // 其他頁面：使用Container限制寬度
+        <Container maxWidth="xl" sx={{ py: 3 }}>
+          {!isPlannedCoursesPage && <AppHeader selectedTab={selectedTab} onTabChange={handleTabChange} />}
+          {children}
+        </Container>
+      )}
+    </>
   );
 }

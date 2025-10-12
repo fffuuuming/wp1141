@@ -15,3 +15,6 @@ export { AppLayout, AppHeader } from './layout/AppLayout';
 
 // Planned courses components
 export { PlannedCoursesPage, PlannedCoursesTable, CourseScheduleTable } from './planned';
+
+// Selection results components
+export { SelectionResultsPage } from './selection-results';
