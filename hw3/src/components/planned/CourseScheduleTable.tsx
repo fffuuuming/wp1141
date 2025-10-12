@@ -65,14 +65,14 @@ function parseCourseSchedule(course: PlannedCourse) {
 }
 
 export function CourseScheduleTable({ plannedCourses }: CourseScheduleTableProps) {
-  // 創建時間表數據結構
-  const scheduleData: { [weekday: number]: { [period: string]: { course: PlannedCourse; classroom: string } } } = {};
+  // 創建時間表數據結構 - 支持多個課程在同一時段
+  const scheduleData: { [weekday: number]: { [period: string]: Array<{ course: PlannedCourse; classroom: string }> } } = {};
   
   // 初始化空的時間表
   for (let weekday = 1; weekday <= 6; weekday++) {
     scheduleData[weekday] = {};
     TIME_SLOTS.forEach(slot => {
-      scheduleData[weekday][slot.period] = { course: null as any, classroom: '' };
+      scheduleData[weekday][slot.period] = [];
     });
   }
   
@@ -82,7 +82,8 @@ export function CourseScheduleTable({ plannedCourses }: CourseScheduleTableProps
     courseSchedule.forEach(({ weekday, periods, classroom }) => {
       periods.forEach(period => {
         if (scheduleData[weekday] && scheduleData[weekday][period]) {
-          scheduleData[weekday][period] = { course, classroom };
+          // 將課程添加到該時段的課程列表中，而不是覆蓋
+          scheduleData[weekday][period].push({ course, classroom });
         }
       });
     });
@@ -128,7 +129,7 @@ export function CourseScheduleTable({ plannedCourses }: CourseScheduleTableProps
                   </TableCell>
                   {WEEKDAYS.map((_, weekdayIndex) => {
                     const weekday = weekdayIndex + 1;
-                    const cellData = scheduleData[weekday][slot.period];
+                    const coursesInSlot = scheduleData[weekday][slot.period];
                     
                     return (
                       <TableCell 
@@ -140,17 +141,31 @@ export function CourseScheduleTable({ plannedCourses }: CourseScheduleTableProps
                           border: '1px solid #ddd'
                         }}
                       >
-                        {cellData.course ? (
-                          <Box sx={{ fontSize: '0.75rem', lineHeight: 1.2 }}>
-                            <Box sx={{ fontWeight: 'bold', mb: 0.5 }}>
-                              {cellData.course.cou_cname}
-                            </Box>
-                            <Box sx={{ color: 'text.secondary', fontSize: '0.7rem', mb: 0.5 }}>
-                              ({cellData.course.tea_cname})
-                            </Box>
-                            <Box sx={{ color: 'error.main', fontWeight: 'bold', fontSize: '0.7rem' }}>
-                              {cellData.classroom}
-                            </Box>
+                        {coursesInSlot.length > 0 ? (
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                            {coursesInSlot.map((courseData, index) => (
+                              <Box 
+                                key={`${courseData.course.cou_code}-${index}`}
+                                sx={{ 
+                                  fontSize: '0.75rem', 
+                                  lineHeight: 1.2,
+                                  backgroundColor: coursesInSlot.length > 1 ? '#ffebee' : 'transparent',
+                                  padding: coursesInSlot.length > 1 ? 0.5 : 0,
+                                  borderRadius: coursesInSlot.length > 1 ? 0.5 : 0,
+                                  border: coursesInSlot.length > 1 ? '1px solid #f44336' : 'none'
+                                }}
+                              >
+                                <Box sx={{ fontWeight: 'bold', mb: 0.5 }}>
+                                  {courseData.course.cou_cname}
+                                </Box>
+                                <Box sx={{ color: 'text.secondary', fontSize: '0.7rem', mb: 0.5 }}>
+                                  ({courseData.course.tea_cname})
+                                </Box>
+                                <Box sx={{ color: 'error.main', fontWeight: 'bold', fontSize: '0.7rem' }}>
+                                  {courseData.classroom}
+                                </Box>
+                              </Box>
+                            ))}
                           </Box>
                         ) : (
                           ''

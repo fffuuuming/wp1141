@@ -35,7 +35,7 @@ export function AppHeader({ selectedTab, onTabChange }: AppHeaderProps) {
             您現在的位置: 課程網頁查詢 &gt; {selectedTab === 'department' ? '系所查詢首頁' : '快速查詢首頁'}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            114-1修課學分數上下限規定
+            100-2修課學分數上下限規定
           </Typography>
         </Box>
         
