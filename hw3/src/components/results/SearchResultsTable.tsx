@@ -87,24 +87,24 @@ const SearchResultsTable = memo(() => {
           <TableContainer component={Paper}>
             <Table>
               <TableHead>
-                <TableRow>
-                  <TableCell>流水號</TableCell>
-                  <TableCell>授課對象</TableCell>
-                  <TableCell>課號</TableCell>
-                  <TableCell>班次</TableCell>
-                  <TableCell>課程名稱</TableCell>
-                  <TableCell>學分</TableCell>
-                  <TableCell>課程識別碼</TableCell>
-                  <TableCell>全/半年</TableCell>
-                  <TableCell>必/選修</TableCell>
-                  <TableCell>授課教師</TableCell>
-                  <TableCell>加選方式</TableCell>
-                  <TableCell>時間教室</TableCell>
-                  <TableCell>總人數</TableCell>
-                  <TableCell>選課限制條件</TableCell>
-                  <TableCell>備註</TableCell>
-                  <TableCell>課程網頁</TableCell>
-                  <TableCell>本學期我預計要選的課程</TableCell>
+                <TableRow sx={{ backgroundColor: '#CAD6F0' }}>
+                  <TableCell sx={{ color: '#333333', fontWeight: 'bold' }}>流水號</TableCell>
+                  <TableCell sx={{ color: '#333333', fontWeight: 'bold' }}>授課對象</TableCell>
+                  <TableCell sx={{ color: '#333333', fontWeight: 'bold' }}>課號</TableCell>
+                  <TableCell sx={{ color: '#333333', fontWeight: 'bold' }}>班次</TableCell>
+                  <TableCell sx={{ color: '#333333', fontWeight: 'bold' }}>課程名稱</TableCell>
+                  <TableCell sx={{ color: '#333333', fontWeight: 'bold' }}>學分</TableCell>
+                  <TableCell sx={{ color: '#333333', fontWeight: 'bold' }}>課程識別碼</TableCell>
+                  <TableCell sx={{ color: '#333333', fontWeight: 'bold' }}>全/半年</TableCell>
+                  <TableCell sx={{ color: '#333333', fontWeight: 'bold' }}>必/選修</TableCell>
+                  <TableCell sx={{ color: '#333333', fontWeight: 'bold' }}>授課教師</TableCell>
+                  <TableCell sx={{ color: '#333333', fontWeight: 'bold' }}>加選方式</TableCell>
+                  <TableCell sx={{ color: '#333333', fontWeight: 'bold' }}>時間教室</TableCell>
+                  <TableCell sx={{ color: '#333333', fontWeight: 'bold' }}>總人數</TableCell>
+                  <TableCell sx={{ color: '#333333', fontWeight: 'bold' }}>選課限制條件</TableCell>
+                  <TableCell sx={{ color: '#333333', fontWeight: 'bold' }}>備註</TableCell>
+                  <TableCell sx={{ color: '#333333', fontWeight: 'bold' }}>課程網頁</TableCell>
+                  <TableCell sx={{ color: '#333333', fontWeight: 'bold' }}>本學期我預計要選的課程</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>

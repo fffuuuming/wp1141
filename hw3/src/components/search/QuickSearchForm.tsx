@@ -18,7 +18,7 @@ export function QuickSearchForm() {
   } = useQuickSearch();
 
   return (
-    <Card sx={{ mb: 3 }}>
+    <Card sx={{ mb: 3, backgroundColor: '#e3f2fd' }}>
       <CardContent sx={{ py: 2 }}>
         <Typography variant="h6" gutterBottom sx={{ fontSize: '1.1rem', mb: 2 }}>
           課程快速查詢

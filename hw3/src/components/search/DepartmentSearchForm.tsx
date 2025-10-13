@@ -26,7 +26,7 @@ export function DepartmentSearchForm() {
   } = useDepartmentSearch();
 
   return (
-    <Card sx={{ mb: 3 }}>
+    <Card sx={{ mb: 3, backgroundColor: '#fff8e1' }}>
       <CardContent sx={{ py: 2 }}>
         <Typography variant="h6" gutterBottom sx={{ fontSize: '1.1rem', mb: 2 }}>
           系所課程查詢
