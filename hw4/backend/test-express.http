@@ -1,0 +1,11 @@
+### 測試基本路由
+GET http://localhost:3001/
+
+### 測試健康檢查
+GET http://localhost:3001/health
+
+### 測試 API 路由
+GET http://localhost:3001/api
+
+### 測試 404 路由
+GET http://localhost:3001/nonexistent
