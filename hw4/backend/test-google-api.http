@@ -1,0 +1,92 @@
+### Google Maps API 測試
+
+### 1. 地址轉座標
+POST http://localhost:3001/api/google/geocode
+Content-Type: application/json
+
+{
+  "address": "台北101"
+}
+
+### 2. 座標轉地址
+POST http://localhost:3001/api/google/reverse-geocode
+Content-Type: application/json
+
+{
+  "lat": 25.0330,
+  "lng": 121.5654
+}
+
+### 3. 搜尋附近地點
+POST http://localhost:3001/api/google/places/nearby
+Content-Type: application/json
+
+{
+  "lat": 25.0330,
+  "lng": 121.5654,
+  "radius": 1000,
+  "type": "restaurant"
+}
+
+### 4. 文字搜尋地點
+POST http://localhost:3001/api/google/places/search
+Content-Type: application/json
+
+{
+  "query": "台北咖啡廳"
+}
+
+### 5. 取得地點詳細資訊
+GET http://localhost:3001/api/google/places/details/ChIJd8BlQ2BZwokRAFQEcDlJRAI
+
+### 6. 計算路線
+POST http://localhost:3001/api/google/directions
+Content-Type: application/json
+
+{
+  "origin": "台北車站",
+  "destination": "台北101",
+  "mode": "driving"
+}
+
+### 7. 計算距離矩陣
+POST http://localhost:3001/api/google/distance-matrix
+Content-Type: application/json
+
+{
+  "origins": ["台北車站", "台北101"],
+  "destinations": ["西門町", "信義區"],
+  "mode": "driving"
+}
+
+### 8. 搜尋咖啡廳
+POST http://localhost:3001/api/google/places/nearby
+Content-Type: application/json
+
+{
+  "lat": 25.0330,
+  "lng": 121.5654,
+  "radius": 1000,
+  "type": "cafe"
+}
+
+### 9. 搜尋景點
+POST http://localhost:3001/api/google/places/nearby
+Content-Type: application/json
+
+{
+  "lat": 25.0330,
+  "lng": 121.5654,
+  "radius": 2000,
+  "type": "tourist_attraction"
+}
+
+### 10. 步行路線
+POST http://localhost:3001/api/google/directions
+Content-Type: application/json
+
+{
+  "origin": "台北車站",
+  "destination": "西門町",
+  "mode": "walking"
+}

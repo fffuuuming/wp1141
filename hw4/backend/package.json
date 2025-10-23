@@ -9,6 +9,8 @@
     "init-db": "ts-node init-database.ts",
     "test-db": "ts-node test-database.ts",
     "test-auth": "ts-node test-auth.ts",
+    "test-google": "ts-node test-google-api.ts",
+    "test-location": "ts-node test-location-crud.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
