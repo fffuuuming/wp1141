@@ -12,12 +12,16 @@ import {
   Chip,
   Alert,
   CircularProgress,
+  ToggleButton,
+  ToggleButtonGroup,
+  Paper,
 } from '@mui/material';
-import { Search, Add, LocationOn, Star } from '@mui/icons-material';
+import { Search, Add, LocationOn, Star, Map, ViewList } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiClient } from '../services/api';
 import type { Location } from '../services/api';
+import GoogleMap, { type MapMarker } from '../components/GoogleMap';
 
 const LocationsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -29,6 +33,7 @@ const LocationsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [viewMode, setViewMode] = useState<'list' | 'map' | 'both'>('both');
 
   // 檢查是否有成功訊息從其他頁面傳來
   useEffect(() => {
@@ -109,21 +114,80 @@ const LocationsPage: React.FC = () => {
         </Box>
       </Box>
 
-      {/* 搜尋欄 */}
+      {/* 搜尋欄和視圖切換 */}
       <Box mb={4}>
-        <TextField
-          fullWidth
-          placeholder="搜尋地點..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search />
-              </InputAdornment>
-            ),
-          }}
-        />
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 3 }}>
+          <TextField
+            fullWidth
+            placeholder="搜尋地點..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search />
+                </InputAdornment>
+              ),
+            }}
+          />
+          <ToggleButtonGroup
+            value={viewMode}
+            exclusive
+            onChange={(_e, newMode) => {
+              if (newMode !== null) {
+                setViewMode(newMode);
+              }
+            }}
+            aria-label="view mode"
+            size="large"
+          >
+            <ToggleButton value="list" aria-label="list view">
+              <ViewList />
+            </ToggleButton>
+            <ToggleButton value="both" aria-label="both view">
+              <Map />
+              <ViewList sx={{ ml: 0.5 }} />
+            </ToggleButton>
+            <ToggleButton value="map" aria-label="map view">
+              <Map />
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
+
+        {/* 地圖視圖 */}
+        {(viewMode === 'map' || viewMode === 'both') && filteredLocations.length > 0 && (
+          <Paper elevation={3} sx={{ p: 2, mb: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              地圖總覽
+            </Typography>
+            <GoogleMap
+              center={
+                filteredLocations.length > 0
+                  ? {
+                      lat: filteredLocations[0].latitude,
+                      lng: filteredLocations[0].longitude,
+                    }
+                  : { lat: 25.033, lng: 121.5654 } // 台北 101 預設座標
+              }
+              zoom={13}
+              markers={filteredLocations.map(
+                (loc): MapMarker => ({
+                  id: loc.id,
+                  position: {
+                    lat: loc.latitude,
+                    lng: loc.longitude,
+                  },
+                  title: loc.name,
+                  description: loc.description,
+                })
+              )}
+              onMarkerClick={(marker) => {
+                navigate(`/locations/${marker.id}`);
+              }}
+              height={500}
+            />
+          </Paper>
+        )}
       </Box>
 
       {/* 成功訊息 */}
@@ -141,7 +205,7 @@ const LocationsPage: React.FC = () => {
       )}
 
       {/* 地點列表 */}
-      {filteredLocations.length === 0 ? (
+      {(viewMode === 'list' || viewMode === 'both') && filteredLocations.length === 0 ? (
         <Box textAlign="center" py={8}>
           <Typography variant="h6" color="text.secondary" gutterBottom>
             {searchTerm ? '找不到符合條件的地點' : '還沒有任何地點'}
@@ -157,7 +221,7 @@ const LocationsPage: React.FC = () => {
             新增第一個地點
           </Button>
         </Box>
-      ) : (
+      ) : (viewMode === 'list' || viewMode === 'both') ? (
         <Box
           sx={{
             display: 'grid',
@@ -240,7 +304,7 @@ const LocationsPage: React.FC = () => {
             </Card>
           ))}
         </Box>
-      )}
+      ) : null}
     </Container>
   );
 };

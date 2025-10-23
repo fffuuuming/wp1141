@@ -10,6 +10,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import LocationsPage from './pages/LocationsPage';
 import AddLocationPage from './pages/AddLocationPage';
+import EditLocationPage from './pages/EditLocationPage';
 import LocationDetailPage from './pages/LocationDetailPage';
 import ProfilePage from './pages/ProfilePage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -126,6 +127,14 @@ const App: React.FC = () => {
               element={
                 <ProtectedRoute>
                   <LocationDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/locations/:id/edit"
+              element={
+                <ProtectedRoute>
+                  <EditLocationPage />
                 </ProtectedRoute>
               }
             />
