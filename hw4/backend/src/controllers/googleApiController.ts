@@ -20,9 +20,25 @@ export class GoogleApiController {
 
       const results = await GeocodingService.geocodeAddress(address);
       
+      if (results.length === 0) {
+        return res.status(404).json({
+          error: 'Not Found',
+          message: '找不到該地址',
+          timestamp: new Date().toISOString()
+        });
+      }
+      
+      // 返回第一個結果的簡化格式
+      const firstResult = results[0];
       res.json({
         message: '地址轉座標成功',
-        data: results,
+        data: {
+          lat: firstResult.geometry.location.lat,
+          lng: firstResult.geometry.location.lng,
+          formatted_address: firstResult.formatted_address,
+          place_id: firstResult.place_id,
+          raw_results: results // 保留完整結果供進階使用
+        },
         timestamp: new Date().toISOString()
       });
       return;
