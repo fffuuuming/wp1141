@@ -14,6 +14,17 @@ async function testDatabase() {
     // 測試使用者操作
     console.log('👤 測試使用者操作...');
     
+    // 先清理可能存在的測試資料
+    try {
+      const existingUser = await UserModel.findByEmail('test@example.com');
+      if (existingUser) {
+        await UserModel.delete(existingUser.id);
+        console.log('🧹 清理現有測試使用者');
+      }
+    } catch (error) {
+      // 忽略清理錯誤
+    }
+    
     // 建立測試使用者
     const hashedPassword = await bcrypt.hash('password123', 10);
     const testUser = await UserModel.create({
