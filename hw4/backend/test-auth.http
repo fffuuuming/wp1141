@@ -1,0 +1,73 @@
+### 認證系統測試
+
+### 1. 註冊新使用者
+POST http://localhost:3001/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "email": "test@example.com",
+  "password": "Password123!"
+}
+
+### 2. 登入
+POST http://localhost:3001/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "Password123!"
+}
+
+### 3. 取得使用者資料
+GET http://localhost:3001/api/auth/profile
+Authorization: Bearer {{token}}
+
+### 4. 更新使用者資料
+PUT http://localhost:3001/api/auth/profile
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "username": "updateduser"
+}
+
+### 5. 登出
+POST http://localhost:3001/api/auth/logout
+Authorization: Bearer {{token}}
+
+### 6. 測試弱密碼（應該失敗）
+POST http://localhost:3001/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "weakuser",
+  "email": "weak@example.com",
+  "password": "123"
+}
+
+### 7. 測試重複註冊（應該失敗）
+POST http://localhost:3001/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "email": "test@example.com",
+  "password": "Password123!"
+}
+
+### 8. 測試無效 token（應該失敗）
+GET http://localhost:3001/api/auth/profile
+Authorization: Bearer invalid-token
+
+### 9. 測試缺少 token（應該失敗）
+GET http://localhost:3001/api/auth/profile
+
+### 10. 測試無效登入（應該失敗）
+POST http://localhost:3001/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "wrongpassword"
+}

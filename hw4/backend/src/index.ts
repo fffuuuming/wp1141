@@ -8,6 +8,9 @@ import path from 'path';
 // 載入環境變數
 dotenv.config();
 
+// 載入路由
+import authRoutes from './routes/auth';
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -43,19 +46,27 @@ app.get('/health', (req, res) => {
   });
 });
 
-// API 路由前綴
-app.use('/api', (req, res) => {
+// API 路由
+app.use('/api/auth', authRoutes);
+
+// API 資訊路由
+app.get('/api', (req, res) => {
   res.json({
-    message: 'API 路由將在此處設定',
+    message: '店家/景點探索平台 API',
+    version: '1.0.0',
     availableEndpoints: [
-      'GET /api/auth/profile',
-      'POST /api/auth/register',
-      'POST /api/auth/login',
-      'GET /api/locations',
-      'POST /api/locations',
-      'PUT /api/locations/:id',
-      'DELETE /api/locations/:id'
-    ]
+      'POST /api/auth/register - 使用者註冊',
+      'POST /api/auth/login - 使用者登入',
+      'GET /api/auth/profile - 取得使用者資料',
+      'PUT /api/auth/profile - 更新使用者資料',
+      'POST /api/auth/logout - 使用者登出',
+      'GET /api/locations - 取得地點清單',
+      'POST /api/locations - 新增地點',
+      'GET /api/locations/:id - 取得特定地點',
+      'PUT /api/locations/:id - 更新地點',
+      'DELETE /api/locations/:id - 刪除地點'
+    ],
+    timestamp: new Date().toISOString()
   });
 });
 

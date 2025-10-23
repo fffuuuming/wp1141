@@ -1,0 +1,76 @@
+### 測試資料庫初始化
+# 注意：這些 API 端點需要先實作認證系統才能使用
+# 這裡只是展示預期的 API 結構
+
+### 註冊新使用者
+POST http://localhost:3001/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "email": "test@example.com",
+  "password": "password123"
+}
+
+### 登入
+POST http://localhost:3001/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "password123"
+}
+
+### 取得使用者資料
+GET http://localhost:3001/api/auth/profile
+Authorization: Bearer {{token}}
+
+### 新增地點
+POST http://localhost:3001/api/locations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "測試咖啡廳",
+  "description": "一家很棒的咖啡廳",
+  "address": "台北市信義區信義路五段7號",
+  "latitude": 25.0330,
+  "longitude": 121.5654,
+  "category": "咖啡廳",
+  "rating": 5,
+  "notes": "環境很棒，咖啡很好喝"
+}
+
+### 取得使用者的所有地點
+GET http://localhost:3001/api/locations
+Authorization: Bearer {{token}}
+
+### 取得特定地點
+GET http://localhost:3001/api/locations/1
+Authorization: Bearer {{token}}
+
+### 更新地點
+PUT http://localhost:3001/api/locations/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "rating": 4,
+  "notes": "更新後的備註"
+}
+
+### 刪除地點
+DELETE http://localhost:3001/api/locations/1
+Authorization: Bearer {{token}}
+
+### 篩選地點（按分類）
+GET http://localhost:3001/api/locations?category=咖啡廳
+Authorization: Bearer {{token}}
+
+### 搜尋地點
+GET http://localhost:3001/api/locations?search=咖啡
+Authorization: Bearer {{token}}
+
+### 取得地點統計
+GET http://localhost:3001/api/locations/stats
+Authorization: Bearer {{token}}
