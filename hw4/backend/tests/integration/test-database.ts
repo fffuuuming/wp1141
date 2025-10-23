@@ -1,6 +1,6 @@
-import { initializeDatabase, closeDatabase } from './src/models/database';
-import { UserModel } from './src/models/User';
-import { LocationModel } from './src/models/Location';
+import { initializeDatabase, closeDatabase } from '../../src/models/database';
+import { UserModel } from '../../src/models/User';
+import { LocationModel } from '../../src/models/Location';
 import bcrypt from 'bcryptjs';
 
 async function testDatabase() {

@@ -2,25 +2,35 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import dotenv from 'dotenv';
-import path from 'path';
 
-// 載入環境變數
-dotenv.config();
+// 載入配置
+import { config, validateConfig, logConfig } from './config';
 
 // 載入路由
 import authRoutes from './routes/auth';
 import googleApiRoutes from './routes/googleApi';
 import locationRoutes from './routes/location';
 
+// 載入錯誤處理
+import { errorHandler, notFoundHandler } from './utils/errors';
+import { sendSuccess } from './utils/response';
+
 const app = express();
-const PORT = process.env.PORT || 3001;
+
+// 驗證配置
+if (!validateConfig()) {
+  console.error('❌ 配置驗證失敗，伺服器無法啟動');
+  process.exit(1);
+}
+
+// 記錄配置資訊
+logConfig();
 
 // 中間件設定
 app.use(helmet()); // 安全標頭
 app.use(morgan('combined')); // 日誌記錄
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: config.cors.origins,
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' })); // JSON 解析
@@ -31,20 +41,17 @@ app.use(express.urlencoded({ extended: true })); // URL 編碼解析
 
 // 基本路由
 app.get('/', (req, res) => {
-  res.json({
-    message: '店家/景點探索平台 API',
+  sendSuccess(res, 200, '店家/景點探索平台 API', {
     version: '1.0.0',
-    status: 'running',
-    timestamp: new Date().toISOString()
+    status: 'running'
   });
 });
 
 // 健康檢查路由
 app.get('/health', (req, res) => {
-  res.json({
-    status: 'healthy',
+  sendSuccess(res, 200, '服務健康', {
     uptime: process.uptime(),
-    timestamp: new Date().toISOString()
+    environment: config.server.nodeEnv
   });
 });
 
@@ -55,8 +62,7 @@ app.use('/api/locations', locationRoutes);
 
 // API 資訊路由
 app.get('/api', (req, res) => {
-  res.json({
-    message: '店家/景點探索平台 API',
+  sendSuccess(res, 200, '店家/景點探索平台 API', {
     version: '1.0.0',
     availableEndpoints: [
       'POST /api/auth/register - 使用者註冊',
@@ -78,36 +84,21 @@ app.get('/api', (req, res) => {
       'DELETE /api/locations/:id - 刪除地點',
       'GET /api/locations/stats/summary - 取得地點統計',
       'POST /api/locations/from-google - 從 Google Places 新增地點'
-    ],
-    timestamp: new Date().toISOString()
+    ]
   });
 });
 
 // 404 處理
-app.use((req, res) => {
-  res.status(404).json({
-    error: 'Not Found',
-    message: `路由 ${req.originalUrl} 不存在`,
-    timestamp: new Date().toISOString()
-  });
-});
+app.use(notFoundHandler);
 
 // 全域錯誤處理
-app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('錯誤:', err);
-  
-  res.status(500).json({
-    error: 'Internal Server Error',
-    message: process.env.NODE_ENV === 'development' ? err.message : '伺服器內部錯誤',
-    timestamp: new Date().toISOString()
-  });
-});
+app.use(errorHandler);
 
 // 啟動伺服器
-app.listen(PORT, () => {
-  console.log(`🚀 伺服器運行在 http://localhost:${PORT}`);
-  console.log(`📊 健康檢查: http://localhost:${PORT}/health`);
-  console.log(`🌍 環境: ${process.env.NODE_ENV || 'development'}`);
+app.listen(config.server.port, () => {
+  console.log(`🚀 伺服器運行在 http://localhost:${config.server.port}`);
+  console.log(`📊 健康檢查: http://localhost:${config.server.port}/health`);
+  console.log(`🌍 環境: ${config.server.nodeEnv}`);
 });
 
 export default app;

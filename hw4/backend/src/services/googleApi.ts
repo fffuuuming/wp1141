@@ -1,13 +1,8 @@
 import axios from 'axios';
-
-const GOOGLE_MAPS_SERVER_KEY = process.env.GOOGLE_MAPS_SERVER_KEY;
-
-if (!GOOGLE_MAPS_SERVER_KEY) {
-  console.warn('⚠️ 警告: 未設定 GOOGLE_MAPS_SERVER_KEY 環境變數');
-}
+import { config } from '../config';
 
 // Google API 基礎 URL
-const GOOGLE_API_BASE_URL = 'https://maps.googleapis.com/maps/api';
+const GOOGLE_API_BASE_URL = config.google.apiBaseUrl;
 
 // 通用 Google API 請求函數
 async function makeGoogleAPIRequest(endpoint: string, params: Record<string, any>) {
@@ -15,7 +10,7 @@ async function makeGoogleAPIRequest(endpoint: string, params: Record<string, any
     const response = await axios.get(`${GOOGLE_API_BASE_URL}${endpoint}`, {
       params: {
         ...params,
-        key: GOOGLE_MAPS_SERVER_KEY
+        key: config.google.serverKey
       }
     });
     

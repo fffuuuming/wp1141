@@ -1,12 +1,5 @@
 import jwt from 'jsonwebtoken';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
-
-// 確保 JWT_SECRET 存在
-if (!process.env.JWT_SECRET) {
-  console.warn('⚠️ 警告: 未設定 JWT_SECRET 環境變數，使用預設值');
-}
+import { config } from '../config';
 
 export interface JWTPayload {
   userId: number;
@@ -26,13 +19,13 @@ export interface TokenResponse {
 
 // 生成 JWT token
 export function generateToken(payload: JWTPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+  return jwt.sign(payload, config.jwt.secret, { expiresIn: '7d' });
 }
 
 // 驗證 JWT token
 export function verifyToken(token: string): JWTPayload | null {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET as string) as JWTPayload;
+    const decoded = jwt.verify(token, config.jwt.secret) as JWTPayload;
     return decoded;
   } catch (error) {
     return null;
@@ -65,7 +58,7 @@ export function generateAuthResponse(user: { id: number; username: string; email
   
   return {
     token,
-    expiresIn: JWT_EXPIRES_IN,
+    expiresIn: config.jwt.expiresIn,
     user: {
       id: user.id,
       username: user.username,
