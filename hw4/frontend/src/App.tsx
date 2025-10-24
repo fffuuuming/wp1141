@@ -21,45 +21,47 @@ import NotFoundPage from './pages/NotFoundPage';
 import Header from './components/Header';
 import ProtectedRoute from './components/ProtectedRoute';
 
+import { designTokens } from './styles';
+
 // 建立 Material-UI 主題
 const theme = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: '#1976d2',
+      main: designTokens.colors.primary,
     },
     secondary: {
       main: '#dc004e',
     },
     background: {
-      default: '#f5f5f5',
+      default: designTokens.colors.background.default,
     },
   },
   typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+    fontFamily: designTokens.typography.fontFamily,
     h1: {
       fontSize: '2.5rem',
-      fontWeight: 600,
+      fontWeight: designTokens.typography.fontWeight.bold,
     },
     h2: {
       fontSize: '2rem',
-      fontWeight: 600,
+      fontWeight: designTokens.typography.fontWeight.bold,
     },
     h3: {
       fontSize: '1.75rem',
-      fontWeight: 600,
+      fontWeight: designTokens.typography.fontWeight.bold,
     },
     h4: {
       fontSize: '1.5rem',
-      fontWeight: 600,
+      fontWeight: designTokens.typography.fontWeight.bold,
     },
     h5: {
       fontSize: '1.25rem',
-      fontWeight: 600,
+      fontWeight: designTokens.typography.fontWeight.bold,
     },
     h6: {
       fontSize: '1rem',
-      fontWeight: 600,
+      fontWeight: designTokens.typography.fontWeight.bold,
     },
   },
   components: {
@@ -67,15 +69,15 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           textTransform: 'none',
-          borderRadius: 8,
+          borderRadius: designTokens.borderRadius.md,
         },
       },
     },
     MuiCard: {
       styleOverrides: {
         root: {
-          borderRadius: 12,
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+          borderRadius: designTokens.borderRadius.lg,
+          boxShadow: designTokens.shadows.sm,
         },
       },
     },
@@ -83,7 +85,7 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           '& .MuiOutlinedInput-root': {
-            borderRadius: 8,
+            borderRadius: designTokens.borderRadius.md,
           },
         },
       },

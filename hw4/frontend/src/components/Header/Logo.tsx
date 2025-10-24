@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import { colors } from '../../styles';
 
 const Logo: React.FC = () => {
   const navigate = useNavigate();
@@ -26,7 +27,7 @@ const Logo: React.FC = () => {
           fontSize: '1.5rem',
           color: 'black',
           '& .highlight': {
-            color: '#ff6b35', // 橘色
+            color: colors.primary,
           },
         }}
       >
