@@ -69,6 +69,7 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
           streetViewControl: true,
           fullscreenControl: true,
           zoomControl: true,
+          gestureHandling: 'greedy', // 允許滑鼠滾輪縮放，不顯示提示
         });
 
         mapInstanceRef.current = map;
@@ -198,6 +199,18 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
 
   return (
     <Box sx={{ position: 'relative', width: '100%', height }}>
+      {/* 隱藏 Google Maps 縮放提示的樣式 */}
+      <style>
+        {`
+          /* 隱藏 Google Maps 的縮放提示按鈕 */
+          .google-map-container .gm-style-iw-c button[title*="⌘"],
+          .google-map-container .gm-style-iw-c button[title*="滾輪"],
+          .google-map-container .gm-style-iw-c button[title*="滾動"],
+          .google-map-container .gm-style-iw-c button[title*="縮放"] {
+            display: none !important;
+          }
+        `}
+      </style>
       {loading && (
         <Box
           sx={{
@@ -223,6 +236,7 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
           height: '100%',
           borderRadius: '8px',
         }}
+        className="google-map-container"
       />
     </Box>
   );
