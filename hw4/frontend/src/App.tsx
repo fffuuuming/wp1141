@@ -16,7 +16,6 @@ import EditLocationPage from './pages/EditLocationPage';
 import LocationDetailPage from './pages/LocationDetailPage';
 import ProfilePage from './pages/ProfilePage';
 import NotFoundPage from './pages/NotFoundPage';
-import TestPage from './pages/TestPage';
 
 // 組件
 import Header from './components/Header';
@@ -106,8 +105,6 @@ const App: React.FC = () => {
             {/* 主要內容區域 */}
             <Box component="main" sx={{ flexGrow: 1 }}>
               <Routes>
-                {/* 測試路由 */}
-                <Route path="/test" element={<TestPage />} />
                 
                 {/* 公開路由 */}
                 <Route path="/" element={<HomePage />} />
