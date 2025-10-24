@@ -76,28 +76,36 @@ const LoginPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setFieldErrors({});
 
+    // 前端驗證：在提交前驗證所有欄位
+    const errors: { email?: string; password?: string } = {};
+    
+    // 驗證 Email
+    const emailResult = validateEmail(formData.email);
+    if (!emailResult.isValid) {
+      errors.email = emailResult.error;
+    }
+    
+    // 驗證密碼（登入只需檢查不為空）
+    const passwordResult = validatePassword(formData.password, false);
+    if (!passwordResult.isValid) {
+      errors.password = passwordResult.error;
+    }
+    
+    // 如果有任何驗證錯誤，顯示並阻止提交
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+
+    // 驗證通過，提交到後端
     try {
       await login(formData.email, formData.password);
       navigate(from, { replace: true });
     } catch (err: any) {
-      // 檢查是否為驗證錯誤（有 details 陣列）
-      const data = err.response?.data;
-      if (data?.details && Array.isArray(data.details)) {
-        // 將驗證錯誤顯示在對應的欄位下方
-        const errors: { email?: string; password?: string } = {};
-        data.details.forEach((detail: any) => {
-          if (detail.path === 'email') {
-            errors.email = detail.msg;
-          } else if (detail.path === 'password') {
-            errors.password = detail.msg;
-          }
-        });
-        setFieldErrors(errors);
-      } else {
-        // 業務邏輯錯誤（如密碼錯誤）顯示在頂部
-        setError(extractErrorMessage(err));
-      }
+      // 只處理業務邏輯錯誤（如密碼錯誤、帳號不存在）
+      setError(extractErrorMessage(err));
     }
   };
 

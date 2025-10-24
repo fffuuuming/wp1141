@@ -40,10 +40,12 @@ const RegisterPage: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
+    const newFormData = {
+      ...formData,
       [name]: value,
-    }));
+    };
+    setFormData(newFormData);
+    
     // 清除該欄位的錯誤訊息
     if (fieldErrors[name as keyof typeof fieldErrors]) {
       setFieldErrors(prev => ({
@@ -51,6 +53,23 @@ const RegisterPage: React.FC = () => {
         [name]: undefined,
       }));
     }
+    
+    // 如果修改的是密碼欄位，且確認密碼已有值，清除確認密碼的錯誤
+    if (name === 'password' && formData.confirmPassword) {
+      setFieldErrors(prev => ({
+        ...prev,
+        confirmPassword: undefined,
+      }));
+    }
+    
+    // 如果修改的是確認密碼欄位，清除確認密碼的錯誤
+    if (name === 'confirmPassword') {
+      setFieldErrors(prev => ({
+        ...prev,
+        confirmPassword: undefined,
+      }));
+    }
+    
     // 清除全局錯誤訊息
     if (error) setError(null);
   };
@@ -83,6 +102,23 @@ const RegisterPage: React.FC = () => {
           password: result.error,
         }));
       }
+      
+      // 如果確認密碼已有值，檢查是否一致
+      if (formData.confirmPassword) {
+        const confirmResult = validateConfirmPassword(value, formData.confirmPassword);
+        if (!confirmResult.isValid) {
+          setFieldErrors(prev => ({
+            ...prev,
+            confirmPassword: confirmResult.error,
+          }));
+        } else {
+          // 如果一致，清除確認密碼的錯誤
+          setFieldErrors(prev => ({
+            ...prev,
+            confirmPassword: undefined,
+          }));
+        }
+      }
     } else if (name === 'confirmPassword') {
       const result = validateConfirmPassword(formData.password, value);
       if (!result.isValid) {
@@ -97,30 +133,48 @@ const RegisterPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setFieldErrors({});
 
+    // 前端驗證：在提交前驗證所有欄位
+    const errors: { username?: string; email?: string; password?: string; confirmPassword?: string } = {};
+    
+    // 驗證使用者名稱
+    const usernameResult = validateUsername(formData.username);
+    if (!usernameResult.isValid) {
+      errors.username = usernameResult.error;
+    }
+    
+    // 驗證 Email
+    const emailResult = validateEmail(formData.email);
+    if (!emailResult.isValid) {
+      errors.email = emailResult.error;
+    }
+    
+    // 驗證密碼
+    const passwordResult = validatePassword(formData.password, true);
+    if (!passwordResult.isValid) {
+      errors.password = passwordResult.error;
+    }
+    
+    // 驗證確認密碼
+    const confirmResult = validateConfirmPassword(formData.password, formData.confirmPassword);
+    if (!confirmResult.isValid) {
+      errors.confirmPassword = confirmResult.error;
+    }
+    
+    // 如果有任何驗證錯誤，顯示並阻止提交
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+
+    // 驗證通過，提交到後端
     try {
       await register(formData.username, formData.email, formData.password);
       navigate('/locations');
     } catch (err: any) {
-      // 檢查是否為驗證錯誤（有 details 陣列）
-      const data = err.response?.data;
-      if (data?.details && Array.isArray(data.details)) {
-        // 將驗證錯誤顯示在對應的欄位下方
-        const errors: { username?: string; email?: string; password?: string; confirmPassword?: string } = {};
-        data.details.forEach((detail: any) => {
-          if (detail.path === 'username') {
-            errors.username = detail.msg;
-          } else if (detail.path === 'email') {
-            errors.email = detail.msg;
-          } else if (detail.path === 'password') {
-            errors.password = detail.msg;
-          }
-        });
-        setFieldErrors(errors);
-      } else {
-        // 業務邏輯錯誤（如帳號已存在）顯示在頂部
-        setError(extractErrorMessage(err));
-      }
+      // 只處理業務邏輯錯誤（如帳號已存在）
+      setError(extractErrorMessage(err));
     }
   };
 

@@ -5,7 +5,7 @@ import { validateRegister, validateLogin } from '../middleware/validation';
 
 const router = Router();
 
-// 公開路由
+// 公開路由（前後端雙重驗證：前端提升 UX，後端保證安全）
 router.post('/register', validateRegister, register);
 router.post('/login', validateLogin, login);
 

@@ -17,21 +17,31 @@ export function handleValidationErrors(req: Request, res: Response, next: NextFu
   return;
 }
 
-// 註冊驗證規則
+// 註冊驗證規則（與前端 formValidation.ts 完全一致）
 export const validateRegister = [
+  // 1. 使用者名稱驗證（按照前端順序）
   body('username')
     .trim()
+    .notEmpty()
+    .withMessage('使用者名稱不能為空')
     .isLength({ min: 3, max: 50 })
     .withMessage('使用者名稱長度必須在 3-50 個字元之間')
     .matches(/^[a-zA-Z0-9_]+$/)
     .withMessage('使用者名稱只能包含字母、數字和底線'),
   
+  // 2. Email 驗證（按照前端順序）
   body('email')
+    .trim()
+    .notEmpty()
+    .withMessage('電子郵件不能為空')
     .isEmail()
     .withMessage('請提供有效的電子郵件地址')
     .normalizeEmail(),
   
+  // 3. 密碼驗證（按照前端順序：長度 → 大寫 → 小寫 → 數字 → 特殊字元）
   body('password')
+    .notEmpty()
+    .withMessage('密碼不能為空')
     .isLength({ min: 8 })
     .withMessage('密碼長度至少需要 8 個字元')
     .matches(/[A-Z]/)
@@ -46,13 +56,18 @@ export const validateRegister = [
   handleValidationErrors
 ];
 
-// 登入驗證規則
+// 登入驗證規則（與前端 formValidation.ts 完全一致）
 export const validateLogin = [
+  // 1. Email 驗證
   body('email')
+    .trim()
+    .notEmpty()
+    .withMessage('電子郵件不能為空')
     .isEmail()
     .withMessage('請提供有效的電子郵件地址')
     .normalizeEmail(),
   
+  // 2. 密碼驗證（登入只檢查不為空）
   body('password')
     .notEmpty()
     .withMessage('密碼不能為空'),

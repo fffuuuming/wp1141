@@ -4,9 +4,13 @@ import { hashPassword, verifyPassword } from '../utils/password';
 import { generateAuthResponse } from '../utils/jwt';
 
 // 使用者註冊
+// 注意：格式驗證由 validateRegister 中間件處理
 export async function register(req: Request, res: Response) {
   try {
     const { username, email, password } = req.body;
+    
+    // 注意：此處不需要檢查必要欄位，因為 validateRegister 中間件已經驗證過了
+    // 如果執行到這裡，代表所有格式驗證都已通過
     
     // 檢查 email 是否已存在
     const emailExists = await UserModel.emailExists(email);
@@ -64,9 +68,13 @@ export async function register(req: Request, res: Response) {
 }
 
 // 使用者登入
+// 注意：格式驗證由 validateLogin 中間件處理
 export async function login(req: Request, res: Response) {
   try {
     const { email, password } = req.body;
+    
+    // 注意：此處不需要檢查必要欄位，因為 validateLogin 中間件已經驗證過了
+    // 如果執行到這裡，代表所有格式驗證都已通過
     
     // 查找使用者
     const user = await UserModel.findByEmail(email);
