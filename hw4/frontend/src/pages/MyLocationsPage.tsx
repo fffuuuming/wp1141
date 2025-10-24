@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   Container,
   Typography,
@@ -18,59 +18,30 @@ import {
   Grid,
 } from '@mui/material';
 import { Search, LocationOn, Star, Map, ViewList, Add } from '@mui/icons-material';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { apiClient } from '../services/api';
-import type { Location } from '../services/api';
+import { useNavigate } from 'react-router-dom';
 import GoogleMap, { type MapMarker } from '../components/GoogleMap';
+import { useLocationData, useNotification, useSearch, useViewMode } from '../hooks';
+import type { Location } from '../services/api';
 
 const MyLocationsPage: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { } = useAuth();
   
-  const [locations, setLocations] = useState<Location[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState<'list' | 'map' | 'both'>('both');
-
-  // 檢查是否有成功訊息從其他頁面傳來
-  useEffect(() => {
-    if (location.state?.message) {
-      setSuccessMessage(location.state.message);
-      // 清除 state 中的訊息
-      window.history.replaceState({}, document.title);
-      // 3 秒後自動清除訊息
-      setTimeout(() => setSuccessMessage(null), 3000);
-    }
-  }, [location]);
+  // 使用自定義 hooks
+  const { locations, loading, error, successMessage, loadLocations } = useLocationData();
+  const { successMessage: notificationSuccess, clearSuccessMessage } = useNotification();
+  const { searchTerm, setSearchTerm, filteredData: filteredLocations } = useSearch({
+    data: locations,
+    searchFields: ['name', 'description', 'address'],
+  });
+  const { viewMode, setViewMode, isListView, isMapView, isBothView } = useViewMode('both');
 
   // 載入地點資料
-  useEffect(() => {
+  React.useEffect(() => {
     loadLocations();
-  }, []);
+  }, [loadLocations]);
 
-  const loadLocations = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await apiClient.getLocations();
-      setLocations(response.data);
-    } catch (err: any) {
-      setError('載入地點失敗：' + (err.response?.data?.message || err.message));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-
-  const filteredLocations = locations.filter(location =>
-    location.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    location.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    location.address?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // 合併通知訊息
+  const displaySuccessMessage = successMessage || notificationSuccess;
 
   if (loading) {
     return (
@@ -263,15 +234,15 @@ const MyLocationsPage: React.FC = () => {
         )}
 
         {/* 成功訊息 */}
-        {successMessage && (
-          <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccessMessage(null)}>
-            {successMessage}
+        {displaySuccessMessage && (
+          <Alert severity="success" sx={{ mb: 3 }} onClose={clearSuccessMessage}>
+            {displaySuccessMessage}
           </Alert>
         )}
 
         {/* 錯誤訊息 */}
         {error && (
-          <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+          <Alert severity="error" sx={{ mb: 3 }}>
             {error}
           </Alert>
         )}
