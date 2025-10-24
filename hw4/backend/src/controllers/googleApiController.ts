@@ -134,7 +134,9 @@ export class GoogleApiController {
       
       res.json({
         message: '文字搜尋成功',
-        data: results,
+        data: {
+          places: results
+        },
         timestamp: new Date().toISOString()
       });
       return;

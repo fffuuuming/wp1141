@@ -95,7 +95,8 @@ export class PlacesService {
     try {
       const params: Record<string, any> = {
         query: query,
-        language: 'zh-TW'
+        language: 'zh-TW',
+        fields: 'place_id,name,formatted_address,geometry,rating,types,photos'
       };
 
       if (location) {

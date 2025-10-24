@@ -15,8 +15,17 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Paper,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemButton,
+  Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
-import { Search, Add, LocationOn, Star, Map, ViewList } from '@mui/icons-material';
+import { Search, Add, LocationOn, Star, Map, ViewList, Place } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiClient } from '../services/api';
@@ -34,6 +43,12 @@ const LocationsPage: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'map' | 'both'>('both');
+  
+  // 搜尋地點相關狀態
+  const [placeSearchQuery, setPlaceSearchQuery] = useState('');
+  const [placeSearchResults, setPlaceSearchResults] = useState<any[]>([]);
+  const [placeSearchLoading, setPlaceSearchLoading] = useState(false);
+  const [placeSearchDialogOpen, setPlaceSearchDialogOpen] = useState(false);
 
   // 檢查是否有成功訊息從其他頁面傳來
   useEffect(() => {
@@ -71,6 +86,38 @@ const LocationsPage: React.FC = () => {
     } catch (err) {
       console.error('Logout failed:', err);
     }
+  };
+
+  // 搜尋地點功能
+  const handlePlaceSearch = async () => {
+    if (!placeSearchQuery.trim()) {
+      setError('請輸入搜尋關鍵字');
+      return;
+    }
+
+    try {
+      setPlaceSearchLoading(true);
+      setError(null);
+      
+      const response = await apiClient.searchPlaces(placeSearchQuery);
+      console.log('搜尋地點結果:', response);
+      
+      setPlaceSearchResults(response.data.places || []);
+      setPlaceSearchDialogOpen(true);
+      
+    } catch (err: any) {
+      console.error('搜尋地點錯誤:', err);
+      setError('搜尋地點失敗：' + (err.response?.data?.message || err.message));
+    } finally {
+      setPlaceSearchLoading(false);
+    }
+  };
+
+  // 選擇搜尋結果
+  const handleSelectPlace = (place: any) => {
+    setPlaceSearchDialogOpen(false);
+    // 導航到新增頁面並傳遞 placeId
+    navigate(`/locations/new?placeId=${place.place_id}&lat=${place.geometry.location.lat}&lng=${place.geometry.location.lng}`);
   };
 
   const filteredLocations = locations.filter(location =>
@@ -116,10 +163,11 @@ const LocationsPage: React.FC = () => {
 
       {/* 搜尋欄和視圖切換 */}
       <Box mb={4}>
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 3 }}>
+        {/* 本地地點搜尋 */}
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
           <TextField
             fullWidth
-            placeholder="搜尋地點..."
+            placeholder="搜尋我的地點..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             InputProps={{
@@ -152,6 +200,37 @@ const LocationsPage: React.FC = () => {
               <Map />
             </ToggleButton>
           </ToggleButtonGroup>
+        </Box>
+
+        {/* Google 地點搜尋 */}
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 3 }}>
+          <TextField
+            fullWidth
+            placeholder="搜尋 Google 地點（如：台北101、星巴克）..."
+            value={placeSearchQuery}
+            onChange={(e) => setPlaceSearchQuery(e.target.value)}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                handlePlaceSearch();
+              }
+            }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Place />
+                </InputAdornment>
+              ),
+            }}
+          />
+          <Button
+            variant="contained"
+            onClick={handlePlaceSearch}
+            disabled={placeSearchLoading || !placeSearchQuery.trim()}
+            startIcon={placeSearchLoading ? <CircularProgress size={20} /> : <Search />}
+            sx={{ minWidth: 120 }}
+          >
+            {placeSearchLoading ? '搜尋中...' : '搜尋地點'}
+          </Button>
         </Box>
 
         {/* 地圖視圖 */}
@@ -320,6 +399,88 @@ const LocationsPage: React.FC = () => {
           ))}
         </Box>
       ) : null}
+
+      {/* 搜尋結果對話框 */}
+      <Dialog
+        open={placeSearchDialogOpen}
+        onClose={() => setPlaceSearchDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Place sx={{ mr: 1 }} />
+            搜尋結果：{placeSearchQuery}
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          {placeSearchResults.length === 0 ? (
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+              <Typography variant="body1" color="text.secondary">
+                找不到符合條件的地點
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                請嘗試使用不同的關鍵字搜尋
+              </Typography>
+            </Box>
+          ) : (
+            <List>
+              {placeSearchResults.map((place, index) => (
+                <React.Fragment key={place.place_id}>
+                  <ListItem disablePadding>
+                    <ListItemButton onClick={() => handleSelectPlace(place)}>
+                      <ListItemText
+                        primary={
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="subtitle1" fontWeight="medium">
+                              {place.name}
+                            </Typography>
+                            {place.rating && (
+                              <Chip
+                                icon={<Star />}
+                                label={place.rating.toFixed(1)}
+                                size="small"
+                                color="secondary"
+                                variant="outlined"
+                              />
+                            )}
+                          </Box>
+                        }
+                        secondary={
+                          <Box>
+                            <Typography variant="body2" color="text.secondary">
+                              {place.formatted_address}
+                            </Typography>
+                            {place.types && place.types.length > 0 && (
+                              <Box sx={{ mt: 0.5 }}>
+                                {place.types.slice(0, 3).map((type: string) => (
+                                  <Chip
+                                    key={type}
+                                    label={type}
+                                    size="small"
+                                    variant="outlined"
+                                    sx={{ mr: 0.5, mb: 0.5 }}
+                                  />
+                                ))}
+                              </Box>
+                            )}
+                          </Box>
+                        }
+                      />
+                    </ListItemButton>
+                  </ListItem>
+                  {index < placeSearchResults.length - 1 && <Divider />}
+                </React.Fragment>
+              ))}
+            </List>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPlaceSearchDialogOpen(false)}>
+            取消
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };
