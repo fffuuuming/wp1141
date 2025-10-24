@@ -1,23 +1,12 @@
 import { Request, Response } from 'express';
 import { UserModel } from '../models/User';
-import { hashPassword, verifyPassword, validatePasswordStrength } from '../utils/password';
+import { hashPassword, verifyPassword } from '../utils/password';
 import { generateAuthResponse } from '../utils/jwt';
 
 // 使用者註冊
 export async function register(req: Request, res: Response) {
   try {
     const { username, email, password } = req.body;
-    
-    // 檢查密碼強度
-    const passwordValidation = validatePasswordStrength(password);
-    if (!passwordValidation.isValid) {
-      return res.status(400).json({
-        error: 'Password Validation Error',
-        message: '密碼強度不足',
-        details: passwordValidation.errors,
-        timestamp: new Date().toISOString()
-      });
-    }
     
     // 檢查 email 是否已存在
     const emailExists = await UserModel.emailExists(email);

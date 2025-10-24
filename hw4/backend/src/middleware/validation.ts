@@ -34,8 +34,14 @@ export const validateRegister = [
   body('password')
     .isLength({ min: 8 })
     .withMessage('密碼長度至少需要 8 個字元')
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
-    .withMessage('密碼必須包含至少一個大寫字母、小寫字母、數字和特殊字元'),
+    .matches(/[A-Z]/)
+    .withMessage('密碼必須包含至少一個大寫字母')
+    .matches(/[a-z]/)
+    .withMessage('密碼必須包含至少一個小寫字母')
+    .matches(/\d/)
+    .withMessage('密碼必須包含至少一個數字')
+    .matches(/[@$!%*?&]/)
+    .withMessage('密碼必須包含至少一個特殊字元 (@$!%*?&)'),
   
   handleValidationErrors
 ];
