@@ -19,8 +19,9 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Fade,
 } from '@mui/material';
-import { Search, Place, Star } from '@mui/icons-material';
+import { Search, Place, Star, Explore, Map } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../services/api';
 import GoogleMap, { type MapMarker } from '../components/GoogleMap';
@@ -68,79 +69,201 @@ const ExplorePage: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4, pt: 8 }}>
-      {/* 頁面標題 */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
-        <Typography variant="h4" component="h1">
-          地點探索
-        </Typography>
-      </Box>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        backgroundColor: 'white',
+        pt: 8, // 為 Header 留出空間
+      }}
+    >
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        {/* 頁面標題區域 */}
+        <Fade in timeout={800}>
+          <Box sx={{ textAlign: 'center', mb: 6 }}>
+            <Typography
+              variant="h3"
+              component="h1"
+              sx={{
+                fontWeight: 'bold',
+                fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
+                color: 'black',
+                mb: 2,
+                '& .highlight': {
+                  color: '#ff6b35',
+                },
+              }}
+            >
+              地點<span className="highlight">探索</span>
+            </Typography>
+            <Typography
+              variant="h6"
+              sx={{
+                color: 'text.secondary',
+                fontWeight: 400,
+                mb: 4,
+              }}
+            >
+              搜尋世界各地的精彩地點，發現新的冒險
+            </Typography>
+          </Box>
+        </Fade>
 
-      {/* Google 地點搜尋 */}
-      <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 3 }}>
-        <TextField
-          fullWidth
-          placeholder="搜尋 Google 地點（如：台北101、星巴克）..."
-          value={placeSearchQuery}
-          onChange={(e) => setPlaceSearchQuery(e.target.value)}
-          onKeyPress={(e) => {
-            if (e.key === 'Enter') {
-              handlePlaceSearch();
-            }
-          }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Place />
-              </InputAdornment>
-            ),
-          }}
-        />
-        <Button
-          variant="contained"
-          onClick={handlePlaceSearch}
-          disabled={placeSearchLoading || !placeSearchQuery.trim()}
-          startIcon={placeSearchLoading ? <CircularProgress size={20} /> : <Search />}
-          sx={{ minWidth: 120 }}
-        >
-          {placeSearchLoading ? '搜尋中...' : '搜尋地點'}
-        </Button>
-      </Box>
+        {/* Google 地點搜尋區域 */}
+        <Fade in timeout={1000}>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 4,
+              border: '1px solid #e0e0e0',
+              borderRadius: 3,
+              backgroundColor: '#fafafa',
+              mb: 4,
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <Search sx={{ color: '#ff6b35', fontSize: 24 }} />
+                <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'black' }}>
+                  搜尋地點
+                </Typography>
+              </Box>
+            </Box>
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+              <TextField
+                fullWidth
+                placeholder="搜尋 Google 地點（如：台北101、星巴克）..."
+                value={placeSearchQuery}
+                onChange={(e) => setPlaceSearchQuery(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    handlePlaceSearch();
+                  }
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                    backgroundColor: 'white',
+                    '& fieldset': {
+                      borderColor: '#e0e0e0',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: '#ff6b35',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#ff6b35',
+                    },
+                  },
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Place sx={{ color: '#ff6b35' }} />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <Button
+                variant="outlined"
+                onClick={handlePlaceSearch}
+                disabled={placeSearchLoading || !placeSearchQuery.trim()}
+                startIcon={placeSearchLoading ? <CircularProgress size={20} /> : <Search />}
+                sx={{
+                  border: '2px solid #ff6b35',
+                  borderRadius: 2,
+                  px: 3,
+                  py: 1.5,
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  color: '#ff6b35',
+                  textTransform: 'none',
+                  minWidth: 140,
+                  '&:hover': {
+                    backgroundColor: '#ff6b35',
+                    color: 'white',
+                  },
+                  '&:disabled': {
+                    borderColor: '#e0e0e0',
+                    color: '#e0e0e0',
+                  },
+                }}
+              >
+                {placeSearchLoading ? '搜尋中...' : '搜尋地點'}
+              </Button>
+            </Box>
+          </Paper>
+        </Fade>
 
-      {/* 地圖總覽 */}
-      <Paper elevation={3} sx={{ p: 2, mb: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h6">
-            地圖總覽
-          </Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center' }}>
-            💡 提示：點擊地圖空白處或地標可快速新增地點
-          </Typography>
-        </Box>
-        <GoogleMap
-          center={{ lat: 25.033, lng: 121.5654 }} // 台北 101 預設座標
-          zoom={13}
-          markers={[]} // 探索頁面不顯示個人地點標記
-          onMapClick={(lat, lng, placeId) => {
-            // 點擊地圖時，導航到新增頁面並傳遞座標
-            if (placeId) {
-              // 點擊了地標，傳遞 placeId 和座標
-              navigate(`/locations/new?lat=${lat}&lng=${lng}&placeId=${placeId}`);
-            } else {
-              // 點擊了空白處，只傳遞座標
-              navigate(`/locations/new?lat=${lat}&lng=${lng}`);
-            }
-          }}
-          height={500}
-        />
-      </Paper>
+        {/* 地圖總覽區域 */}
+        <Fade in timeout={1200}>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 4,
+              border: '1px solid #e0e0e0',
+              borderRadius: 3,
+              backgroundColor: '#fafafa',
+              mb: 4,
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+              <Map sx={{ color: '#ff6b35', fontSize: 24 }} />
+              <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'black' }}>
+                地圖總覽
+              </Typography>
+            </Box>
+            <Box sx={{ 
+              backgroundColor: 'white', 
+              borderRadius: 2, 
+              p: 2,
+              border: '1px solid #e0e0e0',
+            }}>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  color: 'text.secondary', 
+                  mb: 2,
+                  display: 'flex', 
+                  alignItems: 'center',
+                  gap: 1,
+                }}
+              >
+                💡 提示：點擊地圖空白處或地標可快速新增地點
+              </Typography>
+              <GoogleMap
+                center={{ lat: 25.033, lng: 121.5654 }} // 台北 101 預設座標
+                zoom={13}
+                markers={[]} // 探索頁面不顯示個人地點標記
+                onMapClick={(lat, lng, placeId) => {
+                  // 點擊地圖時，導航到新增頁面並傳遞座標
+                  if (placeId) {
+                    // 點擊了地標，傳遞 placeId 和座標
+                    navigate(`/locations/new?lat=${lat}&lng=${lng}&placeId=${placeId}`);
+                  } else {
+                    // 點擊了空白處，只傳遞座標
+                    navigate(`/locations/new?lat=${lat}&lng=${lng}`);
+                  }
+                }}
+                height={500}
+              />
+            </Box>
+          </Paper>
+        </Fade>
 
-      {/* 錯誤訊息 */}
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
+        {/* 錯誤訊息 */}
+        {error && (
+          <Fade in timeout={1400}>
+            <Alert 
+              severity="error" 
+              sx={{ 
+                mb: 3,
+                borderRadius: 2,
+              }} 
+              onClose={() => setError(null)}
+            >
+              {error}
+            </Alert>
+          </Fade>
+        )}
 
       {/* 搜尋結果對話框 */}
       <Dialog
@@ -148,11 +271,18 @@ const ExplorePage: React.FC = () => {
         onClose={() => setPlaceSearchDialogOpen(false)}
         maxWidth="md"
         fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+          },
+        }}
       >
-        <DialogTitle>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Place sx={{ mr: 1 }} />
-            搜尋結果：{placeSearchQuery}
+        <DialogTitle sx={{ pb: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Place sx={{ color: '#ff6b35', fontSize: 24 }} />
+            <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'black' }}>
+              搜尋結果：{placeSearchQuery}
+            </Typography>
           </Box>
         </DialogTitle>
         <DialogContent>
@@ -170,38 +300,61 @@ const ExplorePage: React.FC = () => {
               {placeSearchResults.map((place, index) => (
                 <React.Fragment key={place.place_id}>
                   <ListItem disablePadding>
-                    <ListItemButton onClick={() => handleSelectPlace(place)}>
+                    <ListItemButton 
+                      onClick={() => handleSelectPlace(place)}
+                      sx={{
+                        borderRadius: 2,
+                        mb: 1,
+                        '&:hover': {
+                          backgroundColor: 'rgba(255, 107, 53, 0.08)',
+                        },
+                      }}
+                    >
                       <ListItemText
                         primary={
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Typography variant="subtitle1" fontWeight="medium">
+                            <Typography variant="subtitle1" fontWeight="bold" sx={{ color: 'black' }}>
                               {place.name}
                             </Typography>
                             {place.rating && (
                               <Chip
-                                icon={<Star />}
+                                icon={<Star sx={{ fontSize: 16 }} />}
                                 label={place.rating.toFixed(1)}
                                 size="small"
-                                color="secondary"
-                                variant="outlined"
+                                sx={{
+                                  backgroundColor: '#ff6b35',
+                                  color: 'white',
+                                  fontWeight: 'bold',
+                                  '& .MuiChip-icon': {
+                                    color: 'white',
+                                  },
+                                }}
                               />
                             )}
                           </Box>
                         }
                         secondary={
                           <Box>
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                               {place.formatted_address}
                             </Typography>
                             {place.types && place.types.length > 0 && (
-                              <Box sx={{ mt: 0.5 }}>
+                              <Box sx={{ mt: 1 }}>
                                 {place.types.slice(0, 3).map((type: string) => (
                                   <Chip
                                     key={type}
                                     label={type}
                                     size="small"
                                     variant="outlined"
-                                    sx={{ mr: 0.5, mb: 0.5 }}
+                                    sx={{ 
+                                      mr: 0.5, 
+                                      mb: 0.5,
+                                      borderColor: '#ff6b35',
+                                      color: '#ff6b35',
+                                      '&:hover': {
+                                        backgroundColor: 'rgba(255, 107, 53, 0.08)',
+                                      },
+                                    }}
                                   />
                                 ))}
                               </Box>
@@ -217,13 +370,31 @@ const ExplorePage: React.FC = () => {
             </List>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setPlaceSearchDialogOpen(false)}>
-            取消
+        <DialogActions sx={{ p: 3 }}>
+          <Button 
+            onClick={() => setPlaceSearchDialogOpen(false)}
+            variant="outlined"
+            sx={{
+              border: '2px solid #e0e0e0',
+              borderRadius: 2,
+              px: 3,
+              py: 1,
+              fontSize: '1rem',
+              fontWeight: 'bold',
+              color: 'black',
+              textTransform: 'none',
+              '&:hover': {
+                backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                borderColor: '#000',
+              },
+            }}
+          >
+            關閉
           </Button>
         </DialogActions>
       </Dialog>
-    </Container>
+      </Container>
+    </Box>
   );
 };
 
