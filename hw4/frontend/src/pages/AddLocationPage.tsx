@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Container,
   Paper,
@@ -15,7 +15,7 @@ import {
   Rating,
   FormLabel,
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { LocationOn, Save, Cancel } from '@mui/icons-material';
 import { apiClient } from '../services/api';
 import type { CreateLocationRequest } from '../services/api';
@@ -33,6 +33,7 @@ const CATEGORIES = [
 
 const AddLocationPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   
   const [formData, setFormData] = useState<CreateLocationRequest>({
     name: '',
@@ -49,6 +50,140 @@ const AddLocationPage: React.FC = () => {
   const [geocoding, setGeocoding] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [autoGeocodingFromMap, setAutoGeocodingFromMap] = useState(false);
+
+  // 檢查 URL 參數，如果有座標或 placeId 則自動執行地理編碼
+  useEffect(() => {
+    const lat = searchParams.get('lat');
+    const lng = searchParams.get('lng');
+    const placeId = searchParams.get('placeId');
+    
+    if (placeId && lat && lng) {
+      // 有 placeId，表示點擊了地標，使用 Places API 獲取詳細資訊
+      const latitude = parseFloat(lat);
+      const longitude = parseFloat(lng);
+      
+      if (!isNaN(latitude) && !isNaN(longitude)) {
+        handlePlaceDetails(placeId, latitude, longitude);
+      }
+    } else if (lat && lng) {
+      // 只有座標，表示點擊了空白處，使用反向地理編碼
+      const latitude = parseFloat(lat);
+      const longitude = parseFloat(lng);
+      
+      if (!isNaN(latitude) && !isNaN(longitude)) {
+        // 設置座標到表單
+        setFormData(prev => ({
+          ...prev,
+          latitude,
+          longitude,
+        }));
+        
+        // 自動執行反向地理編碼
+        handleReverseGeocode(latitude, longitude);
+      }
+    }
+  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 使用 Place ID 獲取地標詳細資訊
+  const handlePlaceDetails = async (placeId: string, lat: number, lng: number) => {
+    try {
+      setAutoGeocodingFromMap(true);
+      setGeocoding(true);
+      setError(null);
+      
+      const response = await apiClient.getPlaceDetails(placeId);
+      console.log('Places API 詳細資訊回應:', response);
+      
+      const placeData = response.data;
+      
+      if (placeData) {
+        // 從 Places API 獲取資訊並填入表單
+        const placeName = placeData.name || '';
+        const placeAddress = placeData.formatted_address || placeData.vicinity || '';
+        const placeRating = placeData.rating ? Math.round(placeData.rating) : undefined;
+        const placeTypes = placeData.types || [];
+        
+        // 根據 Google Places 類型推斷分類
+        let category = '';
+        if (placeTypes.includes('cafe') || placeTypes.includes('coffee_shop')) {
+          category = '咖啡廳';
+        } else if (placeTypes.includes('restaurant') || placeTypes.includes('food')) {
+          category = '餐廳';
+        } else if (placeTypes.includes('tourist_attraction') || placeTypes.includes('point_of_interest')) {
+          category = '景點';
+        } else if (placeTypes.includes('museum')) {
+          category = '博物館';
+        } else if (placeTypes.includes('park')) {
+          category = '公園';
+        } else if (placeTypes.includes('store') || placeTypes.includes('shopping_mall')) {
+          category = '商店';
+        }
+        
+        setFormData(prev => ({
+          ...prev,
+          name: placeName,
+          address: placeAddress,
+          latitude: lat,
+          longitude: lng,
+          category: category || prev.category,
+          rating: placeRating !== undefined ? placeRating : prev.rating,
+        }));
+        
+        setSuccess(`✅ 已從地圖地標獲取資訊\n🏷️ 名稱：${placeName}\n📮 地址：${placeAddress}\n📍 座標：${lat.toFixed(6)}, ${lng.toFixed(6)}${placeRating ? `\n⭐ 評分：${placeRating} 星` : ''}`);
+        setTimeout(() => setSuccess(null), 10000);
+      } else {
+        // 如果 Places API 失敗，降級使用反向地理編碼
+        handleReverseGeocode(lat, lng);
+      }
+      
+    } catch (err: any) {
+      console.error('獲取地標資訊錯誤:', err);
+      // 如果 Places API 失敗，降級使用反向地理編碼
+      console.log('降級使用反向地理編碼...');
+      handleReverseGeocode(lat, lng);
+    } finally {
+      setGeocoding(false);
+      setAutoGeocodingFromMap(false);
+    }
+  };
+
+  // 反向地理編碼（座標轉地址）
+  const handleReverseGeocode = async (lat: number, lng: number) => {
+    try {
+      setAutoGeocodingFromMap(true);
+      setGeocoding(true);
+      setError(null);
+      
+      const response = await apiClient.reverseGeocode(lat, lng);
+      console.log('反向地理編碼 API 回應:', response);
+      
+      // 從反向地理編碼結果中取得第一個地址
+      const results = response.data;
+      if (Array.isArray(results) && results.length > 0) {
+        const address = results[0].formatted_address;
+        
+        setFormData(prev => ({
+          ...prev,
+          address,
+          latitude: lat,
+          longitude: lng,
+        }));
+        
+        setSuccess(`✅ 已從地圖座標獲取地址\n📍 座標：${lat.toFixed(6)}, ${lng.toFixed(6)}\n📮 地址：${address}`);
+        setTimeout(() => setSuccess(null), 8000);
+      } else {
+        setError('無法從座標獲取地址，請手動輸入地址');
+      }
+      
+    } catch (err: any) {
+      console.error('反向地理編碼錯誤:', err);
+      setError('無法從座標獲取地址：' + (err.response?.data?.message || err.message) + '\n請手動輸入地址');
+    } finally {
+      setGeocoding(false);
+      setAutoGeocodingFromMap(false);
+    }
+  };
 
   // 處理輸入變更
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -173,21 +308,28 @@ const AddLocationPage: React.FC = () => {
         {/* 頁面標題 */}
         <Box display="flex" alignItems="center" mb={3}>
           <LocationOn sx={{ fontSize: 32, mr: 1, color: 'primary.main' }} />
-          <Typography variant="h4">
-            新增地點
-          </Typography>
+          <Box>
+            <Typography variant="h4">
+              新增地點
+            </Typography>
+            {autoGeocodingFromMap && (
+              <Typography variant="caption" color="text.secondary">
+                正在從地圖座標獲取地址...
+              </Typography>
+            )}
+          </Box>
         </Box>
 
         {/* 錯誤訊息 */}
         {error && (
-          <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+          <Alert severity="error" sx={{ mb: 3, whiteSpace: 'pre-line' }} onClose={() => setError(null)}>
             {error}
           </Alert>
         )}
 
         {/* 成功訊息 */}
         {success && (
-          <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccess(null)}>
+          <Alert severity="success" sx={{ mb: 3, whiteSpace: 'pre-line' }} onClose={() => setSuccess(null)}>
             {success}
           </Alert>
         )}

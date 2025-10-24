@@ -157,9 +157,14 @@ const LocationsPage: React.FC = () => {
         {/* 地圖視圖 */}
         {(viewMode === 'map' || viewMode === 'both') && filteredLocations.length > 0 && (
           <Paper elevation={3} sx={{ p: 2, mb: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              地圖總覽
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6">
+                地圖總覽
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center' }}>
+                💡 提示：點擊地圖空白處或地標可快速新增地點
+              </Typography>
+            </Box>
             <GoogleMap
               center={
                 filteredLocations.length > 0
@@ -183,6 +188,16 @@ const LocationsPage: React.FC = () => {
               )}
               onMarkerClick={(marker) => {
                 navigate(`/locations/${marker.id}`);
+              }}
+              onMapClick={(lat, lng, placeId) => {
+                // 點擊地圖時，導航到新增頁面並傳遞座標
+                if (placeId) {
+                  // 點擊了地標，傳遞 placeId 和座標
+                  navigate(`/locations/new?lat=${lat}&lng=${lng}&placeId=${placeId}`);
+                } else {
+                  // 點擊了空白處，只傳遞座標
+                  navigate(`/locations/new?lat=${lat}&lng=${lng}`);
+                }
               }}
               height={500}
             />

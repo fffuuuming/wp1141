@@ -20,7 +20,7 @@ interface GoogleMapProps {
   zoom?: number;
   markers?: MapMarker[];
   onMarkerClick?: (marker: MapMarker) => void;
-  onMapClick?: (lat: number, lng: number) => void;
+  onMapClick?: (lat: number, lng: number, placeId?: string) => void;
   height?: string | number;
   showInfoWindow?: boolean;
 }
@@ -82,7 +82,19 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
         if (onMapClick) {
           map.addListener('click', (e: google.maps.MapMouseEvent) => {
             if (e.latLng) {
-              onMapClick(e.latLng.lat(), e.latLng.lng());
+              // 檢查是否點擊了 POI（地標）
+              const placeId = e.placeId;
+              
+              if (placeId) {
+                // 點擊了地標，阻止預設行為並傳遞 placeId
+                e.stop(); // 阻止預設的 InfoWindow
+                console.log('點擊地標，placeId:', placeId);
+                onMapClick(e.latLng.lat(), e.latLng.lng(), placeId);
+              } else {
+                // 點擊了空白處，只傳遞座標
+                console.log('點擊空白處，座標:', e.latLng.lat(), e.latLng.lng());
+                onMapClick(e.latLng.lat(), e.latLng.lng());
+              }
             }
           });
         }

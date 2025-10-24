@@ -268,7 +268,7 @@ class ApiClient {
   }
 
   async getPlaceDetails(placeId: string): Promise<ApiResponse<any>> {
-    const response = await this.client.post('/api/google/places/details', { placeId });
+    const response = await this.client.get(`/api/google/places/details/${placeId}`);
     return response.data;
   }
 
