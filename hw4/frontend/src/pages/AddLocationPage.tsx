@@ -303,7 +303,7 @@ const AddLocationPage: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
+    <Container maxWidth="md" sx={{ py: 4, pt: 8 }}>
       <Paper elevation={3} sx={{ p: 4 }}>
         {/* 頁面標題 */}
         <Box display="flex" alignItems="center" mb={3}>

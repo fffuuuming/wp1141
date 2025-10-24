@@ -1,205 +1,194 @@
 import React from 'react';
-import { Container, Typography, Box, Button, Card, CardContent } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Button,
+  Container,
+} from '@mui/material';
+import { Explore } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { LocationOn, Search, Add, Person } from '@mui/icons-material';
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useAuth();
 
-  const features = [
-    {
-      icon: <LocationOn sx={{ fontSize: 40 }} />,
-      title: '探索地點',
-      description: '發現並記錄您喜愛的店家與景點',
-      color: '#1976d2',
-    },
-    {
-      icon: <Search sx={{ fontSize: 40 }} />,
-      title: '智能搜尋',
-      description: '使用 Google Maps 搜尋附近的地點',
-      color: '#388e3c',
-    },
-    {
-      icon: <Add sx={{ fontSize: 40 }} />,
-      title: '個人收藏',
-      description: '建立您的個人地點收藏清單',
-      color: '#f57c00',
-    },
-    {
-      icon: <Person sx={{ fontSize: 40 }} />,
-      title: '個人化體驗',
-      description: '根據您的喜好推薦地點',
-      color: '#7b1fa2',
-    },
-  ];
+  const handleStartExploring = () => {
+    navigate('/explore');
+  };
 
   return (
-    <Box>
-      {/* Hero Section */}
-      <Box
-        sx={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
-          py: 8,
-          textAlign: 'center',
-        }}
-      >
-        <Container maxWidth="md">
-          <Typography variant="h1" gutterBottom>
-            店家/景點探索平台
-          </Typography>
-          <Typography variant="h5" sx={{ mb: 4, opacity: 0.9 }}>
-            發現、記錄、分享您喜愛的地點
-          </Typography>
-          {isAuthenticated ? (
-            <Box>
-              <Typography variant="h6" sx={{ mb: 3 }}>
-                歡迎回來，{user?.username}！
-              </Typography>
-              <Button
-                variant="contained"
-                size="large"
-                onClick={() => navigate('/locations')}
-                sx={{
-                  bgcolor: 'white',
-                  color: 'primary.main',
-                  '&:hover': {
-                    bgcolor: 'grey.100',
-                  },
-                }}
-              >
-                開始探索
-              </Button>
-            </Box>
-          ) : (
-            <Box>
-              <Button
-                variant="contained"
-                size="large"
-                onClick={() => navigate('/register')}
-                sx={{
-                  bgcolor: 'white',
-                  color: 'primary.main',
-                  mr: 2,
-                  '&:hover': {
-                    bgcolor: 'grey.100',
-                  },
-                }}
-              >
-                立即註冊
-              </Button>
-              <Button
-                variant="outlined"
-                size="large"
-                onClick={() => navigate('/login')}
-                sx={{
-                  borderColor: 'white',
-                  color: 'white',
-                  '&:hover': {
-                    borderColor: 'white',
-                    bgcolor: 'rgba(255,255,255,0.1)',
-                  },
-                }}
-              >
-                登入
-              </Button>
-            </Box>
-          )}
-        </Container>
-      </Box>
-
-      {/* Features Section */}
-      <Container maxWidth="lg" sx={{ py: 8 }}>
-        <Typography variant="h2" textAlign="center" gutterBottom>
-          功能特色
-        </Typography>
-        <Typography variant="h6" textAlign="center" color="text.secondary" sx={{ mb: 6 }}>
-          讓探索變得更加簡單有趣
-        </Typography>
-        
+    <Box
+      sx={{
+        minHeight: '100vh',
+        backgroundColor: 'white',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        pt: 8, // 為 Header 留出空間
+        px: 3,
+      }}
+    >
+      <Container maxWidth="md" sx={{ textAlign: 'center' }}>
+        {/* 抽象圖形 */}
         <Box
           sx={{
-            display: 'grid',
-            gridTemplateColumns: {
-              xs: '1fr',
-              sm: 'repeat(2, 1fr)',
-              md: 'repeat(4, 1fr)',
-            },
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
             gap: 4,
+            mb: 6,
+            flexWrap: 'wrap',
           }}
         >
-          {features.map((feature, index) => (
-            <Card
-              key={index}
+          {/* 左側：重疊圓圈 */}
+          <Box sx={{ position: 'relative', width: 60, height: 60 }}>
+            <Box
               sx={{
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                transition: 'transform 0.2s ease-in-out',
-                '&:hover': {
-                  transform: 'translateY(-4px)',
-                },
+                position: 'absolute',
+                width: 30,
+                height: 30,
+                borderRadius: '50%',
+                border: '2px solid black',
+                top: 0,
+                left: 0,
+                opacity: 0.6,
               }}
-            >
-              <CardContent sx={{ flexGrow: 1, textAlign: 'center', py: 4 }}>
-                <Box
-                  sx={{
-                    color: feature.color,
-                    mb: 2,
-                    display: 'flex',
-                    justifyContent: 'center',
-                  }}
-                >
-                  {feature.icon}
-                </Box>
-                <Typography variant="h5" gutterBottom>
-                  {feature.title}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {feature.description}
-                </Typography>
-              </CardContent>
-            </Card>
-          ))}
-        </Box>
-      </Container>
+            />
+            <Box
+              sx={{
+                position: 'absolute',
+                width: 30,
+                height: 30,
+                borderRadius: '50%',
+                border: '2px solid black',
+                top: 15,
+                left: 15,
+                opacity: 0.8,
+              }}
+            />
+            <Box
+              sx={{
+                position: 'absolute',
+                width: 30,
+                height: 30,
+                borderRadius: '50%',
+                border: '2px solid black',
+                top: 30,
+                left: 30,
+                opacity: 1,
+              }}
+            />
+          </Box>
 
-      {/* CTA Section */}
-      {!isAuthenticated && (
-        <Box
+          {/* 中間：四角星形 */}
+          <Box
+            sx={{
+              width: 50,
+              height: 50,
+              position: 'relative',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%) rotate(45deg)',
+                width: 30,
+                height: 30,
+                border: '2px solid black',
+                borderRadius: 2,
+              },
+            }}
+          />
+
+          {/* 右側：重疊三角形 */}
+          <Box sx={{ position: 'relative', width: 60, height: 60 }}>
+            <Box
+              sx={{
+                position: 'absolute',
+                width: 0,
+                height: 0,
+                borderLeft: '15px solid transparent',
+                borderRight: '15px solid transparent',
+                borderBottom: '26px solid black',
+                top: 0,
+                left: 15,
+                opacity: 0.6,
+              }}
+            />
+            <Box
+              sx={{
+                position: 'absolute',
+                width: 0,
+                height: 0,
+                borderLeft: '15px solid transparent',
+                borderRight: '15px solid transparent',
+                borderBottom: '26px solid black',
+                top: 15,
+                left: 22.5,
+                opacity: 0.8,
+              }}
+            />
+            <Box
+              sx={{
+                position: 'absolute',
+                width: 0,
+                height: 0,
+                borderLeft: '15px solid transparent',
+                borderRight: '15px solid transparent',
+                borderBottom: '26px solid black',
+                top: 30,
+                left: 30,
+                opacity: 1,
+              }}
+            />
+          </Box>
+        </Box>
+
+        {/* 主要標題 */}
+        <Typography
+          variant="h2"
+          component="h1"
           sx={{
-            bgcolor: 'grey.100',
-            py: 6,
-            textAlign: 'center',
+            fontWeight: 'bold',
+            fontSize: { xs: '2.5rem', sm: '3.5rem', md: '4rem' },
+            lineHeight: 1.2,
+            mb: 4,
+            color: 'black',
+            '& .highlight': {
+              color: '#ff6b35', // 橘色
+            },
           }}
         >
-          <Container maxWidth="md">
-            <Typography variant="h3" gutterBottom>
-              準備開始探索了嗎？
-            </Typography>
-            <Typography variant="h6" color="text.secondary" sx={{ mb: 4 }}>
-              立即註冊帳號，開始建立您的個人地點收藏
-            </Typography>
-            <Button
-              variant="contained"
-              size="large"
-              onClick={() => navigate('/register')}
-              sx={{ mr: 2 }}
-            >
-              免費註冊
-            </Button>
-            <Button
-              variant="outlined"
-              size="large"
-              onClick={() => navigate('/login')}
-            >
-              已有帳號？登入
-            </Button>
-          </Container>
-        </Box>
-      )}
+          Explore the world, discover{' '}
+          <span className="highlight">wonder</span>
+        </Typography>
+
+        {/* 開始探索按鈕 */}
+        <Button
+          variant="outlined"
+          size="large"
+          startIcon={<Explore />}
+          onClick={handleStartExploring}
+          sx={{
+            border: '2px solid black',
+            borderRadius: 2,
+            px: 4,
+            py: 1.5,
+            fontSize: '1.1rem',
+            fontWeight: 'bold',
+            color: 'black',
+            textTransform: 'none',
+            '&:hover': {
+              backgroundColor: '#ff6b35',
+              borderColor: '#ff6b35',
+              color: 'white',
+            },
+            transition: 'all 0.3s ease',
+          }}
+        >
+          開始探索
+        </Button>
+      </Container>
     </Box>
   );
 };

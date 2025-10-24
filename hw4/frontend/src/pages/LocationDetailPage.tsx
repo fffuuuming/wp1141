@@ -96,7 +96,7 @@ const LocationDetailPage: React.FC = () => {
 
   if (loading) {
     return (
-      <Container maxWidth="md" sx={{ py: 4, display: 'flex', justifyContent: 'center' }}>
+      <Container maxWidth="md" sx={{ py: 4, pt: 8, display: 'flex', justifyContent: 'center' }}>
         <CircularProgress />
       </Container>
     );
@@ -104,7 +104,7 @@ const LocationDetailPage: React.FC = () => {
 
   if (error || !location) {
     return (
-      <Container maxWidth="md" sx={{ py: 4 }}>
+      <Container maxWidth="md" sx={{ py: 4, pt: 8 }}>
         <Alert severity="error" sx={{ mb: 2 }}>
           {error || '找不到該地點'}
         </Alert>
@@ -120,7 +120,7 @@ const LocationDetailPage: React.FC = () => {
   }
 
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
+    <Container maxWidth="md" sx={{ py: 4, pt: 8 }}>
       {/* Success Message */}
       {successMessage && (
         <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage(null)}>

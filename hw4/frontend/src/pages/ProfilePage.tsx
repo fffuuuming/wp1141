@@ -6,7 +6,7 @@ const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
+    <Container maxWidth="md" sx={{ py: 4, pt: 8 }}>
       <Typography variant="h4" gutterBottom>
         個人資料
       </Typography>
