@@ -19,16 +19,30 @@ const HomePage: React.FC = () => {
     <Box
       sx={{
         minHeight: '100vh',
-        backgroundColor: 'white',
+        backgroundImage: 'url(/images/zelda_1.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         pt: 8, // 為 Header 留出空間
         px: 3,
+        position: 'relative',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(255, 255, 255, 0.1)', // 淺色遮罩，讓背景看起來更淺
+          zIndex: 1,
+        },
       }}
     >
-      <Container maxWidth="md" sx={{ textAlign: 'center' }}>
+      <Container maxWidth="md" sx={{ textAlign: 'center', position: 'relative', zIndex: 2 }}>
         {/* 抽象圖形 */}
         <Box
           sx={{
@@ -153,7 +167,8 @@ const HomePage: React.FC = () => {
             fontSize: { xs: '2.5rem', sm: '3.5rem', md: '4rem' },
             lineHeight: 1.2,
             mb: 4,
-            color: 'black',
+            color: 'white',
+            textShadow: '2px 2px 4px rgba(0, 0, 0, 0.7)',
             '& .highlight': {
               color: '#ff6b35', // 橘色
             },
@@ -170,14 +185,16 @@ const HomePage: React.FC = () => {
           startIcon={<Explore />}
           onClick={handleStartExploring}
           sx={{
-            border: '2px solid black',
+            border: '2px solid white',
             borderRadius: 2,
             px: 4,
             py: 1.5,
             fontSize: '1.1rem',
             fontWeight: 'bold',
-            color: 'black',
+            color: 'white',
             textTransform: 'none',
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            backdropFilter: 'blur(10px)',
             '&:hover': {
               backgroundColor: '#ff6b35',
               borderColor: '#ff6b35',

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Container,
   Typography,
@@ -8,12 +8,38 @@ import {
   Divider,
   Chip,
   Fade,
+  CircularProgress,
 } from '@mui/material';
 import { Person, Email, CalendarToday, AccountCircle } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
+import { apiClient } from '../services/api';
 
 const ProfilePage: React.FC = () => {
   const { user } = useAuth();
+  const [stats, setStats] = useState<{
+    total: number;
+    byCategory: Record<string, number>;
+    averageRating: number;
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      if (!user) return;
+      
+      try {
+        setLoading(true);
+        const response = await apiClient.getLocationStats();
+        setStats(response.data);
+      } catch (err: any) {
+        console.error('獲取統計數據失敗:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, [user]);
 
   if (!user) {
     return (
@@ -227,19 +253,27 @@ const ProfilePage: React.FC = () => {
 
                 <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
                   <Box sx={{ textAlign: 'center', p: 2, backgroundColor: 'white', borderRadius: 2 }}>
-                    <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#ff6b35', mb: 0.5 }}>
-                      0
-                    </Typography>
+                    {loading ? (
+                      <CircularProgress size={24} sx={{ color: '#ff6b35', mb: 1 }} />
+                    ) : (
+                      <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#ff6b35', mb: 0.5 }}>
+                        {stats?.total || 0}
+                      </Typography>
+                    )}
                     <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                       收藏地點
                     </Typography>
                   </Box>
                   <Box sx={{ textAlign: 'center', p: 2, backgroundColor: 'white', borderRadius: 2 }}>
-                    <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#ff6b35', mb: 0.5 }}>
-                      0
-                    </Typography>
+                    {loading ? (
+                      <CircularProgress size={24} sx={{ color: '#ff6b35', mb: 1 }} />
+                    ) : (
+                      <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#ff6b35', mb: 0.5 }}>
+                        {stats?.averageRating ? Math.round(stats.averageRating * 10) / 10 : 0}
+                      </Typography>
+                    )}
                     <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                      評分次數
+                      平均評分
                     </Typography>
                   </Box>
                 </Box>

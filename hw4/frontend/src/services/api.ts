@@ -237,7 +237,7 @@ class ApiClient {
     byCategory: Record<string, number>;
     averageRating: number;
   }>> {
-    const response = await this.client.get('/api/locations/stats');
+    const response = await this.client.get('/api/locations/stats/summary');
     return response.data;
   }
 

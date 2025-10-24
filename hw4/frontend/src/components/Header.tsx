@@ -85,13 +85,14 @@ const Header: React.FC = () => {
       position="static" 
       elevation={0}
       sx={{ 
-        backgroundColor: 'white',
-        borderBottom: '1px solid #e0e0e0',
+        backgroundColor: 'rgba(255, 248, 240, 0.9)', // 淺暖色調，半透明
+        borderBottom: '1px solid rgba(255, 107, 53, 0.2)',
         position: 'fixed',
         top: 0,
         left: 0,
         right: 0,
         zIndex: 1000,
+        backdropFilter: 'blur(10px)', // 毛玻璃效果
       }}
     >
       <Toolbar sx={{ justifyContent: 'space-between', px: 3 }}>
