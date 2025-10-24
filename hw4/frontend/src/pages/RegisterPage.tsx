@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { extractErrorMessage } from '../utils/errorHandler';
 
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
@@ -67,7 +68,7 @@ const RegisterPage: React.FC = () => {
       await register(formData.username, formData.email, formData.password);
       navigate('/locations');
     } catch (err: any) {
-      setError(err.response?.data?.message || '註冊失敗，請稍後再試');
+      setError(extractErrorMessage(err));
     }
   };
 
@@ -96,7 +97,7 @@ const RegisterPage: React.FC = () => {
           </Typography>
           
           {error && (
-            <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
+            <Alert severity="error" sx={{ width: '100%', mb: 2, whiteSpace: 'pre-line' }}>
               {error}
             </Alert>
           )}

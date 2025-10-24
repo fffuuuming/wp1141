@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { extractErrorMessage } from '../utils/errorHandler';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -45,7 +46,7 @@ const LoginPage: React.FC = () => {
       await login(formData.email, formData.password);
       navigate(from, { replace: true });
     } catch (err: any) {
-      setError(err.response?.data?.message || '登入失敗，請檢查您的帳號密碼');
+      setError(extractErrorMessage(err));
     }
   };
 
@@ -74,7 +75,7 @@ const LoginPage: React.FC = () => {
           </Typography>
           
           {error && (
-            <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
+            <Alert severity="error" sx={{ width: '100%', mb: 2, whiteSpace: 'pre-line' }}>
               {error}
             </Alert>
           )}
