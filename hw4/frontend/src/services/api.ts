@@ -182,9 +182,9 @@ class ApiClient {
     return response.data;
   }
 
-  async login(email: string, password: string): Promise<ApiResponse<AuthResponse>> {
+  async login(emailOrUsername: string, password: string): Promise<ApiResponse<AuthResponse>> {
     const response = await this.client.post('/api/auth/login', {
-      email,
+      emailOrUsername,
       password,
     });
     return response.data;

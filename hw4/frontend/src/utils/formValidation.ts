@@ -71,6 +71,20 @@ export function validateEmail(email: string): ValidationResult {
 }
 
 /**
+ * 驗證電子郵件或使用者名稱（用於登入）
+ */
+export function validateEmailOrUsername(emailOrUsername: string): ValidationResult {
+  if (!emailOrUsername || emailOrUsername.trim().length === 0) {
+    return {
+      isValid: false,
+      error: '請輸入電子郵件或使用者名稱',
+    };
+  }
+
+  return { isValid: true };
+}
+
+/**
  * 驗證密碼（註冊用）
  */
 export function validatePassword(password: string, isRegister: boolean = false): ValidationResult {
@@ -115,7 +129,7 @@ export function validatePassword(password: string, isRegister: boolean = false):
     }
 
     // 檢查是否包含特殊字元
-    if (!/[@$!%*?&]/.test(password)) {
+    if (!/[@\$!%*?&]/.test(password)) {
       return {
         isValid: false,
         error: '密碼必須包含至少一個特殊字元 (@$!%*?&)',

@@ -13,7 +13,7 @@ import {
 import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { extractErrorMessage } from '../utils/errorHandler';
-import { validateEmail, validatePassword } from '../utils/formValidation';
+import { validateEmailOrUsername, validatePassword } from '../utils/formValidation';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -21,12 +21,12 @@ const LoginPage: React.FC = () => {
   const { login, isLoading } = useAuth();
 
   const [formData, setFormData] = useState({
-    email: '',
+    emailOrUsername: '',
     password: '',
   });
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{
-    email?: string;
+    emailOrUsername?: string;
     password?: string;
   }>({});
 
@@ -54,12 +54,12 @@ const LoginPage: React.FC = () => {
     const { name, value } = e.target;
     
     // 當欄位失去焦點時進行驗證
-    if (name === 'email') {
-      const result = validateEmail(value);
+    if (name === 'emailOrUsername') {
+      const result = validateEmailOrUsername(value);
       if (!result.isValid) {
         setFieldErrors(prev => ({
           ...prev,
-          email: result.error,
+          emailOrUsername: result.error,
         }));
       }
     } else if (name === 'password') {
@@ -79,12 +79,12 @@ const LoginPage: React.FC = () => {
     setFieldErrors({});
 
     // 前端驗證：在提交前驗證所有欄位
-    const errors: { email?: string; password?: string } = {};
+    const errors: { emailOrUsername?: string; password?: string } = {};
     
-    // 驗證 Email
-    const emailResult = validateEmail(formData.email);
-    if (!emailResult.isValid) {
-      errors.email = emailResult.error;
+    // 驗證 Email 或使用者名稱
+    const emailOrUsernameResult = validateEmailOrUsername(formData.emailOrUsername);
+    if (!emailOrUsernameResult.isValid) {
+      errors.emailOrUsername = emailOrUsernameResult.error;
     }
     
     // 驗證密碼（登入只需檢查不為空）
@@ -101,7 +101,7 @@ const LoginPage: React.FC = () => {
 
     // 驗證通過，提交到後端
     try {
-      await login(formData.email, formData.password);
+      await login(formData.emailOrUsername, formData.password);
       navigate(from, { replace: true });
     } catch (err: any) {
       // 只處理業務邏輯錯誤（如密碼錯誤、帳號不存在）
@@ -144,17 +144,17 @@ const LoginPage: React.FC = () => {
               margin="normal"
               required
               fullWidth
-              id="email"
-              label="電子郵件"
-              name="email"
-              autoComplete="email"
+              id="emailOrUsername"
+              label="電子郵件或使用者名稱"
+              name="emailOrUsername"
+              autoComplete="username"
               autoFocus
-              value={formData.email}
+              value={formData.emailOrUsername}
               onChange={handleChange}
               onBlur={handleBlur}
               disabled={isLoading}
-              error={!!fieldErrors.email}
-              helperText={fieldErrors.email}
+              error={!!fieldErrors.emailOrUsername}
+              helperText={fieldErrors.emailOrUsername}
             />
             <TextField
               margin="normal"

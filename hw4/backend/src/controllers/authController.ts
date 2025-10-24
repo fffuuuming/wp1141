@@ -39,7 +39,7 @@ export async function register(req: Request, res: Response) {
     const user = await UserModel.create({
       username,
       email,
-      password_hash: passwordHash
+      password: passwordHash
     });
     
     // 生成認證回應
@@ -71,27 +71,27 @@ export async function register(req: Request, res: Response) {
 // 注意：格式驗證由 validateLogin 中間件處理
 export async function login(req: Request, res: Response) {
   try {
-    const { email, password } = req.body;
+    const { emailOrUsername, password } = req.body;
     
     // 注意：此處不需要檢查必要欄位，因為 validateLogin 中間件已經驗證過了
     // 如果執行到這裡，代表所有格式驗證都已通過
     
-    // 查找使用者
-    const user = await UserModel.findByEmail(email);
+    // 查找使用者（支援 email 或 username）
+    const user = await UserModel.findByEmailOrUsername(emailOrUsername);
     if (!user) {
       return res.status(401).json({
         error: 'Unauthorized',
-        message: '無效的電子郵件或密碼',
+        message: '無效的帳號或密碼',
         timestamp: new Date().toISOString()
       });
     }
     
     // 驗證密碼
-    const isPasswordValid = await verifyPassword(password, user.password_hash);
+    const isPasswordValid = await verifyPassword(password, user.password);
     if (!isPasswordValid) {
       return res.status(401).json({
         error: 'Unauthorized',
-        message: '無效的電子郵件或密碼',
+        message: '無效的帳號或密碼',
         timestamp: new Date().toISOString()
       });
     }

@@ -50,22 +50,19 @@ export const validateRegister = [
     .withMessage('密碼必須包含至少一個小寫字母')
     .matches(/\d/)
     .withMessage('密碼必須包含至少一個數字')
-    .matches(/[@$!%*?&]/)
+    .matches(/[@\$!%*?&]/)
     .withMessage('密碼必須包含至少一個特殊字元 (@$!%*?&)'),
   
   handleValidationErrors
 ];
 
-// 登入驗證規則（與前端 formValidation.ts 完全一致）
+// 登入驗證規則（支援 email 或 username）
 export const validateLogin = [
-  // 1. Email 驗證
-  body('email')
+  // 1. Email 或使用者名稱驗證
+  body('emailOrUsername')
     .trim()
     .notEmpty()
-    .withMessage('電子郵件不能為空')
-    .isEmail()
-    .withMessage('請提供有效的電子郵件地址')
-    .normalizeEmail(),
+    .withMessage('請輸入電子郵件或使用者名稱'),
   
   // 2. 密碼驗證（登入只檢查不為空）
   body('password')

@@ -83,11 +83,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   // 登入函數
-  const login = async (email: string, password: string): Promise<void> => {
+  const login = async (emailOrUsername: string, password: string): Promise<void> => {
     try {
       setAuthState(prev => ({ ...prev, isLoading: true }));
       
-      const response = await apiClient.login(email, password);
+      const response = await apiClient.login(emailOrUsername, password);
       const { token, user } = response.data;
       
       apiClient.setToken(token);

@@ -4,7 +4,7 @@ export interface User {
   id: number;
   username: string;
   email: string;
-  password_hash: string;
+  password: string;  // 對應資料庫的 password 欄位
   created_at: string;
   updated_at: string;
 }
@@ -12,13 +12,13 @@ export interface User {
 export interface CreateUserData {
   username: string;
   email: string;
-  password_hash: string;
+  password: string;  // 對應資料庫的 password 欄位
 }
 
 export interface UpdateUserData {
   username?: string;
   email?: string;
-  password_hash?: string;
+  password?: string;  // 對應資料庫的 password 欄位
 }
 
 export class UserModel {
@@ -26,11 +26,11 @@ export class UserModel {
   static async create(userData: CreateUserData): Promise<User> {
     return new Promise((resolve, reject) => {
       const sql = `
-        INSERT INTO users (username, email, password_hash)
+        INSERT INTO users (username, email, password)
         VALUES (?, ?, ?)
       `;
       
-      db.run(sql, [userData.username, userData.email, userData.password_hash], function(err) {
+      db.run(sql, [userData.username, userData.email, userData.password], function(err) {
         if (err) {
           reject(err);
         } else {
@@ -88,6 +88,21 @@ export class UserModel {
     });
   }
 
+  // 根據 email 或 username 查找使用者（用於登入）
+  static async findByEmailOrUsername(emailOrUsername: string): Promise<User | null> {
+    return new Promise((resolve, reject) => {
+      const sql = 'SELECT * FROM users WHERE email = ? OR username = ?';
+      
+      db.get(sql, [emailOrUsername, emailOrUsername], (err, row) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(row as User || null);
+        }
+      });
+    });
+  }
+
   // 更新使用者資料
   static async update(id: number, userData: UpdateUserData): Promise<User | null> {
     return new Promise((resolve, reject) => {
@@ -102,9 +117,9 @@ export class UserModel {
         fields.push('email = ?');
         values.push(userData.email);
       }
-      if (userData.password_hash !== undefined) {
-        fields.push('password_hash = ?');
-        values.push(userData.password_hash);
+      if (userData.password !== undefined) {
+        fields.push('password = ?');
+        values.push(userData.password);
       }
       
       fields.push('updated_at = CURRENT_TIMESTAMP');
