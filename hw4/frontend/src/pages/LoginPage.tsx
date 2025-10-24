@@ -115,7 +115,7 @@ const LoginPage: React.FC = () => {
     <Box
       sx={{
         minHeight: '100vh',
-        backgroundColor: 'white',
+        backgroundColor: '#f5f5f5',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',

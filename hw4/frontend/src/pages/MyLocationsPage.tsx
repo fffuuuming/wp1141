@@ -18,7 +18,7 @@ import {
   Fade,
   Grid,
 } from '@mui/material';
-import { Search, Add, LocationOn, Star, Map, ViewList, Explore } from '@mui/icons-material';
+import { Search, LocationOn, Star, Map, ViewList, Explore } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiClient } from '../services/api';
@@ -98,7 +98,7 @@ const MyLocationsPage: React.FC = () => {
     <Box
       sx={{
         minHeight: '100vh',
-        backgroundColor: 'white',
+        backgroundColor: '#f5f5f5', // 中性淺灰色，與暖色調更和諧
         pt: 8, // 為 Header 留出空間
       }}
     >
@@ -134,29 +134,6 @@ const MyLocationsPage: React.FC = () => {
             
             {/* 操作按鈕 */}
             <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
-              <Button
-                variant="outlined"
-                startIcon={<Add />}
-                onClick={() => navigate('/locations/new')}
-                sx={{
-                  border: '2px solid black',
-                  borderRadius: 2,
-                  px: 3,
-                  py: 1.5,
-                  fontSize: '1rem',
-                  fontWeight: 'bold',
-                  color: 'black',
-                  textTransform: 'none',
-                  '&:hover': {
-                    backgroundColor: '#ff6b35',
-                    borderColor: '#ff6b35',
-                    color: 'white',
-                  },
-                  transition: 'all 0.3s ease',
-                }}
-              >
-                新增地點
-              </Button>
               <Button
                 variant="outlined"
                 startIcon={<Explore />}
@@ -373,6 +350,7 @@ const MyLocationsPage: React.FC = () => {
               {filteredLocations.map((location, index) => (
                 <Grid item xs={12} sm={6} md={4} key={location.id}>
                   <Card
+                    onClick={() => navigate(`/locations/${location.id}`)}
                     sx={{
                       height: '100%',
                       display: 'flex',
@@ -380,6 +358,7 @@ const MyLocationsPage: React.FC = () => {
                       transition: 'all 0.3s ease',
                       border: '1px solid #e0e0e0',
                       borderRadius: 3,
+                      cursor: 'pointer',
                       '&:hover': {
                         transform: 'translateY(-4px)',
                         boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)',
@@ -435,37 +414,6 @@ const MyLocationsPage: React.FC = () => {
                         )}
                       </Box>
                     </CardContent>
-                    
-                    <CardActions sx={{ p: 3, pt: 0 }}>
-                      <Button
-                        size="small"
-                        onClick={() => navigate(`/locations/${location.id}`)}
-                        sx={{
-                          color: '#ff6b35',
-                          fontWeight: 'bold',
-                          textTransform: 'none',
-                          '&:hover': {
-                            backgroundColor: 'rgba(255, 107, 53, 0.08)',
-                          },
-                        }}
-                      >
-                        查看詳情
-                      </Button>
-                      <Button
-                        size="small"
-                        onClick={() => navigate(`/locations/${location.id}/edit`)}
-                        sx={{
-                          color: 'black',
-                          fontWeight: 'bold',
-                          textTransform: 'none',
-                          '&:hover': {
-                            backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                          },
-                        }}
-                      >
-                        編輯
-                      </Button>
-                    </CardActions>
                   </Card>
                 </Grid>
               ))}

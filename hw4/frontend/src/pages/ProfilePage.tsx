@@ -64,7 +64,7 @@ const ProfilePage: React.FC = () => {
     <Box
       sx={{
         minHeight: '100vh',
-        backgroundColor: 'white',
+        backgroundColor: '#f5f5f5',
         pt: 8, // 為 Header 留出空間
         pb: 4,
       }}

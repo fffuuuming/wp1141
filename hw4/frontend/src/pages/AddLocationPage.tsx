@@ -290,7 +290,7 @@ const AddLocationPage: React.FC = () => {
       await apiClient.createLocation(formData);
       
       // 成功後跳轉回地點列表
-      navigate('/locations', {
+      navigate('/my-locations', {
         state: { message: '地點新增成功！' }
       });
       
@@ -303,7 +303,14 @@ const AddLocationPage: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="md" sx={{ py: 4, pt: 8 }}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        backgroundColor: '#f5f5f5',
+        pt: 8,
+      }}
+    >
+      <Container maxWidth="md" sx={{ py: 4 }}>
       <Paper elevation={3} sx={{ p: 4 }}>
         {/* 頁面標題 */}
         <Box display="flex" alignItems="center" mb={3}>
@@ -463,14 +470,15 @@ const AddLocationPage: React.FC = () => {
               fullWidth
               disabled={loading}
               startIcon={<Cancel />}
-              onClick={() => navigate('/locations')}
+              onClick={() => navigate('/my-locations')}
             >
               取消
             </Button>
           </Box>
         </Box>
       </Paper>
-    </Container>
+      </Container>
+    </Box>
   );
 };
 

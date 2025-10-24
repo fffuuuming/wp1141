@@ -72,7 +72,7 @@ const ExplorePage: React.FC = () => {
     <Box
       sx={{
         minHeight: '100vh',
-        backgroundColor: 'white',
+        backgroundColor: '#f5f5f5', // 中性淺灰色，與暖色調更和諧
         pt: 8, // 為 Header 留出空間
       }}
     >

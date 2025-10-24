@@ -11,7 +11,6 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ExplorePage from './pages/ExplorePage';
 import MyLocationsPage from './pages/MyLocationsPage';
-import LocationsPage from './pages/LocationsPage';
 import AddLocationPage from './pages/AddLocationPage';
 import EditLocationPage from './pages/EditLocationPage';
 import LocationDetailPage from './pages/LocationDetailPage';
@@ -129,14 +128,6 @@ const App: React.FC = () => {
                   element={
                     <ProtectedRoute>
                       <MyLocationsPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/locations"
-                  element={
-                    <ProtectedRoute>
-                      <LocationsPage />
                     </ProtectedRoute>
                   }
                 />

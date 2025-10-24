@@ -173,7 +173,7 @@ const RegisterPage: React.FC = () => {
     // 驗證通過，提交到後端
     try {
       await register(formData.username, formData.email, formData.password);
-      navigate('/locations');
+      navigate('/my-locations');
     } catch (err: any) {
       // 只處理業務邏輯錯誤（如帳號已存在）
       setError(extractErrorMessage(err));
@@ -184,7 +184,7 @@ const RegisterPage: React.FC = () => {
     <Box
       sx={{
         minHeight: '100vh',
-        backgroundColor: 'white',
+        backgroundColor: '#f5f5f5',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',

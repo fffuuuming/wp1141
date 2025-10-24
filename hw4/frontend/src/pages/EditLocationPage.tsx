@@ -196,15 +196,30 @@ const EditLocationPage: React.FC = () => {
   };
 
   if (loading) {
-    return (
-      <Container maxWidth="md" sx={{ py: 4, pt: 8, display: 'flex', justifyContent: 'center' }}>
+  return (
+    <Box
+      sx={{
+        minHeight: '100vh',
+        backgroundColor: '#f5f5f5',
+        pt: 8,
+      }}
+    >
+      <Container maxWidth="md" sx={{ py: 4, display: 'flex', justifyContent: 'center' }}>
         <CircularProgress />
       </Container>
-    );
+    </Box>
+  );
   }
 
   return (
-    <Container maxWidth="md" sx={{ py: 4, pt: 8 }}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        backgroundColor: '#f5f5f5',
+        pt: 8,
+      }}
+    >
+      <Container maxWidth="md" sx={{ py: 4 }}>
       {/* Header */}
       <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Button
@@ -375,7 +390,8 @@ const EditLocationPage: React.FC = () => {
           </Box>
         </form>
       </Paper>
-    </Container>
+      </Container>
+    </Box>
   );
 };
 

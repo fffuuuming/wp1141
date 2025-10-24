@@ -75,7 +75,7 @@ const LocationDetailPage: React.FC = () => {
 
     try {
       await apiClient.deleteLocation(parseInt(id!));
-      navigate('/locations', { 
+      navigate('/my-locations', { 
         state: { message: '地點已成功刪除' } 
       });
     } catch (err: any) {
@@ -95,32 +95,55 @@ const LocationDetailPage: React.FC = () => {
   };
 
   if (loading) {
-    return (
-      <Container maxWidth="md" sx={{ py: 4, pt: 8, display: 'flex', justifyContent: 'center' }}>
+  return (
+    <Box
+      sx={{
+        minHeight: '100vh',
+        backgroundColor: '#f5f5f5',
+        pt: 8,
+      }}
+    >
+      <Container maxWidth="md" sx={{ py: 4, display: 'flex', justifyContent: 'center' }}>
         <CircularProgress />
       </Container>
-    );
+    </Box>
+  );
   }
 
   if (error || !location) {
     return (
-      <Container maxWidth="md" sx={{ py: 4, pt: 8 }}>
+      <Box
+        sx={{
+          minHeight: '100vh',
+          backgroundColor: '#f5f5f5',
+          pt: 8,
+        }}
+      >
+        <Container maxWidth="md" sx={{ py: 4 }}>
         <Alert severity="error" sx={{ mb: 2 }}>
           {error || '找不到該地點'}
         </Alert>
         <Button
           variant="outlined"
           startIcon={<ArrowBackIcon />}
-          onClick={() => navigate('/locations')}
+          onClick={() => navigate('/my-locations')}
         >
           返回地點列表
         </Button>
-      </Container>
+        </Container>
+      </Box>
     );
   }
 
   return (
-    <Container maxWidth="md" sx={{ py: 4, pt: 8 }}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        backgroundColor: '#f5f5f5',
+        pt: 8,
+      }}
+    >
+      <Container maxWidth="md" sx={{ py: 4 }}>
       {/* Success Message */}
       {successMessage && (
         <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage(null)}>
@@ -132,7 +155,7 @@ const LocationDetailPage: React.FC = () => {
       <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Button
           startIcon={<ArrowBackIcon />}
-          onClick={() => navigate('/locations')}
+          onClick={() => navigate('/my-locations')}
         >
           返回列表
         </Button>
@@ -276,26 +299,8 @@ const LocationDetailPage: React.FC = () => {
           )}
         </Box>
       </Paper>
-
-      {/* Action Buttons */}
-      <Box sx={{ mt: 3, display: 'flex', gap: 2, justifyContent: 'center' }}>
-        <Button
-          variant="contained"
-          startIcon={<EditIcon />}
-          onClick={handleEdit}
-        >
-          編輯地點
-        </Button>
-        <Button
-          variant="outlined"
-          color="error"
-          startIcon={<DeleteIcon />}
-          onClick={handleDelete}
-        >
-          刪除地點
-        </Button>
-      </Box>
-    </Container>
+      </Container>
+    </Box>
   );
 };
 
