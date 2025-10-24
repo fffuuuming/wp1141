@@ -45,7 +45,7 @@ const Header: React.FC = () => {
 
   const handleDashboardClick = () => {
     handleMenuClose();
-    navigate('/explore');
+    navigate('/profile');
   };
 
   const handleLogoutClick = () => {
