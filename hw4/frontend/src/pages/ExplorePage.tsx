@@ -71,23 +71,26 @@ const ExplorePage: React.FC = () => {
   return (
     <Box
       sx={{
-        minHeight: '100vh',
-        backgroundColor: '#f5f5f5', // 中性淺灰色，與暖色調更和諧
+        height: '100vh',
+        backgroundColor: '#f5f5f5',
         pt: 8, // 為 Header 留出空間
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
       }}
     >
-      <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Container maxWidth="lg" sx={{ flex: 1, display: 'flex', flexDirection: 'column', py: 2 }}>
         {/* 頁面標題區域 */}
         <Fade in timeout={800}>
-          <Box sx={{ textAlign: 'center', mb: 6 }}>
+          <Box sx={{ textAlign: 'center', mb: 2 }}>
             <Typography
-              variant="h3"
+              variant="h4"
               component="h1"
               sx={{
                 fontWeight: 'bold',
-                fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
+                fontSize: { xs: '1.5rem', sm: '2rem', md: '2.5rem' },
                 color: 'black',
-                mb: 2,
+                mb: 1,
                 '& .highlight': {
                   color: '#ff6b35',
                 },
@@ -96,11 +99,11 @@ const ExplorePage: React.FC = () => {
               地點<span className="highlight">探索</span>
             </Typography>
             <Typography
-              variant="h6"
+              variant="body1"
               sx={{
                 color: 'text.secondary',
                 fontWeight: 400,
-                mb: 4,
+                mb: 2,
               }}
             >
               搜尋世界各地的精彩地點，發現新的冒險
@@ -113,20 +116,18 @@ const ExplorePage: React.FC = () => {
           <Paper
             elevation={0}
             sx={{
-              p: 4,
+              p: 2,
               border: '1px solid #e0e0e0',
-              borderRadius: 3,
+              borderRadius: 2,
               backgroundColor: '#fafafa',
-              mb: 4,
+              mb: 2,
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                <Search sx={{ color: '#ff6b35', fontSize: 24 }} />
-                <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'black' }}>
-                  搜尋地點
-                </Typography>
-              </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+              <Search sx={{ color: '#ff6b35', fontSize: 20 }} />
+              <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: 'black' }}>
+                搜尋地點
+              </Typography>
             </Box>
             <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
               <TextField
@@ -139,6 +140,7 @@ const ExplorePage: React.FC = () => {
                     handlePlaceSearch();
                   }
                 }}
+                size="small"
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 2,
@@ -157,7 +159,7 @@ const ExplorePage: React.FC = () => {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Place sx={{ color: '#ff6b35' }} />
+                      <Place sx={{ color: '#ff6b35', fontSize: 20 }} />
                     </InputAdornment>
                   ),
                 }}
@@ -166,17 +168,18 @@ const ExplorePage: React.FC = () => {
                 variant="outlined"
                 onClick={handlePlaceSearch}
                 disabled={placeSearchLoading || !placeSearchQuery.trim()}
-                startIcon={placeSearchLoading ? <CircularProgress size={20} /> : <Search />}
+                startIcon={placeSearchLoading ? <CircularProgress size={16} /> : <Search />}
+                size="small"
                 sx={{
                   border: '2px solid #ff6b35',
                   borderRadius: 2,
-                  px: 3,
-                  py: 1.5,
-                  fontSize: '1rem',
+                  px: 2,
+                  py: 1,
+                  fontSize: '0.875rem',
                   fontWeight: 'bold',
                   color: '#ff6b35',
                   textTransform: 'none',
-                  minWidth: 140,
+                  minWidth: 100,
                   '&:hover': {
                     backgroundColor: '#ff6b35',
                     color: 'white',
@@ -198,53 +201,60 @@ const ExplorePage: React.FC = () => {
           <Paper
             elevation={0}
             sx={{
-              p: 4,
+              p: 2,
               border: '1px solid #e0e0e0',
-              borderRadius: 3,
+              borderRadius: 2,
               backgroundColor: '#fafafa',
-              mb: 4,
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
-              <Map sx={{ color: '#ff6b35', fontSize: 24 }} />
-              <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'black' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+              <Map sx={{ color: '#ff6b35', fontSize: 20 }} />
+              <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: 'black' }}>
                 地圖總覽
               </Typography>
             </Box>
             <Box sx={{ 
               backgroundColor: 'white', 
               borderRadius: 2, 
-              p: 2,
+              p: 1,
               border: '1px solid #e0e0e0',
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
             }}>
               <Typography 
-                variant="body2" 
+                variant="caption" 
                 sx={{ 
                   color: 'text.secondary', 
-                  mb: 2,
+                  mb: 1,
                   display: 'flex', 
                   alignItems: 'center',
-                  gap: 1,
+                  gap: 0.5,
                 }}
               >
                 💡 提示：點擊地圖空白處或地標可快速新增地點
               </Typography>
-              <GoogleMap
-                center={{ lat: 25.033, lng: 121.5654 }} // 台北 101 預設座標
-                zoom={13}
-                markers={[]} // 探索頁面不顯示個人地點標記
-                onMapClick={(lat, lng, placeId) => {
-                  // 點擊地圖時，導航到新增頁面並傳遞座標
-                  if (placeId) {
-                    // 點擊了地標，傳遞 placeId 和座標
-                    navigate(`/locations/new?lat=${lat}&lng=${lng}&placeId=${placeId}`);
-                  } else {
-                    // 點擊了空白處，只傳遞座標
-                    navigate(`/locations/new?lat=${lat}&lng=${lng}`);
-                  }
-                }}
-                height={500}
-              />
+              <Box sx={{ flex: 1 }}>
+                <GoogleMap
+                  center={{ lat: 25.033, lng: 121.5654 }} // 台北 101 預設座標
+                  zoom={13}
+                  markers={[]} // 探索頁面不顯示個人地點標記
+                  onMapClick={(lat, lng, placeId) => {
+                    // 點擊地圖時，導航到新增頁面並傳遞座標
+                    if (placeId) {
+                      // 點擊了地標，傳遞 placeId 和座標
+                      navigate(`/locations/new?lat=${lat}&lng=${lng}&placeId=${placeId}`);
+                    } else {
+                      // 點擊了空白處，只傳遞座標
+                      navigate(`/locations/new?lat=${lat}&lng=${lng}`);
+                    }
+                  }}
+                  height="100%"
+                />
+              </Box>
             </Box>
           </Paper>
         </Fade>
@@ -255,7 +265,7 @@ const ExplorePage: React.FC = () => {
             <Alert 
               severity="error" 
               sx={{ 
-                mb: 3,
+                mt: 2,
                 borderRadius: 2,
               }} 
               onClose={() => setError(null)}
