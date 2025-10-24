@@ -9,7 +9,9 @@ import {
   Link,
   Alert,
   CircularProgress,
+  Fade,
 } from '@mui/material';
+import { PersonAdd, Person, Email, Lock, LockOutlined } from '@mui/icons-material';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { extractErrorMessage } from '../utils/errorHandler';
@@ -179,125 +181,282 @@ const RegisterPage: React.FC = () => {
   };
 
   return (
-    <Container component="main" maxWidth="sm">
-      <Box
-        sx={{
-          marginTop: 8,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-        }}
-      >
-        <Paper
-          elevation={3}
-          sx={{
-            padding: 4,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            width: '100%',
-          }}
-        >
-          <Typography component="h1" variant="h4" gutterBottom>
-            註冊
-          </Typography>
-          
-          {error && (
-            <Alert severity="error" sx={{ width: '100%', mb: 2, whiteSpace: 'pre-line' }}>
-              {error}
-            </Alert>
-          )}
-
-          <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }}>
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              id="username"
-              label="使用者名稱"
-              name="username"
-              autoComplete="username"
-              autoFocus
-              value={formData.username}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              disabled={isLoading}
-              error={!!fieldErrors.username}
-              helperText={fieldErrors.username || '3-50 個字元，只能包含字母、數字和底線'}
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              id="email"
-              label="電子郵件"
-              name="email"
-              autoComplete="email"
-              value={formData.email}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              disabled={isLoading}
-              error={!!fieldErrors.email}
-              helperText={fieldErrors.email}
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="password"
-              label="密碼"
-              type="password"
-              id="password"
-              autoComplete="new-password"
-              value={formData.password}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              disabled={isLoading}
-              error={!!fieldErrors.password}
-              helperText={fieldErrors.password || '至少 8 個字元，包含大小寫字母、數字和特殊字元'}
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="confirmPassword"
-              label="確認密碼"
-              type="password"
-              id="confirmPassword"
-              autoComplete="new-password"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              disabled={isLoading}
-              error={!!fieldErrors.confirmPassword}
-              helperText={fieldErrors.confirmPassword}
-            />
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              sx={{ mt: 3, mb: 2 }}
-              disabled={isLoading}
+    <Box
+      sx={{
+        minHeight: '100vh',
+        backgroundColor: 'white',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        pt: 8, // 為 Header 留出空間
+        px: 3,
+      }}
+    >
+      <Container maxWidth="sm" sx={{ textAlign: 'center' }}>
+        {/* 頁面標題區域 */}
+        <Fade in timeout={800}>
+          <Box sx={{ mb: 6 }}>
+            <Typography
+              variant="h3"
+              component="h1"
+              sx={{
+                fontWeight: 'bold',
+                fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
+                color: 'black',
+                mb: 2,
+                '& .highlight': {
+                  color: '#ff6b35',
+                },
+              }}
             >
-              {isLoading ? (
-                <CircularProgress size={24} />
-              ) : (
-                '註冊'
-              )}
-            </Button>
-            
-            <Box textAlign="center">
-              <Typography variant="body2">
-                已有帳號？{' '}
-                <Link component={RouterLink} to="/login">
-                  立即登入
-                </Link>
-              </Typography>
-            </Box>
+              加入<span className="highlight">探探</span>
+            </Typography>
+            <Typography
+              variant="h6"
+              sx={{
+                color: 'text.secondary',
+                fontWeight: 400,
+                mb: 4,
+              }}
+            >
+              創建您的帳號，開始探索精彩世界
+            </Typography>
           </Box>
-        </Paper>
-      </Box>
-    </Container>
+        </Fade>
+
+        {/* 註冊表單 */}
+        <Fade in timeout={1000}>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 4,
+              border: '1px solid #e0e0e0',
+              borderRadius: 3,
+              backgroundColor: '#fafafa',
+              maxWidth: 400,
+              mx: 'auto',
+            }}
+          >
+            {error && (
+              <Alert 
+                severity="error" 
+                sx={{ 
+                  width: '100%', 
+                  mb: 3, 
+                  whiteSpace: 'pre-line',
+                  borderRadius: 2,
+                }}
+              >
+                {error}
+              </Alert>
+            )}
+
+            <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }}>
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                id="username"
+                label="使用者名稱"
+                name="username"
+                autoComplete="username"
+                autoFocus
+                value={formData.username}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                disabled={isLoading}
+                error={!!fieldErrors.username}
+                helperText={fieldErrors.username || '3-50 個字元，只能包含字母、數字和底線'}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                    backgroundColor: 'white',
+                    '& fieldset': {
+                      borderColor: '#e0e0e0',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: '#ff6b35',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#ff6b35',
+                    },
+                  },
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <Box sx={{ display: 'flex', alignItems: 'center', mr: 1 }}>
+                      <Person sx={{ color: '#ff6b35', fontSize: 20 }} />
+                    </Box>
+                  ),
+                }}
+              />
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                id="email"
+                label="電子郵件"
+                name="email"
+                autoComplete="email"
+                value={formData.email}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                disabled={isLoading}
+                error={!!fieldErrors.email}
+                helperText={fieldErrors.email}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                    backgroundColor: 'white',
+                    '& fieldset': {
+                      borderColor: '#e0e0e0',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: '#ff6b35',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#ff6b35',
+                    },
+                  },
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <Box sx={{ display: 'flex', alignItems: 'center', mr: 1 }}>
+                      <Email sx={{ color: '#ff6b35', fontSize: 20 }} />
+                    </Box>
+                  ),
+                }}
+              />
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                name="password"
+                label="密碼"
+                type="password"
+                id="password"
+                autoComplete="new-password"
+                value={formData.password}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                disabled={isLoading}
+                error={!!fieldErrors.password}
+                helperText={fieldErrors.password || '至少 8 個字元，包含大小寫字母、數字和特殊字元'}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                    backgroundColor: 'white',
+                    '& fieldset': {
+                      borderColor: '#e0e0e0',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: '#ff6b35',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#ff6b35',
+                    },
+                  },
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <Box sx={{ display: 'flex', alignItems: 'center', mr: 1 }}>
+                      <Lock sx={{ color: '#ff6b35', fontSize: 20 }} />
+                    </Box>
+                  ),
+                }}
+              />
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                name="confirmPassword"
+                label="確認密碼"
+                type="password"
+                id="confirmPassword"
+                autoComplete="new-password"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                disabled={isLoading}
+                error={!!fieldErrors.confirmPassword}
+                helperText={fieldErrors.confirmPassword}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                    backgroundColor: 'white',
+                    '& fieldset': {
+                      borderColor: '#e0e0e0',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: '#ff6b35',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#ff6b35',
+                    },
+                  },
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <Box sx={{ display: 'flex', alignItems: 'center', mr: 1 }}>
+                      <LockOutlined sx={{ color: '#ff6b35', fontSize: 20 }} />
+                    </Box>
+                  ),
+                }}
+              />
+              <Button
+                type="submit"
+                fullWidth
+                variant="outlined"
+                disabled={isLoading}
+                startIcon={isLoading ? <CircularProgress size={20} /> : <PersonAdd />}
+                sx={{
+                  mt: 3,
+                  mb: 2,
+                  border: '2px solid #ff6b35',
+                  borderRadius: 2,
+                  py: 1.5,
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  color: '#ff6b35',
+                  textTransform: 'none',
+                  '&:hover': {
+                    backgroundColor: '#ff6b35',
+                    color: 'white',
+                  },
+                  '&:disabled': {
+                    borderColor: '#e0e0e0',
+                    color: '#e0e0e0',
+                  },
+                }}
+              >
+                {isLoading ? '註冊中...' : '註冊'}
+              </Button>
+              
+              <Box textAlign="center" sx={{ mt: 3 }}>
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                  已有帳號？{' '}
+                  <Link 
+                    component={RouterLink} 
+                    to="/login"
+                    sx={{
+                      color: '#ff6b35',
+                      fontWeight: 'bold',
+                      textDecoration: 'none',
+                      '&:hover': {
+                        textDecoration: 'underline',
+                      },
+                    }}
+                  >
+                    立即登入
+                  </Link>
+                </Typography>
+              </Box>
+            </Box>
+          </Paper>
+        </Fade>
+      </Container>
+    </Box>
   );
 };
 
