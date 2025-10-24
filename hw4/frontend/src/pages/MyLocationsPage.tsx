@@ -18,7 +18,7 @@ import {
   Fade,
   Grid,
 } from '@mui/material';
-import { Search, LocationOn, Star, Map, ViewList, Explore } from '@mui/icons-material';
+import { Search, LocationOn, Star, Map, ViewList } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiClient } from '../services/api';
@@ -132,31 +132,6 @@ const MyLocationsPage: React.FC = () => {
               管理您喜愛的地點，探索更多精彩
             </Typography>
             
-            {/* 操作按鈕 */}
-            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
-              <Button
-                variant="outlined"
-                startIcon={<Explore />}
-                onClick={() => navigate('/explore')}
-                sx={{
-                  border: '2px solid #ff6b35',
-                  borderRadius: 2,
-                  px: 3,
-                  py: 1.5,
-                  fontSize: '1rem',
-                  fontWeight: 'bold',
-                  color: '#ff6b35',
-                  textTransform: 'none',
-                  '&:hover': {
-                    backgroundColor: '#ff6b35',
-                    color: 'white',
-                  },
-                  transition: 'all 0.3s ease',
-                }}
-              >
-                探索地點
-              </Button>
-            </Box>
           </Box>
         </Fade>
 
