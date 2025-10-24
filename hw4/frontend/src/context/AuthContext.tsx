@@ -44,6 +44,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // 載入本地 token
         apiClient.loadToken();
         
+        // 檢查是否有有效的 token，沒有有效 token 就不嘗試獲取用戶資料
+        if (!apiClient.hasValidToken()) {
+          setAuthState({
+            user: null,
+            token: null,
+            isAuthenticated: false,
+            isLoading: false,
+          });
+          return;
+        }
+        
         // 嘗試取得使用者資料
         const response = await authApi.getProfile();
         setAuthState({
@@ -54,6 +65,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         });
       } catch (error) {
         // 如果取得使用者資料失敗，清除認證狀態
+        console.warn('Failed to get user profile on initialization:', error);
         apiClient.clearToken();
         setAuthState({
           user: null,

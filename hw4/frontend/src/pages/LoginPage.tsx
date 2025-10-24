@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Container,
   Paper,
@@ -20,7 +20,7 @@ import { validateEmailOrUsername, validatePassword } from '../utils/formValidati
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, isLoading } = useAuth();
+  const { login, isLoading, user } = useAuth();
 
   const [formData, setFormData] = useState({
     emailOrUsername: '',
@@ -33,7 +33,15 @@ const LoginPage: React.FC = () => {
   }>({});
 
   // 從重導向狀態中取得原始路徑
-  const from = (location.state as any)?.from?.pathname || '/locations';
+  const from = (location.state as any)?.from?.pathname || '/my-locations';
+
+  // 監聽認證狀態變化，登入成功後跳轉
+  useEffect(() => {
+    if (user && !isLoading) {
+      console.log('User authenticated, navigating to:', from);
+      navigate(from, { replace: true });
+    }
+  }, [user, isLoading, navigate, from]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -104,7 +112,8 @@ const LoginPage: React.FC = () => {
     // 驗證通過，提交到後端
     try {
       await login(formData.emailOrUsername, formData.password);
-      navigate(from, { replace: true });
+      console.log('Login successful');
+      // 跳轉將由 useEffect 處理
     } catch (err: any) {
       // 只處理業務邏輯錯誤（如密碼錯誤、帳號不存在）
       setError(extractErrorMessage(err));

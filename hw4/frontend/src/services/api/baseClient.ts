@@ -81,6 +81,25 @@ class ApiClient {
     localStorage.removeItem('auth_token');
   }
 
+  // 檢查 token 是否存在且有效
+  hasValidToken(): boolean {
+    const token = localStorage.getItem('auth_token');
+    if (!token) return false;
+    
+    // 檢查 token 格式（JWT 應該有三個部分）
+    const parts = token.split('.');
+    if (parts.length !== 3) return false;
+    
+    // 檢查過期時間
+    try {
+      const payload = JSON.parse(atob(parts[1]));
+      const now = Math.floor(Date.now() / 1000);
+      return payload.exp > now;
+    } catch {
+      return false;
+    }
+  }
+
   // 從 localStorage 載入 token
   loadToken(): void {
     const token = localStorage.getItem('auth_token');
