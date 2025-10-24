@@ -17,8 +17,8 @@ import {
 } from '@mui/material';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { LocationOn, Save, Cancel } from '@mui/icons-material';
-import { apiClient } from '../services/api';
-import type { CreateLocationRequest } from '../services/api';
+import { locationApi, googleApi } from '../services/api/index';
+import type { CreateLocationRequest } from '../services/api/index';
 
 // 分類選項
 const CATEGORIES = [
@@ -92,7 +92,7 @@ const AddLocationPage: React.FC = () => {
       setGeocoding(true);
       setError(null);
       
-      const response = await apiClient.getPlaceDetails(placeId);
+      const response = await googleApi.getPlaceDetails(placeId);
       console.log('Places API 詳細資訊回應:', response);
       
       const placeData = response.data;
@@ -155,7 +155,7 @@ const AddLocationPage: React.FC = () => {
       setGeocoding(true);
       setError(null);
       
-      const response = await apiClient.reverseGeocode(lat, lng);
+      const response = await googleApi.reverseGeocode(lat, lng);
       console.log('反向地理編碼 API 回應:', response);
       
       // 從反向地理編碼結果中取得第一個地址
@@ -222,7 +222,7 @@ const AddLocationPage: React.FC = () => {
       setGeocoding(true);
       setError(null);
       
-      const response = await apiClient.geocode(formData.address);
+      const response = await googleApi.geocode(formData.address);
       console.log('API 回應:', response.data);
       
       const { lat, lng, formatted_address } = response.data;
@@ -287,7 +287,7 @@ const AddLocationPage: React.FC = () => {
       setError(null);
       
       console.log('準備發送到後端的資料:', formData);
-      await apiClient.createLocation(formData);
+      await locationApi.createLocation(formData);
       
       // 成功後跳轉回地點列表
       navigate('/my-locations', {

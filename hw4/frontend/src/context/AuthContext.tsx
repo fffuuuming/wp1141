@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import { apiClient } from '../services/api';
-import type { User } from '../services/api';
+import { authApi, apiClient } from '../services/api/index';
+import type { User } from '../services/api/index';
 
 // 認證狀態介面
 interface AuthState {
@@ -45,7 +45,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         apiClient.loadToken();
         
         // 嘗試取得使用者資料
-        const response = await apiClient.getProfile();
+        const response = await authApi.getProfile();
         setAuthState({
           user: response.data,
           token: localStorage.getItem('auth_token'),
@@ -87,7 +87,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setAuthState(prev => ({ ...prev, isLoading: true }));
       
-      const response = await apiClient.login(emailOrUsername, password);
+      const response = await authApi.login(emailOrUsername, password);
       const { token, user } = response.data;
       
       apiClient.setToken(token);
@@ -113,7 +113,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setAuthState(prev => ({ ...prev, isLoading: true }));
       
-      const response = await apiClient.register(username, email, password);
+      const response = await authApi.register(username, email, password);
       const { token, user } = response.data;
       
       apiClient.setToken(token);
@@ -137,7 +137,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // 登出函數
   const logout = async (): Promise<void> => {
     try {
-      await apiClient.logout();
+      await authApi.logout();
     } catch (error) {
       // 即使登出 API 失敗，也要清除本地狀態
       console.error('Logout API failed:', error);
@@ -155,7 +155,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // 更新使用者資料
   const updateProfile = async (data: { username?: string; email?: string }): Promise<void> => {
     try {
-      const response = await apiClient.updateProfile(data);
+      const response = await authApi.updateProfile(data);
       setAuthState(prev => ({
         ...prev,
         user: response.data,
@@ -168,7 +168,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // 重新整理使用者資料
   const refreshProfile = async (): Promise<void> => {
     try {
-      const response = await apiClient.getProfile();
+      const response = await authApi.getProfile();
       setAuthState(prev => ({
         ...prev,
         user: response.data,

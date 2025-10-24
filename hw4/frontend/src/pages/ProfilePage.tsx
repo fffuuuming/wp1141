@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import { Person, Email, CalendarToday, AccountCircle } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
-import { apiClient } from '../services/api';
+import { locationApi } from '../services/api/index';
 
 const ProfilePage: React.FC = () => {
   const { user } = useAuth();
@@ -29,7 +29,7 @@ const ProfilePage: React.FC = () => {
       
       try {
         setLoading(true);
-        const response = await apiClient.getLocationStats();
+        const response = await locationApi.getLocationStats();
         setStats(response.data);
       } catch (err: any) {
         console.error('獲取統計數據失敗:', err);

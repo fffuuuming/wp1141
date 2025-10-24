@@ -3,9 +3,9 @@
  * 提供地點的 CRUD 操作和狀態管理
  */
 
-import { useState, useEffect, useCallback } from 'react';
-import { apiClient } from '../services/api';
-import type { Location, CreateLocationRequest, UpdateLocationRequest } from '../services/api';
+import { useState, useCallback } from 'react';
+import { locationApi } from '../services/api/index';
+import type { Location, CreateLocationRequest, UpdateLocationRequest } from '../services/api/index';
 
 interface UseLocationDataReturn {
   locations: Location[];
@@ -31,7 +31,7 @@ export const useLocationData = (): UseLocationDataReturn => {
     try {
       setLoading(true);
       setError(null);
-      const response = await apiClient.getLocations();
+      const response = await locationApi.getLocations();
       setLocations(response.data);
     } catch (err: any) {
       setError('載入地點失敗：' + (err.response?.data?.message || err.message));
@@ -44,7 +44,7 @@ export const useLocationData = (): UseLocationDataReturn => {
     try {
       setLoading(true);
       setError(null);
-      await apiClient.createLocation(data);
+      await locationApi.createLocation(data);
       setSuccessMessage('地點新增成功！');
       await loadLocations(); // 重新載入列表
     } catch (err: any) {
@@ -58,7 +58,7 @@ export const useLocationData = (): UseLocationDataReturn => {
     try {
       setLoading(true);
       setError(null);
-      await apiClient.updateLocation(id, data);
+      await locationApi.updateLocation(id, data);
       setSuccessMessage('地點更新成功！');
       await loadLocations(); // 重新載入列表
     } catch (err: any) {
@@ -72,7 +72,7 @@ export const useLocationData = (): UseLocationDataReturn => {
     try {
       setLoading(true);
       setError(null);
-      await apiClient.deleteLocation(id);
+      await locationApi.deleteLocation(id);
       setSuccessMessage('地點已成功刪除');
       await loadLocations(); // 重新載入列表
     } catch (err: any) {

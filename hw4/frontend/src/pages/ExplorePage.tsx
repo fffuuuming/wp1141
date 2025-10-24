@@ -21,10 +21,10 @@ import {
   DialogActions,
   Fade,
 } from '@mui/material';
-import { Search, Place, Star, Explore, Map } from '@mui/icons-material';
+import { Search, Place, Star, Map } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { apiClient } from '../services/api';
-import GoogleMap, { type MapMarker } from '../components/GoogleMap';
+import { googleApi } from '../services/api/index';
+import GoogleMap from '../components/GoogleMap';
 
 const ExplorePage: React.FC = () => {
   const navigate = useNavigate();
@@ -47,7 +47,7 @@ const ExplorePage: React.FC = () => {
       setPlaceSearchLoading(true);
       setError(null);
       
-      const response = await apiClient.searchPlaces(placeSearchQuery);
+      const response = await googleApi.searchPlaces(placeSearchQuery);
       console.log('搜尋地點結果:', response);
       
       setPlaceSearchResults(response.data.places || []);

@@ -21,7 +21,7 @@ import { Search, LocationOn, Star, Map, ViewList, Add } from '@mui/icons-materia
 import { useNavigate } from 'react-router-dom';
 import GoogleMap, { type MapMarker } from '../components/GoogleMap';
 import { useLocationData, useNotification, useSearch, useViewMode } from '../hooks';
-import type { Location } from '../services/api';
+import type { Location } from '../services/api/index';
 
 const MyLocationsPage: React.FC = () => {
   const navigate = useNavigate();

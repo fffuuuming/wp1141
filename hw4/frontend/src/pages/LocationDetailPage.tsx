@@ -20,7 +20,7 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import CategoryIcon from '@mui/icons-material/Category';
 import NotesIcon from '@mui/icons-material/Notes';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import apiClient, { type Location } from '../services/api';
+import { locationApi, type Location } from '../services/api/index';
 import GoogleMap from '../components/GoogleMap';
 
 const LocationDetailPage: React.FC = () => {
@@ -54,7 +54,7 @@ const LocationDetailPage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await apiClient.getLocation(parseInt(id!));
+      const response = await locationApi.getLocation(parseInt(id!));
       setLocation(response.data);
     } catch (err: any) {
       setError(err.response?.data?.message || '無法載入地點詳情');
@@ -74,7 +74,7 @@ const LocationDetailPage: React.FC = () => {
     }
 
     try {
-      await apiClient.deleteLocation(parseInt(id!));
+      await locationApi.deleteLocation(parseInt(id!));
       navigate('/my-locations', { 
         state: { message: '地點已成功刪除' } 
       });

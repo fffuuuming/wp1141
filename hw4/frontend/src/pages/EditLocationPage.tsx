@@ -17,18 +17,7 @@ import {
 import { useNavigate, useParams } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SaveIcon from '@mui/icons-material/Save';
-import apiClient from '../services/api';
-
-interface UpdateLocationRequest {
-  name: string;
-  description?: string;
-  address: string;
-  latitude?: number;
-  longitude?: number;
-  category?: string;
-  rating?: number;
-  notes?: string;
-}
+import { locationApi, googleApi, type UpdateLocationRequest } from '../services/api/index';
 
 const categories = [
   '餐廳',
@@ -72,7 +61,7 @@ const EditLocationPage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await apiClient.getLocation(parseInt(id!));
+      const response = await locationApi.getLocation(parseInt(id!));
       const location = response.data;
       
       setFormData({
@@ -111,7 +100,7 @@ const EditLocationPage: React.FC = () => {
       setGeocoding(true);
       setError(null);
       
-      const response = await apiClient.geocode(formData.address);
+      const response = await googleApi.geocode(formData.address);
       console.log('API 回應:', response.data);
       
       const { lat, lng, formatted_address } = response.data;
@@ -180,7 +169,7 @@ const EditLocationPage: React.FC = () => {
 
       console.log('準備發送到後端的資料:', submitData);
 
-      await apiClient.updateLocation(parseInt(id!), submitData);
+      await locationApi.updateLocation(parseInt(id!), submitData);
       
       // 成功後跳轉回詳情頁
       navigate(`/locations/${id}`, { 
