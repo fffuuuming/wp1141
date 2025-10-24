@@ -6,7 +6,6 @@ import {
   Button,
   Card,
   CardContent,
-  CardActions,
   TextField,
   InputAdornment,
   Chip,
@@ -18,7 +17,7 @@ import {
   Fade,
   Grid,
 } from '@mui/material';
-import { Search, LocationOn, Star, Map, ViewList } from '@mui/icons-material';
+import { Search, LocationOn, Star, Map, ViewList, Add } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiClient } from '../services/api';
@@ -28,7 +27,7 @@ import GoogleMap, { type MapMarker } from '../components/GoogleMap';
 const MyLocationsPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { logout } = useAuth();
+  const { } = useAuth();
   
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
@@ -66,14 +65,6 @@ const MyLocationsPage: React.FC = () => {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate('/');
-    } catch (err) {
-      console.error('Logout failed:', err);
-    }
-  };
 
   const filteredLocations = locations.filter(location =>
     location.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -322,7 +313,7 @@ const MyLocationsPage: React.FC = () => {
         ) : (viewMode === 'list' || viewMode === 'both') ? (
           <Fade in timeout={1400}>
             <Grid container spacing={3}>
-              {filteredLocations.map((location, index) => (
+              {filteredLocations.map((location) => (
                 <Grid item xs={12} sm={6} md={4} key={location.id}>
                   <Card
                     onClick={() => navigate(`/locations/${location.id}`)}
