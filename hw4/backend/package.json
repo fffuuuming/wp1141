@@ -22,6 +22,8 @@
     "db:clear": "ts-node scripts/db/clear-all-data.ts",
     "db:rebuild": "ts-node scripts/db/rebuild-database.ts",
     "db:info": "ts-node scripts/db/show-database-info.ts",
+    "check-jwt": "ts-node scripts/check-jwt-secret.ts",
+    "generate-jwt": "node -e \"console.log('JWT_SECRET=' + require('crypto').randomBytes(64).toString('hex'))\"",
     "test": "npm run test:all"
   },
   "keywords": [],
