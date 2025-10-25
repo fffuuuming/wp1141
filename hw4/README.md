@@ -165,6 +165,7 @@ graph TB
    # CORS Configuration
    FRONTEND_URL=http://localhost:5173
    ```
+   > 對於 server key 限制類型風險，請參照 [Google Maps Server Key 安全風險](#google-maps-server-key-安全風險)
 
    **前端環境變數範本** (`frontend/.env.example`)：
    ```bash
@@ -684,7 +685,7 @@ chmod 664 backend/database/locations.db
 
 ## ⚠️ 安全風險說明
 
-### 🚨 Google Maps Server Key 安全風險
+### Google Maps Server Key 安全風險
 
 **風險描述**：
 - **Server Key 具有較高的 API 配額限制**，且沒有瀏覽器端的安全限制
