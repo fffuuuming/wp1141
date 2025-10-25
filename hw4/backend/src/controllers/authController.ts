@@ -87,7 +87,7 @@ export async function login(req: Request, res: Response) {
     }
     
     // 驗證密碼
-    const isPasswordValid = await verifyPassword(password, user.password_hash);
+    const isPasswordValid = await verifyPassword(password, user.password);
     if (!isPasswordValid) {
       return res.status(401).json({
         error: 'Unauthorized',

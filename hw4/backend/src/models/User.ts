@@ -4,7 +4,7 @@ export interface User {
   id: number;
   username: string;
   email: string;
-  password_hash: string;  // 對應資料庫的 password_hash 欄位
+  password: string;  // 對應資料庫的 password 欄位
   created_at: string;
   updated_at: string;
 }
@@ -26,7 +26,7 @@ export class UserModel {
   static async create(userData: CreateUserData): Promise<User> {
     return new Promise((resolve, reject) => {
       const sql = `
-        INSERT INTO users (username, email, password_hash)
+        INSERT INTO users (username, email, password)
         VALUES (?, ?, ?)
       `;
       
@@ -35,7 +35,8 @@ export class UserModel {
           reject(err);
         } else {
           // 回傳新建立的使用者
-          UserModel.findById(this.lastID)
+          const userId = this.lastID;
+          UserModel.findById(userId)
             .then(user => resolve(user!))
             .catch(reject);
         }
@@ -118,7 +119,7 @@ export class UserModel {
         values.push(userData.email);
       }
       if (userData.password !== undefined) {
-        fields.push('password_hash = ?');
+        fields.push('password = ?');
         values.push(userData.password);
       }
       
