@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   Container,
   Typography,
@@ -21,13 +21,30 @@ import {
   DialogActions,
   Fade,
 } from '@mui/material';
-import { Search, Place, Star, Map } from '@mui/icons-material';
+import { Search, Place, Star, Map, MyLocation } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { googleApi } from '../services/api/index';
 import GoogleMap from '../components/GoogleMap';
+import { useGeolocation } from '../hooks';
 
 const ExplorePage: React.FC = () => {
   const navigate = useNavigate();
+  
+  // 地理位置相關狀態
+  const { 
+    latitude, 
+    longitude, 
+    error: geolocationError, 
+    loading: geolocationLoading, 
+    getCurrentPosition,
+    clearError: clearGeolocationError 
+  } = useGeolocation();
+  
+  // 地圖中心點狀態
+  const [mapCenter, setMapCenter] = useState({
+    lat: 25.033, // 台北 101 預設座標
+    lng: 121.5654
+  });
   
   // 搜尋地點相關狀態
   const [placeSearchQuery, setPlaceSearchQuery] = useState('');
@@ -35,6 +52,26 @@ const ExplorePage: React.FC = () => {
   const [placeSearchLoading, setPlaceSearchLoading] = useState(false);
   const [placeSearchDialogOpen, setPlaceSearchDialogOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // 組件載入時自動獲取用戶位置
+  useEffect(() => {
+    getCurrentPosition();
+  }, [getCurrentPosition]);
+
+  // 當獲取到用戶位置時，更新地圖中心點
+  useEffect(() => {
+    if (latitude && longitude) {
+      setMapCenter({
+        lat: latitude,
+        lng: longitude
+      });
+    }
+  }, [latitude, longitude]);
+
+  // 手動獲取位置的函數
+  const handleGetCurrentLocation = () => {
+    getCurrentPosition();
+  };
 
   // 搜尋地點功能
   const handlePlaceSearch = async () => {
@@ -222,11 +259,41 @@ const ExplorePage: React.FC = () => {
               flexDirection: 'column',
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-              <Map sx={{ color: '#ff6b35', fontSize: 20 }} />
-              <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: 'black' }}>
-                地圖總覽
-              </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Map sx={{ color: '#ff6b35', fontSize: 20 }} />
+                <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: 'black' }}>
+                  地圖總覽
+                </Typography>
+              </Box>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={handleGetCurrentLocation}
+                disabled={geolocationLoading}
+                startIcon={geolocationLoading ? <CircularProgress size={16} /> : <MyLocation />}
+                sx={{
+                  border: '2px solid #ff6b35',
+                  borderRadius: 2,
+                  px: 2,
+                  py: 0.5,
+                  fontSize: '0.75rem',
+                  fontWeight: 'bold',
+                  color: '#ff6b35',
+                  textTransform: 'none',
+                  minWidth: 100,
+                  '&:hover': {
+                    backgroundColor: '#ff6b35',
+                    color: 'white',
+                  },
+                  '&:disabled': {
+                    borderColor: '#e0e0e0',
+                    color: '#e0e0e0',
+                  },
+                }}
+              >
+                {geolocationLoading ? '定位中...' : '我的位置'}
+              </Button>
             </Box>
             <Box sx={{ 
               backgroundColor: 'white', 
@@ -251,8 +318,8 @@ const ExplorePage: React.FC = () => {
               </Typography>
               <Box sx={{ flex: 1 }}>
                 <GoogleMap
-                  center={{ lat: 25.033, lng: 121.5654 }} // 台北 101 預設座標
-                  zoom={13}
+                  center={mapCenter}
+                  zoom={14}
                   markers={[]} // 探索頁面不顯示個人地點標記
                   onMapClick={handleMapClick}
                   height="100%"
@@ -263,7 +330,7 @@ const ExplorePage: React.FC = () => {
         </Fade>
 
         {/* 錯誤訊息 */}
-        {error && (
+        {(error || geolocationError) && (
           <Fade in timeout={1400}>
             <Alert 
               severity="error" 
@@ -271,9 +338,12 @@ const ExplorePage: React.FC = () => {
                 mt: 2,
                 borderRadius: 2,
               }} 
-              onClose={() => setError(null)}
+              onClose={() => {
+                setError(null);
+                clearGeolocationError();
+              }}
             >
-              {error}
+              {error || geolocationError}
             </Alert>
           </Fade>
         )}

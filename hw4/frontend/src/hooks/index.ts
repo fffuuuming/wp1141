@@ -8,3 +8,4 @@ export { useNotification } from './useNotification';
 export { useSearch } from './useSearch';
 export { useViewMode } from './useViewMode';
 export { useForm } from './useForm';
+export { useGeolocation } from './useGeolocation';
