@@ -31,6 +31,7 @@ const LoginPage: React.FC = () => {
     emailOrUsername?: string;
     password?: string;
   }>({});
+  const [isNavigating, setIsNavigating] = useState(false);
 
   // 從重導向狀態中取得原始路徑
   const from = (location.state as any)?.from?.pathname || '/my-locations';
@@ -61,6 +62,9 @@ const LoginPage: React.FC = () => {
   };
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    // 如果正在導航，不進行驗證
+    if (isNavigating) return;
+    
     const { name, value } = e.target;
     
     // 當欄位失去焦點時進行驗證
@@ -204,7 +208,6 @@ const LoginPage: React.FC = () => {
                 autoFocus
                 value={formData.emailOrUsername}
                 onChange={handleChange}
-                onBlur={handleBlur}
                 disabled={isLoading}
                 error={!!fieldErrors.emailOrUsername}
                 helperText={fieldErrors.emailOrUsername}
@@ -242,7 +245,6 @@ const LoginPage: React.FC = () => {
                 autoComplete="current-password"
                 value={formData.password}
                 onChange={handleChange}
-                onBlur={handleBlur}
                 disabled={isLoading}
                 error={!!fieldErrors.password}
                 helperText={fieldErrors.password}
@@ -297,26 +299,32 @@ const LoginPage: React.FC = () => {
               >
                 {isLoading ? '登入中...' : '登入'}
               </Button>
-              
-              <Box textAlign="center" sx={{ mt: 3 }}>
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                  還沒有帳號？{' '}
-                  <Link 
-                    component={RouterLink} 
-                    to="/register"
-                    sx={{
-                      color: '#ff6b35',
-                      fontWeight: 'bold',
-                      textDecoration: 'none',
-                      '&:hover': {
-                        textDecoration: 'underline',
-                      },
-                    }}
-                  >
-                    立即註冊
-                  </Link>
-                </Typography>
-              </Box>
+            </Box>
+            
+            <Box textAlign="center" sx={{ mt: 3 }}>
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                還沒有帳號？{' '}
+                <Link 
+                  component={RouterLink} 
+                  to="/register"
+                  onMouseDown={() => setIsNavigating(true)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    navigate('/register');
+                  }}
+                  sx={{
+                    color: '#ff6b35',
+                    fontWeight: 'bold',
+                    textDecoration: 'none',
+                    '&:hover': {
+                      textDecoration: 'underline',
+                    },
+                  }}
+                >
+                  立即註冊
+                </Link>
+              </Typography>
             </Box>
           </Paper>
         </Fade>

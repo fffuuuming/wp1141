@@ -1,50 +1,108 @@
 import { Router } from 'express';
 import { GoogleApiController } from '../controllers/googleApiController';
-import { body } from 'express-validator';
-import { handleValidationErrors } from '../middleware/validation';
+import { createValidationMiddleware, CustomValidator } from '../middleware/validation';
 
 const router = Router();
 
 // Geocoding API 路由
-router.post('/geocode', [
-  body('address').notEmpty().withMessage('請提供地址'),
-  handleValidationErrors
-], GoogleApiController.geocodeAddress);
+router.post('/geocode', createValidationMiddleware([
+  {
+    field: 'address',
+    rules: [
+      { validator: CustomValidator.notEmpty, message: '請提供地址' }
+    ]
+  }
+]), GoogleApiController.geocodeAddress);
 
-router.post('/reverse-geocode', [
-  body('lat').isFloat({ min: -90, max: 90 }).withMessage('緯度必須在 -90 到 90 之間'),
-  body('lng').isFloat({ min: -180, max: 180 }).withMessage('經度必須在 -180 到 180 之間'),
-  handleValidationErrors
-], GoogleApiController.reverseGeocode);
+router.post('/reverse-geocode', createValidationMiddleware([
+  {
+    field: 'lat',
+    rules: [
+      { validator: (v) => CustomValidator.isFloat(v, { min: -90, max: 90 }), message: '緯度必須在 -90 到 90 之間' }
+    ]
+  },
+  {
+    field: 'lng',
+    rules: [
+      { validator: (v) => CustomValidator.isFloat(v, { min: -180, max: 180 }), message: '經度必須在 -180 到 180 之間' }
+    ]
+  }
+]), GoogleApiController.reverseGeocode);
 
 // Places API 路由
-router.post('/places/nearby', [
-  body('lat').isFloat({ min: -90, max: 90 }).withMessage('緯度必須在 -90 到 90 之間'),
-  body('lng').isFloat({ min: -180, max: 180 }).withMessage('經度必須在 -180 到 180 之間'),
-  body('radius').optional().isInt({ min: 1, max: 50000 }).withMessage('搜尋半徑必須在 1 到 50000 公尺之間'),
-  handleValidationErrors
-], GoogleApiController.searchNearby);
+router.post('/places/nearby', createValidationMiddleware([
+  {
+    field: 'lat',
+    rules: [
+      { validator: (v) => CustomValidator.isFloat(v, { min: -90, max: 90 }), message: '緯度必須在 -90 到 90 之間' }
+    ]
+  },
+  {
+    field: 'lng',
+    rules: [
+      { validator: (v) => CustomValidator.isFloat(v, { min: -180, max: 180 }), message: '經度必須在 -180 到 180 之間' }
+    ]
+  },
+  {
+    field: 'radius',
+    rules: [
+      { validator: CustomValidator.optional((v) => CustomValidator.isInt(v, { min: 1, max: 50000 })), message: '搜尋半徑必須在 1 到 50000 公尺之間' }
+    ]
+  }
+]), GoogleApiController.searchNearby);
 
-router.post('/places/search', [
-  body('query').notEmpty().withMessage('請提供搜尋關鍵字'),
-  handleValidationErrors
-], GoogleApiController.searchText);
+router.post('/places/search', createValidationMiddleware([
+  {
+    field: 'query',
+    rules: [
+      { validator: CustomValidator.notEmpty, message: '請提供搜尋關鍵字' }
+    ]
+  }
+]), GoogleApiController.searchText);
 
 router.get('/places/details/:placeId', GoogleApiController.getPlaceDetails);
 
 // Directions API 路由
-router.post('/directions', [
-  body('origin').notEmpty().withMessage('請提供起點'),
-  body('destination').notEmpty().withMessage('請提供終點'),
-  body('mode').optional().isIn(['driving', 'walking', 'transit', 'bicycling']).withMessage('交通方式必須是 driving, walking, transit 或 bicycling'),
-  handleValidationErrors
-], GoogleApiController.getDirections);
+router.post('/directions', createValidationMiddleware([
+  {
+    field: 'origin',
+    rules: [
+      { validator: CustomValidator.notEmpty, message: '請提供起點' }
+    ]
+  },
+  {
+    field: 'destination',
+    rules: [
+      { validator: CustomValidator.notEmpty, message: '請提供終點' }
+    ]
+  },
+  {
+    field: 'mode',
+    rules: [
+      { validator: CustomValidator.optional((v) => CustomValidator.isIn(v, ['driving', 'walking', 'transit', 'bicycling'])), message: '交通方式必須是 driving, walking, transit 或 bicycling' }
+    ]
+  }
+]), GoogleApiController.getDirections);
 
-router.post('/distance-matrix', [
-  body('origins').isArray({ min: 1 }).withMessage('請提供起點陣列'),
-  body('destinations').isArray({ min: 1 }).withMessage('請提供終點陣列'),
-  body('mode').optional().isIn(['driving', 'walking', 'transit', 'bicycling']).withMessage('交通方式必須是 driving, walking, transit 或 bicycling'),
-  handleValidationErrors
-], GoogleApiController.getDistanceMatrix);
+router.post('/distance-matrix', createValidationMiddleware([
+  {
+    field: 'origins',
+    rules: [
+      { validator: (v) => Array.isArray(v) && v.length >= 1, message: '請提供起點陣列' }
+    ]
+  },
+  {
+    field: 'destinations',
+    rules: [
+      { validator: (v) => Array.isArray(v) && v.length >= 1, message: '請提供終點陣列' }
+    ]
+  },
+  {
+    field: 'mode',
+    rules: [
+      { validator: CustomValidator.optional((v) => CustomValidator.isIn(v, ['driving', 'walking', 'transit', 'bicycling'])), message: '交通方式必須是 driving, walking, transit 或 bicycling' }
+    ]
+  }
+]), GoogleApiController.getDistanceMatrix);
 
 export default router;

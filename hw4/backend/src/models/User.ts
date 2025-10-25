@@ -4,7 +4,7 @@ export interface User {
   id: number;
   username: string;
   email: string;
-  password: string;  // 對應資料庫的 password 欄位
+  password_hash: string;  // 對應資料庫的 password_hash 欄位
   created_at: string;
   updated_at: string;
 }
@@ -12,13 +12,13 @@ export interface User {
 export interface CreateUserData {
   username: string;
   email: string;
-  password: string;  // 對應資料庫的 password 欄位
+  password: string;  // 輸入的密碼，會被雜湊後存入 password_hash
 }
 
 export interface UpdateUserData {
   username?: string;
   email?: string;
-  password?: string;  // 對應資料庫的 password 欄位
+  password?: string;  // 輸入的密碼，會被雜湊後存入 password_hash
 }
 
 export class UserModel {
@@ -26,7 +26,7 @@ export class UserModel {
   static async create(userData: CreateUserData): Promise<User> {
     return new Promise((resolve, reject) => {
       const sql = `
-        INSERT INTO users (username, email, password)
+        INSERT INTO users (username, email, password_hash)
         VALUES (?, ?, ?)
       `;
       
@@ -118,7 +118,7 @@ export class UserModel {
         values.push(userData.email);
       }
       if (userData.password !== undefined) {
-        fields.push('password = ?');
+        fields.push('password_hash = ?');
         values.push(userData.password);
       }
       

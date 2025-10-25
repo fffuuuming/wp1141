@@ -172,7 +172,7 @@ const EditLocationPage: React.FC = () => {
       await locationApi.updateLocation(parseInt(id!), submitData);
       
       // 成功後跳轉回詳情頁
-      navigate(`/locations/${id}`, { 
+      navigate(`/my-locations/${id}`, { 
         state: { message: '地點已成功更新' } 
       });
       
@@ -213,7 +213,7 @@ const EditLocationPage: React.FC = () => {
       <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Button
           startIcon={<ArrowBackIcon />}
-          onClick={() => navigate(`/locations/${id}`)}
+          onClick={() => navigate(`/my-locations/${id}`)}
         >
           取消編輯
         </Button>
@@ -363,7 +363,7 @@ const EditLocationPage: React.FC = () => {
           <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
             <Button
               variant="outlined"
-              onClick={() => navigate(`/locations/${id}`)}
+              onClick={() => navigate(`/my-locations/${id}`)}
               disabled={saving}
             >
               取消

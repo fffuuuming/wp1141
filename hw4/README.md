@@ -153,11 +153,11 @@
 2. **設置環境變數**
    ```bash
    # 後端：複製環境變數範本並填入 Server Key
-   cp backend/env.example backend/.env
+   cp backend/.env.example backend/.env
    # GOOGLE_MAPS_SERVER_KEY=YOUR_SERVER_KEY
 
    # 前端：複製環境變數範本並填入 Browser Key
-   cp frontend/env.example frontend/.env
+   cp frontend/.env.example frontend/.env
    # VITE_GOOGLE_MAPS_JS_KEY=YOUR_BROWSER_KEY
    ```
 

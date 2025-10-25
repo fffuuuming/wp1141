@@ -131,7 +131,7 @@ const App: React.FC = () => {
                   }
                 />
                 <Route
-                  path="/locations/new"
+                  path="/my-locations/new"
                   element={
                     <ProtectedRoute>
                       <AddLocationPage />
@@ -139,7 +139,7 @@ const App: React.FC = () => {
                   }
                 />
                 <Route
-                  path="/locations/:id"
+                  path="/my-locations/:id"
                   element={
                     <ProtectedRoute>
                       <LocationDetailPage />
@@ -147,7 +147,7 @@ const App: React.FC = () => {
                   }
                 />
                 <Route
-                  path="/locations/:id/edit"
+                  path="/my-locations/:id/edit"
                   element={
                     <ProtectedRoute>
                       <EditLocationPage />

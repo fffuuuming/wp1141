@@ -39,6 +39,7 @@ const RegisterPage: React.FC = () => {
     password?: string;
     confirmPassword?: string;
   }>({});
+  const [isNavigating, setIsNavigating] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -77,6 +78,9 @@ const RegisterPage: React.FC = () => {
   };
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    // 如果正在導航，不進行驗證
+    if (isNavigating) return;
+    
     const { name, value } = e.target;
     
     // 當欄位失去焦點時進行驗證
@@ -264,7 +268,6 @@ const RegisterPage: React.FC = () => {
                 autoFocus
                 value={formData.username}
                 onChange={handleChange}
-                onBlur={handleBlur}
                 disabled={isLoading}
                 error={!!fieldErrors.username}
                 helperText={fieldErrors.username || '3-50 個字元，只能包含字母、數字和底線'}
@@ -301,7 +304,6 @@ const RegisterPage: React.FC = () => {
                 autoComplete="email"
                 value={formData.email}
                 onChange={handleChange}
-                onBlur={handleBlur}
                 disabled={isLoading}
                 error={!!fieldErrors.email}
                 helperText={fieldErrors.email}
@@ -339,7 +341,6 @@ const RegisterPage: React.FC = () => {
                 autoComplete="new-password"
                 value={formData.password}
                 onChange={handleChange}
-                onBlur={handleBlur}
                 disabled={isLoading}
                 error={!!fieldErrors.password}
                 helperText={fieldErrors.password || '至少 8 個字元，包含大小寫字母、數字和特殊字元'}
@@ -377,7 +378,6 @@ const RegisterPage: React.FC = () => {
                 autoComplete="new-password"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                onBlur={handleBlur}
                 disabled={isLoading}
                 error={!!fieldErrors.confirmPassword}
                 helperText={fieldErrors.confirmPassword}
@@ -432,26 +432,32 @@ const RegisterPage: React.FC = () => {
               >
                 {isLoading ? '註冊中...' : '註冊'}
               </Button>
-              
-              <Box textAlign="center" sx={{ mt: 3 }}>
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                  已有帳號？{' '}
-                  <Link 
-                    component={RouterLink} 
-                    to="/login"
-                    sx={{
-                      color: '#ff6b35',
-                      fontWeight: 'bold',
-                      textDecoration: 'none',
-                      '&:hover': {
-                        textDecoration: 'underline',
-                      },
-                    }}
-                  >
-                    立即登入
-                  </Link>
-                </Typography>
-              </Box>
+            </Box>
+            
+            <Box textAlign="center" sx={{ mt: 3 }}>
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                已有帳號？{' '}
+                <Link 
+                  component={RouterLink} 
+                  to="/login"
+                  onMouseDown={() => setIsNavigating(true)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    navigate('/login');
+                  }}
+                  sx={{
+                    color: '#ff6b35',
+                    fontWeight: 'bold',
+                    textDecoration: 'none',
+                    '&:hover': {
+                      textDecoration: 'underline',
+                    },
+                  }}
+                >
+                  立即登入
+                </Link>
+              </Typography>
             </Box>
           </Paper>
         </Fade>

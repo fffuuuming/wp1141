@@ -65,7 +65,7 @@ const ExplorePage: React.FC = () => {
   const handleSelectPlace = (place: any) => {
     setPlaceSearchDialogOpen(false);
     // 導航到新增頁面並傳遞 placeId
-    navigate(`/locations/new?placeId=${place.place_id}&lat=${place.geometry.location.lat}&lng=${place.geometry.location.lng}`);
+    navigate(`/my-locations/new?placeId=${place.place_id}&lat=${place.geometry.location.lat}&lng=${place.geometry.location.lng}`);
   };
 
   return (
@@ -246,10 +246,10 @@ const ExplorePage: React.FC = () => {
                     // 點擊地圖時，導航到新增頁面並傳遞座標
                     if (placeId) {
                       // 點擊了地標，傳遞 placeId 和座標
-                      navigate(`/locations/new?lat=${lat}&lng=${lng}&placeId=${placeId}`);
+                      navigate(`/my-locations/new?lat=${lat}&lng=${lng}&placeId=${placeId}`);
                     } else {
                       // 點擊了空白處，只傳遞座標
-                      navigate(`/locations/new?lat=${lat}&lng=${lng}`);
+                      navigate(`/my-locations/new?lat=${lat}&lng=${lng}`);
                     }
                   }}
                   height="100%"

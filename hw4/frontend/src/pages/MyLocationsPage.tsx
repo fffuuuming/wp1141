@@ -225,7 +225,7 @@ const MyLocationsPage: React.FC = () => {
                   })
                 )}
                 onMarkerClick={(marker) => {
-                  navigate(`/locations/${marker.id}`);
+                  navigate(`/my-locations/${marker.id}`);
                 }}
                 height={500}
               />
@@ -260,7 +260,7 @@ const MyLocationsPage: React.FC = () => {
               <Button
                 variant="outlined"
                 startIcon={<Add />}
-                onClick={() => navigate('/locations/new')}
+                onClick={() => navigate('/my-locations/new')}
                 sx={{
                   border: '2px solid #ff6b35',
                   borderRadius: 2,
@@ -287,7 +287,7 @@ const MyLocationsPage: React.FC = () => {
               {filteredLocations.map((location) => (
                 <Grid item xs={12} sm={6} md={4} key={location.id}>
                   <Card
-                    onClick={() => navigate(`/locations/${location.id}`)}
+                    onClick={() => navigate(`/my-locations/${location.id}`)}
                     sx={{
                       height: '100%',
                       display: 'flex',

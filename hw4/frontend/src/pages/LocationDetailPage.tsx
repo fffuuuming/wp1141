@@ -65,7 +65,7 @@ const LocationDetailPage: React.FC = () => {
   };
 
   const handleEdit = () => {
-    navigate(`/locations/${id}/edit`);
+    navigate(`/my-locations/${id}/edit`);
   };
 
   const handleDelete = async () => {
