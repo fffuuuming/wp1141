@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Container,
   Typography,
@@ -67,6 +67,18 @@ const ExplorePage: React.FC = () => {
     // 導航到新增頁面並傳遞 placeId
     navigate(`/my-locations/new?placeId=${place.place_id}&lat=${place.geometry.location.lat}&lng=${place.geometry.location.lng}`);
   };
+
+  // 使用 useCallback 來穩定 onMapClick 函數引用
+  const handleMapClick = useCallback((lat: number, lng: number, placeId?: string) => {
+    // 點擊地圖時，導航到新增頁面並傳遞座標
+    if (placeId) {
+      // 點擊了地標，傳遞 placeId 和座標
+      navigate(`/my-locations/new?lat=${lat}&lng=${lng}&placeId=${placeId}`);
+    } else {
+      // 點擊了空白處，只傳遞座標
+      navigate(`/my-locations/new?lat=${lat}&lng=${lng}`);
+    }
+  }, [navigate]);
 
   return (
     <Box
@@ -242,16 +254,7 @@ const ExplorePage: React.FC = () => {
                   center={{ lat: 25.033, lng: 121.5654 }} // 台北 101 預設座標
                   zoom={13}
                   markers={[]} // 探索頁面不顯示個人地點標記
-                  onMapClick={(lat, lng, placeId) => {
-                    // 點擊地圖時，導航到新增頁面並傳遞座標
-                    if (placeId) {
-                      // 點擊了地標，傳遞 placeId 和座標
-                      navigate(`/my-locations/new?lat=${lat}&lng=${lng}&placeId=${placeId}`);
-                    } else {
-                      // 點擊了空白處，只傳遞座標
-                      navigate(`/my-locations/new?lat=${lat}&lng=${lng}`);
-                    }
-                  }}
+                  onMapClick={handleMapClick}
                   height="100%"
                 />
               </Box>
