@@ -144,7 +144,18 @@ graph TB
    cd wp1141-hw4
    ```
 
-2. **設置環境變數**
+2. **安裝依賴**
+   ```bash
+   # 安裝前端依賴
+   cd frontend
+   npm install
+   
+   # 安裝後端依賴
+   cd ../backend
+   npm install
+   ```
+
+3. **設置環境變數**
 
    **後端環境變數範本** (`backend/.env.example`)：
    ```bash
@@ -205,17 +216,6 @@ graph TB
       NODE_ENV=development
       PORT=3001
       ```
-
-3. **安裝依賴**
-   ```bash
-   # 安裝前端依賴
-   cd frontend
-   npm install
-   
-   # 安裝後端依賴
-   cd ../backend
-   npm install
-   ```
 
 4. **初始化資料庫**
    ```bash
