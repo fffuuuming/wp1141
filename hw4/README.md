@@ -154,6 +154,7 @@ graph TB
    cd ../backend
    npm install
    ```
+   > note that some warnings may show up during installation which is normal and can be ignored
 
 3. **設置環境變數**
 
