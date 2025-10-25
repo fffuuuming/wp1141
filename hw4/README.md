@@ -341,6 +341,8 @@ graph TB
 6. **開啟應用程式**
    - 前端應用：http://localhost:5173
    - 後端 API：http://localhost:3001
+   - 健康檢查：http://localhost:3001/health
+   - API 配額狀態：http://localhost:3001/api/google/quota-status
 
 ## 📋 API 文件
 
@@ -364,14 +366,16 @@ graph TB
 | GET | `/api/locations/stats` | 取得地點統計 | ✅ |
 
 ### Google API 整合
-| 方法 | 端點 | 描述 | 認證需求 |
-|------|------|------|----------|
-| POST | `/api/google/geocode` | 地址轉座標 | ✅ |
-| POST | `/api/google/reverse-geocode` | 座標轉地址 | ✅ |
-| POST | `/api/google/places/search` | 搜尋附近地點 | ✅ |
-| GET | `/api/google/places/details/:placeId` | 取得地點詳情 | ✅ |
-| POST | `/api/google/directions` | 取得路線規劃 | ✅ |
-| POST | `/api/google/distance-matrix` | 計算距離矩陣 | ✅ |
+| 方法 | 端點 | 描述 | 認證需求 | 速率限制 |
+|------|------|------|----------|----------|
+| POST | `/api/google/geocode` | 地址轉座標 | ✅ | 每分鐘 10 次 |
+| POST | `/api/google/reverse-geocode` | 座標轉地址 | ✅ | 每分鐘 10 次 |
+| POST | `/api/google/places/nearby` | 搜尋附近地點 | ✅ | 每分鐘 10 次 |
+| POST | `/api/google/places/search` | 文字搜尋地點 | ✅ | 每分鐘 10 次 |
+| GET | `/api/google/places/details/:placeId` | 取得地點詳情 | ✅ | 每分鐘 10 次 |
+| POST | `/api/google/directions` | 取得路線規劃 | ✅ | 每分鐘 10 次 |
+| POST | `/api/google/distance-matrix` | 計算距離矩陣 | ✅ | 每分鐘 10 次 |
+| GET | `/api/google/quota-status` | 查詢 API 配額狀態 | ✅ | 無限制 |
 
 ## 📡 API 使用範例
 
@@ -599,12 +603,95 @@ curl -X PUT http://localhost:3001/api/locations/1 \
 }
 ```
 
+#### 8. 查詢 Google API 配額狀態（需要認證）
+```bash
+curl -X GET http://localhost:3001/api/google/quota-status \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN_HERE"
+```
+
+**回應範例**：
+```json
+{
+  "success": true,
+  "message": "配額狀態查詢成功",
+  "data": {
+    "quotaStatus": {
+      "geocoding": {
+        "dailyLimit": 100,
+        "usedToday": 5,
+        "remainingToday": 95,
+        "usagePercentage": 5,
+        "lastResetDate": "2024-01-15",
+        "requestsPerMinute": 10
+      },
+      "places": {
+        "dailyLimit": 100,
+        "usedToday": 3,
+        "remainingToday": 97,
+        "usagePercentage": 3,
+        "lastResetDate": "2024-01-15",
+        "requestsPerMinute": 10
+      },
+      "directions": {
+        "dailyLimit": 100,
+        "usedToday": 2,
+        "remainingToday": 98,
+        "usagePercentage": 2,
+        "lastResetDate": "2024-01-15",
+        "requestsPerMinute": 10
+      }
+    },
+    "currentTier": "FREE",
+    "resetTime": "2024-01-16T00:00:00.000Z"
+  }
+}
+```
+
 ### 🔑 認證 Token 使用說明
 
 **取得 Token**：
 1. 先使用註冊或登入 API 取得 JWT token
 2. 在後續的 API 請求中，在 Header 中加入：`Authorization: Bearer YOUR_JWT_TOKEN_HERE`
 3. Token 有效期為 7 天，過期後需要重新登入
+
+### 🚦 速率限制說明
+
+**多層級限制**：
+- **認證 API**：每 15 分鐘最多 5 次嘗試（防止暴力破解）
+- **註冊 API**：每小時最多 3 次嘗試（防止濫用註冊）
+- **一般 API**：每 15 分鐘最多 100 次請求
+- **Google API**：每分鐘最多 10 次請求（保護 API 配額）
+- **地點 API**：每 5 分鐘最多 50 次請求
+
+**速率限制響應**：
+```json
+{
+  "success": false,
+  "message": "請求過於頻繁，請稍後再試",
+  "error": "RATE_LIMIT_EXCEEDED",
+  "retryAfter": 3600
+}
+```
+
+### 📊 Google Maps API 配額管理
+
+**配額限制**：
+- **免費方案**：每日 1000 次一般請求，各 API 每日 100 次
+- **付費方案**：每日 100,000 次請求，各 API 每日 10,000 次
+
+**配額監控**：
+- 自動追蹤每日使用量
+- 75% 和 90% 使用率警告
+- 配額狀態查詢端點
+- 響應頭包含配額資訊
+
+**配額響應頭**：
+```
+X-Quota-Remaining: 95
+X-Quota-Used: 5
+X-Quota-Limit: 100
+X-Quota-Reset: 2024-01-16T00:00:00.000Z
+```
 
 **錯誤處理範例**：
 ```bash
@@ -729,11 +816,17 @@ npm run db:info
 - **Token 驗證**：自動檢查 token 有效性
 - **路由保護**：受保護的路由需要認證
 
-### 資料安全
+### API 安全
+- **速率限制**：多層級速率限制防止濫用
+- **配額管理**：Google Maps API 配額保護
 - **輸入驗證**：前後端雙重驗證
-- **SQL 注入防護**：參數化查詢
-- **CORS 配置**：跨域請求安全控制
 - **錯誤處理**：不洩露敏感資訊
+
+### 系統安全
+- **健康監控**：資料庫連接狀態監控
+- **優雅關閉**：程序退出時安全清理資源
+- **CORS 配置**：跨域請求安全控制
+- **安全標頭**：Helmet 中間件提供安全標頭
 
 ## 📱 響應式設計
 
@@ -754,7 +847,7 @@ npm run db:info
 1. **環境變數配置**
 2. **資料庫遷移**
 3. **靜態資源優化**
-4. **API 速率限制**
+4. **API 速率限制** ✅ 已實作
 5. **錯誤監控設置**
 
 ### 性能優化
@@ -792,12 +885,16 @@ MIT License - 詳見 [LICENSE](LICENSE) 檔案
 
 ### 🔧 技術債務
 
-#### 後端問題
-- **資料庫連接管理**：`database.ts` 中的 `closeDatabase()` 函數存在語法錯誤（第80行缺少 `new Promise`）
+#### 已修復問題 ✅
+- **資料庫連接管理**：已修復語法錯誤，新增健康檢查和優雅關閉機制
+- **API 速率限制**：已實作完整的多層級速率限制系統
+- **Google Maps API 配額管理**：已建立智能配額追蹤和管理機制
+- **健康檢查機制**：已增強健康檢查端點，包含資料庫狀態監控
+
+#### 待改進問題
 - **錯誤處理不完整**：部分 API 端點缺乏完整的錯誤邊界處理
 - **SQLite 限制**：使用 SQLite 作為生產環境資料庫可能面臨併發和擴展性限制
-- **API 速率限制**：缺乏對 Google Maps API 呼叫的速率限制和配額管理
-- **環境變數驗證**：配置驗證僅為警告，不會阻止服務啟動
+- **環境變數驗證**：開發環境允許使用預設值，可能導致安全風險
 
 #### 前端問題
 - **地圖載入穩定性**：Google Maps API 載入失敗時的錯誤處理可以更優雅
@@ -836,7 +933,6 @@ MIT License - 詳見 [LICENSE](LICENSE) 檔案
 ### 📈 短期改進（1-3個月）
 
 #### 技術優化
-- **修復已知 Bug**：優先修復資料庫連接和錯誤處理問題
 - **API 標準化**：統一前後端 API 錯誤處理格式
 - **性能優化**：實作地點資料分頁和虛擬滾動
 - **測試覆蓋**：增加單元測試和整合測試覆蓋率

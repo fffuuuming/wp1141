@@ -9,10 +9,31 @@ const requiredEnvVars = [
   'GOOGLE_MAPS_SERVER_KEY'
 ];
 
-const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+// 檢查環境變數是否存在且不為空
+const missingEnvVars = requiredEnvVars.filter(envVar => {
+  const value = process.env[envVar];
+  return !value || value.trim() === '';
+});
+
+// 檢查生產環境的特殊要求
+const isProduction = process.env.NODE_ENV === 'production';
+const isUsingDefaultJWT = process.env.JWT_SECRET === 'your-super-secret-jwt-key-change-this-in-production';
 
 if (missingEnvVars.length > 0) {
-  console.warn(`⚠️ 警告: 缺少必要的環境變數: ${missingEnvVars.join(', ')}`);
+  console.error(`❌ 錯誤: 缺少必要的環境變數: ${missingEnvVars.join(', ')}`);
+  if (isProduction) {
+    console.error('❌ 生產環境必須設定所有必要的環境變數');
+    process.exit(1);
+  } else {
+    console.warn(`⚠️ 警告: 缺少必要的環境變數: ${missingEnvVars.join(', ')}`);
+    console.warn('⚠️ 將使用預設值，請在生產環境中設定正確的環境變數');
+  }
+}
+
+// 生產環境安全檢查
+if (isProduction && isUsingDefaultJWT) {
+  console.error('❌ 生產環境不能使用預設的 JWT secret');
+  process.exit(1);
 }
 
 // 配置物件
