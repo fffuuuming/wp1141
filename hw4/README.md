@@ -240,11 +240,9 @@ graph TB
 ### 環境需求
 - **Node.js** >= 16.0.0
 - **npm** >= 8.0.0
-- **Google Maps API Key** (需要啟用以下 API)：
-  - Maps JavaScript API
-  - Geocoding API
-  - Places API
-  - Directions API
+- **Google Maps API Key**：
+  - 前端 Browser Key (Maps JavaScript API)
+  - 後端 Server Key (Geocoding API / Places API / Directions API)
 
 ### 安裝與設置
 
@@ -287,15 +285,15 @@ graph TB
    ```
 
    **設置步驟**：
-   ```bash
-   # 後端：複製環境變數範本並填入實際值
-   cp backend/.env.example backend/.env
-   # 編輯 backend/.env 並填入你的 Google Maps Server Key
+   - 分別複製前後端環境變數範本
+      ```bash
+      # backend
+      cp backend/.env.example backend/.env
 
-   # 前端：複製環境變數範本並填入實際值
-   cp frontend/.env.example frontend/.env
-   # 編輯 frontend/.env 並填入你的 Google Maps Browser Key
-   ```
+      # frontend
+      cp frontend/.env.example frontend/.env
+      ```
+   -  填入實際值 （你自己的 api key, secret...)
 
    **⚠️ 安全提醒**
    
