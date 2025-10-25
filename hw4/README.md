@@ -152,12 +152,29 @@
 
 2. **設置環境變數**
    ```bash
-   # 複製環境變數範本
+   # 後端：複製環境變數範本並填入 Server Key
    cp backend/env.example backend/.env
-   
-   # 編輯 .env 檔案，填入 Google Maps API Key
-   # GOOGLE_MAPS_API_KEY=your_api_key_here
+   # GOOGLE_MAPS_SERVER_KEY=YOUR_SERVER_KEY
+
+   # 前端：複製環境變數範本並填入 Browser Key
+   cp frontend/env.example frontend/.env
+   # VITE_GOOGLE_MAPS_JS_KEY=YOUR_BROWSER_KEY
    ```
+
+   **⚠️ 安全提醒**
+   
+   **後端 Key（Server Key）安全風險**
+   
+   - **風險描述**：Server Key 具有較高的 API 配額限制，且沒有瀏覽器端的安全限制
+   - **潛在威脅**：
+     - Key 洩露時可能被惡意使用，導致 API 配額耗盡
+     - 可能被用於未授權的 API 呼叫，產生額外費用
+     - 缺乏 IP 限制時，任何知道 Key 的人都可以使用
+   - **目前狀況**：由於本地開發需求，暫時未設定 IP 限制
+   - **建議措施**：
+     - 定期監控 API 使用量
+     - 部署到生產環境時務必設定 IP 限制
+     - 考慮使用環境變數管理，避免將 Key 提交到版本控制
 
 3. **安裝依賴**
    ```bash
