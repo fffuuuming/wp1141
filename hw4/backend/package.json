@@ -22,9 +22,7 @@
     "db:clear": "ts-node scripts/db/clear-all-data.ts",
     "db:rebuild": "ts-node scripts/db/rebuild-database.ts",
     "db:info": "ts-node scripts/db/show-database-info.ts",
-    "clear-data": "npm run db:clear",
-    "reset-db": "npm run db:rebuild",
-    "fresh-start": "npm run db:rebuild && npm run init-db",
+    "db:fresh-start": "npm run db:rebuild && npm run init-db",
     "check-jwt": "ts-node scripts/check-jwt-secret.ts",
     "generate-jwt": "node -e \"console.log('JWT_SECRET=' + require('crypto').randomBytes(64).toString('hex'))\"",
     "test": "npm run test:all"

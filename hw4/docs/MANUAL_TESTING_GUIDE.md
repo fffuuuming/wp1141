@@ -130,16 +130,9 @@ npm run db:info
 
 # 清除所有測試資料（保留資料庫結構）
 npm run db:clear
-# 或者使用別名
-npm run clear-data
-
-# 完全重置資料庫（刪除並重建）
-npm run db:rebuild
-# 或者使用別名
-npm run reset-db
 
 # 完整重置並準備測試環境
-npm run fresh-start
+npm run db:fresh-start
 
 # 初始化資料庫（如果資料庫不存在）
 npm run init-db
@@ -148,8 +141,7 @@ npm run init-db
 **腳本說明**：
 - `db:info` - 查看資料庫狀態和統計資訊
 - `db:clear` / `clear-data` - 清除所有資料但保留資料庫結構
-- `db:rebuild` / `reset-db` - 完全重建資料庫（刪除並重新建立）
-- `fresh-start` - 重建資料庫並初始化（最徹底的重置）
+- `db:fresh-start` - 重建資料庫並初始化（最徹底的重置）
 - `init-db` - 僅初始化資料庫結構（如果資料庫不存在）
 
 ### **方法 2: 手動清除瀏覽器資料**
