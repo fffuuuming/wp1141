@@ -16,7 +16,7 @@ import {
   FormLabel,
 } from '@mui/material';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { LocationOn, Save, Cancel } from '@mui/icons-material';
+import { LocationOn, Save, Cancel, Explore } from '@mui/icons-material';
 import { locationApi, googleApi } from '../services/api/index';
 import type { CreateLocationRequest } from '../services/api/index';
 
@@ -325,6 +325,42 @@ const AddLocationPage: React.FC = () => {
               </Typography>
             )}
           </Box>
+        </Box>
+
+        {/* 探索提示區域 */}
+        <Box 
+          sx={{ 
+            mb: 3, 
+            p: 3, 
+            backgroundColor: '#f8f9fa', 
+            borderRadius: 2, 
+            border: '1px solid #e9ecef',
+            textAlign: 'center'
+          }}
+        >
+          <Typography variant="h6" sx={{ mb: 1, color: 'text.primary' }}>
+            🤔 不知道地點？
+          </Typography>
+          <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+            在地圖上探索並點擊感興趣的地點，系統會自動填入相關資訊
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<Explore />}
+            onClick={() => navigate('/explore')}
+            sx={{
+              backgroundColor: '#ff6b35',
+              '&:hover': {
+                backgroundColor: '#e55a2b',
+              },
+              borderRadius: 2,
+              px: 3,
+              py: 1,
+              fontWeight: 'bold',
+            }}
+          >
+            開始探索
+          </Button>
         </Box>
 
         {/* 錯誤訊息 */}

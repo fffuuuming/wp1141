@@ -283,78 +283,105 @@ const MyLocationsPage: React.FC = () => {
           </Fade>
         ) : (viewMode === 'list' || viewMode === 'both') ? (
           <Fade in timeout={1400}>
-            <Grid container spacing={3}>
-              {filteredLocations.map((location) => (
-                <Grid item xs={12} sm={6} md={4} key={location.id}>
-                  <Card
-                    onClick={() => navigate(`/my-locations/${location.id}`)}
-                    sx={{
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      transition: 'all 0.3s ease',
-                      border: '1px solid #e0e0e0',
-                      borderRadius: 3,
-                      cursor: 'pointer',
-                      '&:hover': {
-                        transform: 'translateY(-4px)',
-                        boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)',
-                        borderColor: '#ff6b35',
-                      },
-                    }}
-                  >
-                    <CardContent sx={{ flexGrow: 1, p: 3 }}>
-                      <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: 'black' }}>
-                        {location.name}
-                      </Typography>
-                      
-                      {location.description && (
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2, lineHeight: 1.6 }}>
-                          {location.description}
+            <Box>
+              {/* 新增地點按鈕區域 */}
+              <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
+                <Button
+                  variant="contained"
+                  startIcon={<Add />}
+                  onClick={() => navigate('/my-locations/new')}
+                  sx={{
+                    backgroundColor: '#ff6b35',
+                    borderRadius: 2,
+                    px: 3,
+                    py: 1.5,
+                    fontSize: '1rem',
+                    fontWeight: 'bold',
+                    textTransform: 'none',
+                    '&:hover': {
+                      backgroundColor: '#e55a2b',
+                    },
+                    transition: 'all 0.3s ease',
+                  }}
+                >
+                  新增地點
+                </Button>
+              </Box>
+              
+              {/* 地點卡片網格 */}
+              <Grid container spacing={3}>
+                {filteredLocations.map((location) => (
+                  <Grid item xs={12} sm={6} md={4} key={location.id}>
+                    <Card
+                      onClick={() => navigate(`/my-locations/${location.id}`)}
+                      sx={{
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        transition: 'all 0.3s ease',
+                        border: '1px solid #e0e0e0',
+                        borderRadius: 3,
+                        cursor: 'pointer',
+                        '&:hover': {
+                          transform: 'translateY(-4px)',
+                          boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)',
+                          borderColor: '#ff6b35',
+                        },
+                      }}
+                    >
+                      <CardContent sx={{ flexGrow: 1, p: 3 }}>
+                        <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: 'black' }}>
+                          {location.name}
                         </Typography>
-                      )}
-
-                      {location.address && (
-                        <Box display="flex" alignItems="center" sx={{ mb: 2 }}>
-                          <LocationOn sx={{ fontSize: 16, mr: 1, color: '#ff6b35' }} />
-                          <Typography variant="body2" color="text.secondary">
-                            {location.address}
+                        
+                        {location.description && (
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 2, lineHeight: 1.6 }}>
+                            {location.description}
                           </Typography>
-                        </Box>
-                      )}
+                        )}
 
-                      <Box display="flex" gap={1} flexWrap="wrap">
-                        {location.category && (
-                          <Chip
-                            label={location.category}
-                            size="small"
-                            sx={{
-                              backgroundColor: 'rgba(255, 107, 53, 0.1)',
-                              color: '#ff6b35',
-                              fontWeight: 'bold',
-                              border: '1px solid rgba(255, 107, 53, 0.3)',
-                            }}
-                          />
+                        {location.address && (
+                          <Box display="flex" alignItems="center" sx={{ mb: 2 }}>
+                            <LocationOn sx={{ fontSize: 16, mr: 1, color: '#ff6b35' }} />
+                            <Typography variant="body2" color="text.secondary">
+                              {location.address}
+                            </Typography>
+                          </Box>
                         )}
-                        {location.rating && (
-                          <Chip
-                            icon={<Star sx={{ color: '#ff6b35' }} />}
-                            label={location.rating}
-                            size="small"
-                            sx={{
-                              backgroundColor: 'rgba(255, 107, 53, 0.1)',
-                              color: '#ff6b35',
-                              fontWeight: 'bold',
-                              border: '1px solid rgba(255, 107, 53, 0.3)',
-                            }}
-                          />
-                        )}
-                      </Box>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
+
+                        <Box display="flex" gap={1} flexWrap="wrap">
+                          {location.category && (
+                            <Chip
+                              label={location.category}
+                              size="small"
+                              sx={{
+                                backgroundColor: 'rgba(255, 107, 53, 0.1)',
+                                color: '#ff6b35',
+                                fontWeight: 'bold',
+                                border: '1px solid rgba(255, 107, 53, 0.3)',
+                              }}
+                            />
+                          )}
+                          {location.rating && (
+                            <Chip
+                              icon={<Star sx={{ color: '#ff6b35' }} />}
+                              label={location.rating}
+                              size="small"
+                              sx={{
+                                backgroundColor: 'rgba(255, 107, 53, 0.1)',
+                                color: '#ff6b35',
+                                fontWeight: 'bold',
+                                border: '1px solid rgba(255, 107, 53, 0.3)',
+                              }}
+                            />
+                          )}
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
           </Fade>
         ) : null}
       </Container>
