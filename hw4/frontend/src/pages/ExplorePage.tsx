@@ -325,8 +325,8 @@ const ExplorePage: React.FC = () => {
                     >
                       <ListItemText
                         primary={
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Typography variant="subtitle1" fontWeight="bold" sx={{ color: 'black' }}>
+                          <Box component="div" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="subtitle1" fontWeight="bold" component="div" sx={{ color: 'black' }}>
                               {place.name}
                             </Typography>
                             {place.rating && (
@@ -347,8 +347,8 @@ const ExplorePage: React.FC = () => {
                           </Box>
                         }
                         secondary={
-                          <Box>
-                            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                          <Box component="div">
+                            <Typography variant="body2" color="text.secondary" component="div" sx={{ mt: 0.5 }}>
                               {place.formatted_address}
                             </Typography>
                             {place.types && place.types.length > 0 && (
@@ -374,6 +374,12 @@ const ExplorePage: React.FC = () => {
                             )}
                           </Box>
                         }
+                        primaryTypographyProps={{
+                          component: 'div'
+                        }}
+                        secondaryTypographyProps={{
+                          component: 'div'
+                        }}
                       />
                     </ListItemButton>
                   </ListItem>
