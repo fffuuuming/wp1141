@@ -49,6 +49,110 @@
 - **驗證**：express-validator
 - **測試**：自定義測試框架
 
+## 🏛️ 系統架構圖
+
+```mermaid
+graph TB
+    %% 用戶層
+    User[👤 用戶]
+    
+    %% 前端層
+    subgraph Frontend["🖥️ 前端應用 (React + TypeScript)"]
+        UI[📱 用戶介面]
+        Auth[🔐 認證系統]
+        Map[🗺️ 地圖組件]
+        Location[📍 地點管理]
+    end
+    
+    %% 後端層
+    subgraph Backend["⚙️ 後端服務 (Node.js + Express)"]
+        API[🌐 REST API]
+        AuthController[🔑 認證控制器]
+        LocationController[📍 地點控制器]
+        GoogleController[🗺️ Google API 控制器]
+        Middleware[🛡️ 中間件]
+    end
+    
+    %% 資料庫層
+    subgraph Database["💾 資料庫層"]
+        SQLite[(🗃️ SQLite 資料庫)]
+        UserTable[👤 Users 表]
+        LocationTable[📍 Locations 表]
+    end
+    
+    %% 外部服務
+    subgraph External["🌍 外部服務"]
+        GoogleMaps[🗺️ Google Maps API]
+        Places[🏢 Places API]
+        Geocoding[📍 Geocoding API]
+        Directions[🛣️ Directions API]
+    end
+    
+    %% 連接關係
+    User --> UI
+    UI --> Auth
+    UI --> Map
+    UI --> Location
+    
+    Auth --> AuthController
+    Map --> GoogleController
+    Location --> LocationController
+    
+    AuthController --> Middleware
+    LocationController --> Middleware
+    GoogleController --> Middleware
+    
+    Middleware --> API
+    API --> SQLite
+    
+    SQLite --> UserTable
+    SQLite --> LocationTable
+    
+    GoogleController --> GoogleMaps
+    GoogleController --> Places
+    GoogleController --> Geocoding
+    GoogleController --> Directions
+    
+    %% 樣式
+    classDef userClass fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    classDef frontendClass fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef backendClass fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
+    classDef databaseClass fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef externalClass fill:#fce4ec,stroke:#880e4f,stroke-width:2px
+    
+    class User userClass
+    class Frontend,UI,Auth,Map,Location frontendClass
+    class Backend,API,AuthController,LocationController,GoogleController,Middleware backendClass
+    class Database,SQLite,UserTable,LocationTable databaseClass
+    class External,GoogleMaps,Places,Geocoding,Directions externalClass
+```
+
+### 架構說明
+
+#### 🎯 **三層架構設計**
+- **展示層 (Presentation Layer)**：React 前端應用
+- **業務邏輯層 (Business Logic Layer)**：Node.js 後端服務
+- **資料存取層 (Data Access Layer)**：SQLite 資料庫
+
+#### 🔄 **資料流向**
+1. **用戶操作** → 前端 UI 組件
+2. **API 請求** → 後端控制器
+3. **業務邏輯** → 中間件處理
+4. **資料存取** → SQLite 資料庫
+5. **外部整合** → Google Maps API 服務
+
+#### 🛡️ **安全機制**
+- **JWT 認證**：前後端身份驗證
+- **中間件驗證**：API 請求安全檢查
+- **輸入驗證**：前後端雙重驗證
+- **CORS 控制**：跨域請求安全
+
+#### 🌐 **外部服務整合**
+- **Google Maps JavaScript API**：地圖顯示與互動
+- **Google Places API**：地點搜尋與詳情
+- **Google Geocoding API**：地址與座標轉換
+- **Google Directions API**：路線規劃功能
+
 ## 📁 專案結構
 
 ```
