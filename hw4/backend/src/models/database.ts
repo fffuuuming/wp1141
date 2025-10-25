@@ -15,13 +15,18 @@ if (!fs.existsSync(dbDir)) {
 const db = new sqlite3.Database(DB_PATH, (err) => {
   if (err) {
     console.error('❌ 資料庫連接失敗:', err.message);
+    process.exit(1); // 資料庫連接失敗時退出程序
   } else {
     console.log('✅ SQLite 資料庫連接成功');
   }
 });
 
-// 啟用外鍵約束
+// 啟用外鍵約束和優化設定
 db.run('PRAGMA foreign_keys = ON');
+db.run('PRAGMA journal_mode = WAL'); // 啟用 WAL 模式提升併發性能
+db.run('PRAGMA synchronous = NORMAL'); // 平衡性能和安全性
+db.run('PRAGMA cache_size = 10000'); // 增加快取大小
+db.run('PRAGMA temp_store = MEMORY'); // 使用記憶體儲存臨時表
 
 // 建立資料表的 SQL 語句
 const createTablesSQL = `
@@ -75,20 +80,60 @@ export function initializeDatabase(): Promise<void> {
   });
 }
 
-// 關閉資料庫連接
-export function closeDatabase(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    db.close((err) => {
+// 資料庫健康檢查
+export function checkDatabaseHealth(): Promise<boolean> {
+  return new Promise((resolve) => {
+    db.get('SELECT 1 as health', (err) => {
       if (err) {
-        console.error('❌ 關閉資料庫失敗:', err.message);
-        reject(err);
+        console.error('❌ 資料庫健康檢查失敗:', err.message);
+        resolve(false);
       } else {
-        console.log('✅ 資料庫連接已關閉');
-        resolve();
+        resolve(true);
       }
     });
   });
 }
+
+// 優雅關閉資料庫連接
+export function closeDatabase(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    // 等待所有查詢完成
+    db.serialize(() => {
+      db.close((err) => {
+        if (err) {
+          console.error('❌ 關閉資料庫失敗:', err.message);
+          reject(err);
+        } else {
+          console.log('✅ 資料庫連接已關閉');
+          resolve();
+        }
+      });
+    });
+  });
+}
+
+// 處理程序退出時的清理
+process.on('SIGINT', async () => {
+  console.log('🔄 收到 SIGINT 信號，正在關閉資料庫連接...');
+  try {
+    await closeDatabase();
+    process.exit(0);
+  } catch (error) {
+    console.error('❌ 關閉資料庫時發生錯誤:', error);
+    process.exit(1);
+  }
+});
+
+process.on('SIGTERM', async () => {
+  console.log('🔄 收到 SIGTERM 信號，正在關閉資料庫連接...');
+  try {
+    await closeDatabase();
+    process.exit(0);
+  } catch (error) {
+    console.error('❌ 關閉資料庫時發生錯誤:', error);
+    process.exit(1);
+  }
+});
 
 // 匯出資料庫實例
 export default db;

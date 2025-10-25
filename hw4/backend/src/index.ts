@@ -11,9 +11,23 @@ import authRoutes from './routes/auth';
 import googleApiRoutes from './routes/googleApi';
 import locationRoutes from './routes/location';
 
+// 載入資料庫
+import { checkDatabaseHealth } from './models/database';
+
 // 載入錯誤處理
 import { errorHandler, notFoundHandler } from './utils/errors';
 import { sendSuccess } from './utils/response';
+
+// 載入速率限制
+import { 
+  generalRateLimit, 
+  authRateLimit, 
+  googleApiRateLimit, 
+  locationApiRateLimit,
+  registerRateLimit,
+  slowDownLimit,
+  rateLimitStatus
+} from './middleware/rateLimiting';
 
 const app = express();
 
@@ -33,6 +47,12 @@ app.use(cors({
   origin: config.cors.origins,
   credentials: true
 }));
+
+// 速率限制設定
+app.use(rateLimitStatus); // 添加速率限制狀態資訊
+app.use(slowDownLimit); // 慢速限制
+app.use(generalRateLimit); // 一般速率限制
+
 app.use(express.json({ limit: '10mb' })); // JSON 解析
 app.use(express.urlencoded({ extended: true })); // URL 編碼解析
 
@@ -48,17 +68,48 @@ app.get('/', (req, res) => {
 });
 
 // 健康檢查路由
-app.get('/health', (req, res) => {
-  sendSuccess(res, 200, '服務健康', {
-    uptime: process.uptime(),
-    environment: config.server.nodeEnv
-  });
+app.get('/health', async (req, res) => {
+  try {
+    const dbHealth = await checkDatabaseHealth();
+    const healthStatus = {
+      status: 'healthy',
+      uptime: process.uptime(),
+      environment: config.server.nodeEnv,
+      database: dbHealth ? 'connected' : 'disconnected',
+      timestamp: new Date().toISOString(),
+      version: '1.0.0'
+    };
+    
+    if (!dbHealth) {
+      healthStatus.status = 'unhealthy';
+      return res.status(503).json({
+        success: false,
+        message: '服務不健康',
+        data: healthStatus
+      });
+    }
+    
+    return sendSuccess(res, 200, '服務健康', healthStatus);
+  } catch (error) {
+    res.status(503).json({
+      success: false,
+      message: '健康檢查失敗',
+      error: 'HEALTH_CHECK_FAILED',
+      data: {
+        status: 'unhealthy',
+        uptime: process.uptime(),
+        environment: config.server.nodeEnv,
+        database: 'error',
+        timestamp: new Date().toISOString()
+      }
+    });
+  }
 });
 
-// API 路由
-app.use('/api/auth', authRoutes);
-app.use('/api/google', googleApiRoutes);
-app.use('/api/locations', locationRoutes);
+// API 路由（應用特定速率限制）
+app.use('/api/auth', authRateLimit, authRoutes); // 認證 API 使用嚴格限制
+app.use('/api/google', googleApiRateLimit, googleApiRoutes); // Google API 使用特殊限制
+app.use('/api/locations', locationApiRateLimit, locationRoutes); // 地點 API 使用中等限制
 
 // API 資訊路由
 app.get('/api', (req, res) => {
