@@ -255,14 +255,46 @@ graph TB
    ```
 
 2. **設置環境變數**
-   ```bash
-   # 後端：複製環境變數範本並填入 Server Key
-   cp backend/.env.example backend/.env
-   # GOOGLE_MAPS_SERVER_KEY=YOUR_SERVER_KEY
 
-   # 前端：複製環境變數範本並填入 Browser Key
+   **後端環境變數範本** (`backend/.env.example`)：
+   ```bash
+   # Server Configuration
+   # Server Configuration
+   PORT=3001
+   NODE_ENV=development
+
+   # JWT Configuration
+   JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+   JWT_EXPIRES_IN=7d
+
+   # Google Maps API (Server Key - 已啟用 Geocoding/Places/Directions)
+   GOOGLE_MAPS_SERVER_KEY=your-server-key-here
+
+   # Database Configuration
+   DATABASE_PATH=../database/locations.db
+
+   # CORS Configuration
+   FRONTEND_URL=http://localhost:5173
+   ```
+
+   **前端環境變數範本** (`frontend/.env.example`)：
+   ```bash
+   # Google Maps API (Browser Key - Maps JavaScript API)
+   VITE_GOOGLE_MAPS_JS_KEY=your-browser-key-here
+
+   # Backend API
+   VITE_API_BASE_URL=http://localhost:3001
+   ```
+
+   **設置步驟**：
+   ```bash
+   # 後端：複製環境變數範本並填入實際值
+   cp backend/.env.example backend/.env
+   # 編輯 backend/.env 並填入你的 Google Maps Server Key
+
+   # 前端：複製環境變數範本並填入實際值
    cp frontend/.env.example frontend/.env
-   # VITE_GOOGLE_MAPS_JS_KEY=YOUR_BROWSER_KEY
+   # 編輯 frontend/.env 並填入你的 Google Maps Browser Key
    ```
 
    **⚠️ 安全提醒**
@@ -342,6 +374,254 @@ graph TB
 | GET | `/api/google/places/details/:placeId` | 取得地點詳情 | ✅ |
 | POST | `/api/google/directions` | 取得路線規劃 | ✅ |
 | POST | `/api/google/distance-matrix` | 計算距離矩陣 | ✅ |
+
+## 📡 API 使用範例
+
+### 🔐 授權流程範例
+
+#### 1. 使用者註冊
+```bash
+curl -X POST http://localhost:3001/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "testuser",
+    "email": "test@example.com",
+    "password": "password123"
+  }'
+```
+
+**回應範例**：
+```json
+{
+  "success": true,
+  "message": "使用者註冊成功",
+  "data": {
+    "user": {
+      "id": 1,
+      "username": "testuser",
+      "email": "test@example.com"
+    },
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+}
+```
+
+#### 2. 使用者登入
+```bash
+curl -X POST http://localhost:3001/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@example.com",
+    "password": "password123"
+  }'
+```
+
+**回應範例**：
+```json
+{
+  "success": true,
+  "message": "登入成功",
+  "data": {
+    "user": {
+      "id": 1,
+      "username": "testuser",
+      "email": "test@example.com"
+    },
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+}
+```
+
+### 📍 地點管理範例
+
+#### 3. 新增地點（需要認證）
+```bash
+curl -X POST http://localhost:3001/api/locations \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN_HERE" \
+  -d '{
+    "name": "台北101",
+    "description": "台灣最高建築物",
+    "address": "台北市信義區信義路五段7號",
+    "latitude": 25.033,
+    "longitude": 121.5654,
+    "category": "景點",
+    "rating": 5,
+    "notes": "觀景台視野很棒"
+  }'
+```
+
+**回應範例**：
+```json
+{
+  "success": true,
+  "message": "地點新增成功",
+  "data": {
+    "id": 1,
+    "name": "台北101",
+    "description": "台灣最高建築物",
+    "address": "台北市信義區信義路五段7號",
+    "latitude": 25.033,
+    "longitude": 121.5654,
+    "category": "景點",
+    "rating": 5,
+    "notes": "觀景台視野很棒",
+    "userId": 1,
+    "createdAt": "2024-01-15T10:30:00.000Z"
+  }
+}
+```
+
+#### 4. 取得地點清單（需要認證）
+```bash
+curl -X GET http://localhost:3001/api/locations \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN_HERE"
+```
+
+**回應範例**：
+```json
+{
+  "success": true,
+  "message": "地點清單取得成功",
+  "data": [
+    {
+      "id": 1,
+      "name": "台北101",
+      "description": "台灣最高建築物",
+      "address": "台北市信義區信義路五段7號",
+      "latitude": 25.033,
+      "longitude": 121.5654,
+      "category": "景點",
+      "rating": 5,
+      "notes": "觀景台視野很棒",
+      "userId": 1,
+      "createdAt": "2024-01-15T10:30:00.000Z"
+    }
+  ]
+}
+```
+
+### 🗺️ Google API 整合範例
+
+#### 5. 地址轉座標（需要認證）
+```bash
+curl -X POST http://localhost:3001/api/google/geocode \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN_HERE" \
+  -d '{
+    "address": "台北市信義區信義路五段7號"
+  }'
+```
+
+**回應範例**：
+```json
+{
+  "success": true,
+  "message": "地理編碼成功",
+  "data": {
+    "address": "台北市信義區信義路五段7號",
+    "latitude": 25.033,
+    "longitude": 121.5654,
+    "formatted_address": "110台灣台北市信義區信義路五段7號"
+  }
+}
+```
+
+#### 6. 搜尋附近地點（需要認證）
+```bash
+curl -X POST http://localhost:3001/api/google/places/search \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN_HERE" \
+  -d '{
+    "query": "星巴克",
+    "location": {
+      "lat": 25.033,
+      "lng": 121.5654
+    },
+    "radius": 1000
+  }'
+```
+
+**回應範例**：
+```json
+{
+  "success": true,
+  "message": "地點搜尋成功",
+  "data": {
+    "places": [
+      {
+        "place_id": "ChIJ...",
+        "name": "星巴克 台北101店",
+        "formatted_address": "台北市信義區信義路五段7號",
+        "geometry": {
+          "location": {
+            "lat": 25.033,
+            "lng": 121.5654
+          }
+        },
+        "rating": 4.2,
+        "types": ["cafe", "food", "point_of_interest"]
+      }
+    ]
+  }
+}
+```
+
+#### 7. 更新地點（需要認證）
+```bash
+curl -X PUT http://localhost:3001/api/locations/1 \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN_HERE" \
+  -d '{
+    "name": "台北101觀景台",
+    "description": "台灣最高建築物觀景台",
+    "rating": 5,
+    "notes": "夜景很美，值得一遊"
+  }'
+```
+
+**回應範例**：
+```json
+{
+  "success": true,
+  "message": "地點更新成功",
+  "data": {
+    "id": 1,
+    "name": "台北101觀景台",
+    "description": "台灣最高建築物觀景台",
+    "address": "台北市信義區信義路五段7號",
+    "latitude": 25.033,
+    "longitude": 121.5654,
+    "category": "景點",
+    "rating": 5,
+    "notes": "夜景很美，值得一遊",
+    "userId": 1,
+    "updatedAt": "2024-01-15T11:00:00.000Z"
+  }
+}
+```
+
+### 🔑 認證 Token 使用說明
+
+**取得 Token**：
+1. 先使用註冊或登入 API 取得 JWT token
+2. 在後續的 API 請求中，在 Header 中加入：`Authorization: Bearer YOUR_JWT_TOKEN_HERE`
+3. Token 有效期為 7 天，過期後需要重新登入
+
+**錯誤處理範例**：
+```bash
+# 未提供認證 token 的錯誤回應
+curl -X GET http://localhost:3001/api/locations
+```
+
+**錯誤回應**：
+```json
+{
+  "success": false,
+  "message": "未提供認證 token",
+  "error": "UNAUTHORIZED"
+}
+```
 
 ## 🔧 開發指令
 
