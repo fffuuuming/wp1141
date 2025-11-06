@@ -1,30 +1,118 @@
-export default function ProfilePage({ params }: { params: { userID: string } }) {
+import { redirect } from 'next/navigation'
+import { auth } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
+import { ProfileContent } from '@/components/ProfileContent'
+import Link from 'next/link'
+
+export const dynamic = 'force-dynamic'
+
+interface ProfilePageProps {
+  params: Promise<{ userID: string }>
+}
+
+export default async function ProfilePage({ params }: ProfilePageProps) {
+  const { userID } = await params
+  const session = await auth()
+  const currentUserId = session?.user?.id
+
+  // Fetch user profile data
+  const user = await prisma.user.findUnique({
+    where: { userID },
+    select: {
+      id: true,
+      userID: true,
+      name: true,
+      email: true,
+      image: true,
+      bio: true,
+      backgroundImage: true,
+      createdAt: true,
+      _count: {
+        select: {
+          posts: true,
+          following: true,
+          followers: true,
+        },
+      },
+    },
+  })
+
+  if (!user) {
+    redirect('/')
+  }
+
+  // Check if current user follows this user
+  let isFollowing = false
+  if (currentUserId && currentUserId !== user.id) {
+    const follow = await prisma.follow.findFirst({
+      where: {
+        followerId: currentUserId,
+        followingId: user.id,
+      },
+    })
+    isFollowing = !!follow
+  }
+
+  // Check if this is the current user's own profile
+  const isOwnProfile = currentUserId === user.id
+
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
-      <div className="border-b border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm sticky top-0 z-10">
-        <div className="p-6">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Profile</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">@{params.userID}</p>
-        </div>
-      </div>
-      <div className="p-6">
-        <div className="max-w-2xl mx-auto">
-          <div className="text-center py-12">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 rounded-2xl mb-6">
-              <svg className="w-10 h-10 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
+      {/* Top Header: Back Arrow, Name, Post Count, Search Icon */}
+      <div className="sticky top-0 z-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="flex items-center justify-between py-3">
+            <div className="flex items-center gap-4">
+              {/* Back Arrow */}
+              <Link
+                href="/"
+                className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </Link>
+              
+              {/* Name and Post Count */}
+              <div>
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                  {user.name || 'User'}
+                </h1>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {user._count.posts} posts
+                </p>
+              </div>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              Profile Page
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400">
-              Profile for @{params.userID} - Coming in Stage 5!
-            </p>
+
+            {/* Search Icon */}
+            <button className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </button>
           </div>
         </div>
       </div>
+
+      {/* Profile Content */}
+      <ProfileContent
+        user={{
+          id: user.id,
+          userID: user.userID,
+          name: user.name,
+          image: user.image,
+          bio: user.bio,
+          backgroundImage: user.backgroundImage,
+          createdAt: user.createdAt,
+        }}
+        stats={{
+          posts: user._count.posts,
+          following: user._count.following,
+          followers: user._count.followers,
+        }}
+        isFollowing={isFollowing}
+        isOwnProfile={isOwnProfile}
+      />
     </div>
   )
 }
-
