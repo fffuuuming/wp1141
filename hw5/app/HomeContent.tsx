@@ -58,13 +58,25 @@ export default function HomeContent() {
         return
       }
 
-      // Redirect to the appropriate OAuth provider
+      // Validate provider
       const provider = data.provider as 'google' | 'github' | 'facebook'
+      if (!provider || !['google', 'github', 'facebook'].includes(provider)) {
+        setError('Invalid provider. Please contact support.')
+        setLoading(false)
+        return
+      }
+
+      console.log(`Redirecting to ${provider} OAuth for userID: ${inputUserID}`)
+      
+      // Redirect to the appropriate OAuth provider
+      // signIn will redirect the page, so we don't need to handle the return value
       await signIn(provider, {
         callbackUrl: '/',
+        redirect: true,
       })
     } catch (err: any) {
-      setError(err.message || 'An error occurred')
+      console.error('Error during userID login:', err)
+      setError(err.message || 'An error occurred while logging in')
       setLoading(false)
     }
   }

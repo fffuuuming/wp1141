@@ -14,7 +14,7 @@ model User {
   id              String    @id @default(cuid())
   userID          String    @unique // Will be set to temporary value in createUser event, but needs default for PrismaAdapter
   name            String?
-  email           String?   @unique // NextAuth requires email to be unique for lookups
+  email           String?   // Not unique - same email can be used with different providers
   emailVerified   DateTime?
   image           String?
   provider        String    @default("") // Temporary default, will be updated in createUser event

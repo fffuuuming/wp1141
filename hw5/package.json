@@ -12,7 +12,11 @@
     "db:push:reset": "prisma db push --force-reset",
     "db:studio": "prisma studio",
     "db:clear": "tsx scripts/clear-database.ts",
-    "test:delete-user": "tsx scripts/delete-test-user.ts"
+    "test:delete-user": "tsx scripts/delete-test-user.ts",
+    "fix:providers": "tsx scripts/fix-user-providers.ts",
+    "check:accounts": "tsx scripts/check-accounts.ts",
+    "unlink:accounts": "tsx scripts/unlink-and-separate-accounts.ts",
+    "fix:orphaned": "tsx scripts/fix-orphaned-users.ts"
   },
   "keywords": [],
   "author": "",

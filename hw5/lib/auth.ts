@@ -6,39 +6,123 @@ import FacebookProvider from 'next-auth/providers/facebook'
 import NextAuth from 'next-auth'
 import { prisma } from './prisma'
 
-// Create base adapter
+// Type assertion for Prisma client - account model exists but TypeScript may not recognize it
+// This is safe because Prisma generates the client with lowercase model names
+const prismaClient = prisma as typeof prisma & { account: any }
+
+/**
+ * Generate a unique temporary userID for new users
+ * Format: temp_{timestamp}_{random}
+ */
+async function generateTempUserID(): Promise<string> {
+  let tempUserID = `temp_${Date.now()}_${Math.random().toString(36).substring(7)}`
+  
+  // Ensure uniqueness (collision is extremely rare, but check anyway)
+  let exists = await prisma.user.findUnique({ where: { userID: tempUserID } })
+  while (exists) {
+    tempUserID = `temp_${Date.now()}_${Math.random().toString(36).substring(7)}`
+    exists = await prisma.user.findUnique({ where: { userID: tempUserID } })
+  }
+  
+  return tempUserID
+}
+
+// Create base Prisma adapter
 const baseAdapter = PrismaAdapter(prisma) as any
 
-// Custom adapter wrapper to handle userID creation
+/**
+ * Custom adapter that:
+ * 1. Prevents account linking (different providers = separate accounts)
+ * 2. Assigns temporary userIDs to new users
+ * 3. Ensures provider info is synced correctly
+ */
 const customAdapter = {
   ...baseAdapter,
-  async createUser(user: any) {
-    // Generate a unique temporary userID
-    let tempUserID = `temp_${Date.now()}_${Math.random().toString(36).substring(7)}`
-    
-    // Ensure uniqueness (in case of collision, which is extremely rare)
-    let exists = await prisma.user.findUnique({ where: { userID: tempUserID } })
-    while (exists) {
-      tempUserID = `temp_${Date.now()}_${Math.random().toString(36).substring(7)}`
-      exists = await prisma.user.findUnique({ where: { userID: tempUserID } })
-    }
 
-    // Create user with temporary userID and default provider values
+  /**
+   * Create a new user with a temporary userID
+   * This is called when a new OAuth account is created
+   * 
+   * IMPORTANT: We call the base adapter's createUser first to ensure
+   * the Account record is created properly, then we update the user
+   * with the temporary userID and provider info.
+   */
+  async createUser(user: any) {
+    // Generate temporary userID first
+    const tempUserID = await generateTempUserID()
+    
+    // Create user with temporary userID
+    // The base adapter's createUser would fail because our schema requires userID
+    // So we create it ourselves, but we need to ensure the Account is created later
     const createdUser = await prisma.user.create({
       data: {
         ...user,
         userID: tempUserID,
-        provider: user.provider || '',
-        providerId: user.providerId || '',
+        provider: '', // Will be synced from Account in createUser event
+        providerId: '', // Will be synced from Account in createUser event
       },
     })
 
     return createdUser
   },
+
+  /**
+   * Link account to user
+   * 
+   * IMPORTANT: This is called AFTER createUser, so the user already exists.
+   * We should NOT create a new user here - we should link the account to the existing user.
+   * The base adapter handles this correctly, so we just call it.
+   * 
+   * The account linking prevention is handled by:
+   * 1. getUserByEmail returning null (prevents email-based linking)
+   * 2. getUserByAccount only finding by provider+providerId (prevents cross-provider linking)
+   */
+  async linkAccount(account: any) {
+    // Use base adapter's linkAccount - it will link to the user created in createUser
+    return await baseAdapter.linkAccount(account)
+  },
+
+  /**
+   * Prevent email-based user lookups
+   * This prevents NextAuth from finding existing users by email and linking accounts
+   * Returns null to force creation of new accounts for different providers
+   */
+  async getUserByEmail(email: string) {
+    // Always return null - we don't want email-based account linking
+    // Different providers should create separate accounts even with same email
+    return null
+  },
+
+  /**
+   * Find user by provider + providerAccountId combination
+   * This is the ONLY way users should be found - ensures provider isolation
+   */
+  async getUserByAccount({ provider, providerAccountId }: { provider: string; providerAccountId: string }) {
+    const account = await prismaClient.account.findUnique({
+      where: {
+        provider_providerAccountId: {
+          provider,
+          providerAccountId,
+        },
+      },
+      include: {
+        user: true,
+      },
+    })
+    return account?.user ?? null
+  },
 }
 
+/**
+ * NextAuth configuration
+ * Key features:
+ * - Database session strategy (sessions stored in DB)
+ * - Custom adapter prevents account linking
+ * - Provider info synced after user creation
+ */
 export const authOptions: NextAuthConfig = {
   adapter: customAdapter as any,
+  
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -53,22 +137,36 @@ export const authOptions: NextAuthConfig = {
       clientSecret: process.env.FACEBOOK_CLIENT_SECRET!,
     }),
   ],
+
   session: {
     strategy: 'database',
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+    updateAge: 24 * 60 * 60, // Update session every 24 hours of activity
   },
+
   pages: {
     signIn: '/auth/signin',
     error: '/auth/error',
   },
+
   callbacks: {
+    /**
+     * Sign-in callback - validates that the user can sign in
+     * Checks if user exists with this exact provider + providerId combination
+     * Also syncs provider info as a backup if createUser event didn't sync it
+     */
     async signIn({ user, account, profile }) {
       if (!account || !user) {
-        console.error('SignIn callback: Missing account or user', { account: !!account, user: !!user })
+        console.error('[Auth] SignIn callback: Missing account or user', {
+          hasAccount: !!account,
+          hasUser: !!user,
+        })
         return false
       }
 
       try {
-        // Check if user already exists with this provider
+        // Check if user already exists with this EXACT provider + providerId
+        // This ensures different providers create separate accounts
         const existingUser = await prisma.user.findFirst({
           where: {
             provider: account.provider,
@@ -76,22 +174,54 @@ export const authOptions: NextAuthConfig = {
           },
         })
 
-        // If user exists, allow sign in
+        // If user exists with this provider, allow sign in
         if (existingUser) {
           return true
         }
 
-        // New user - will be created by adapter
-        // We'll handle userID assignment after creation
+        // For new users, check if provider info needs to be synced
+        // This is a backup in case the createUser event didn't sync it
+        if (user.id) {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: user.id },
+            select: { provider: true, providerId: true },
+          })
+
+          // If provider info is missing, try to sync it from Account
+          if (dbUser && (!dbUser.provider || !dbUser.providerId)) {
+            const accountRecord = await prismaClient.account.findFirst({
+              where: { userId: user.id },
+            })
+
+            if (accountRecord) {
+              await prisma.user.update({
+                where: { id: user.id },
+                data: {
+                  provider: accountRecord.provider,
+                  providerId: accountRecord.providerAccountId,
+                },
+              })
+              console.log(`[Auth] ✅ Synced provider info in signIn callback for user ${user.id}: ${accountRecord.provider}`)
+            }
+          }
+        }
+
+        // New account - allow creation
+        // The adapter will handle creating a new user with temporary userID
         return true
       } catch (error) {
-        console.error('SignIn callback error:', error)
+        console.error('[Auth] SignIn callback error:', error)
         return false
       }
     },
+
+    /**
+     * Session callback - enriches session with user data from database
+     * Includes userID and other user information
+     */
     async session({ session, user }) {
       if (session.user && user) {
-        // Get full user data including userID
+        // Fetch full user data including userID
         const dbUser = await prisma.user.findUnique({
           where: { id: user.id },
           select: {
@@ -105,7 +235,7 @@ export const authOptions: NextAuthConfig = {
         })
 
         if (dbUser && dbUser.userID) {
-          // Use Object.assign to bypass TypeScript strict checking
+          // Enrich session with user data
           Object.assign(session.user, {
             id: dbUser.id,
             userID: dbUser.userID,
@@ -118,25 +248,55 @@ export const authOptions: NextAuthConfig = {
       return session
     },
   },
+
   events: {
+    /**
+     * After user creation, sync provider info from Account model
+     * This ensures the User model has the correct provider and providerId
+     * 
+     * IMPORTANT: This event fires AFTER the Account is created by the base adapter
+     * However, there's a timing issue - the Account might be created AFTER this event fires.
+     * So we also sync in the signIn callback as a backup.
+     */
     async createUser({ user }) {
-      // When a new user is created, sync provider info from Account
-      if (user.id) {
-        // Get the account to extract provider info
-        const account = await prisma.account.findFirst({
+      if (!user.id) {
+        console.warn('[Auth] createUser event: user.id is missing')
+        return
+      }
+
+      // Retry mechanism: Account might not be created immediately
+      // Increase retries and delay to handle slower account creation
+      let account = null
+      let retries = 15 // Increased retries even more
+      const retryDelay = 300 // Increased delay (ms)
+
+      console.log(`[Auth] createUser event: Syncing provider info for user ${user.id}`)
+
+      while (!account && retries > 0) {
+        account = await prismaClient.account.findFirst({
           where: { userId: user.id },
         })
-
-        // Sync provider info from Account if available
-        if (account) {
-          await prisma.user.update({
-            where: { id: user.id },
-            data: {
-              provider: account.provider,
-              providerId: account.providerAccountId,
-            },
-          })
+        
+        if (!account) {
+          console.log(`[Auth] Account not found for user ${user.id}, retrying... (${retries} retries left)`)
+          await new Promise(resolve => setTimeout(resolve, retryDelay))
+          retries--
         }
+      }
+
+      // Sync provider info from Account to User model
+      if (account) {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            provider: account.provider,
+            providerId: account.providerAccountId,
+          },
+        })
+        console.log(`[Auth] ✅ Synced provider info for user ${user.id}: ${account.provider} (${account.providerAccountId})`)
+      } else {
+        console.warn(`[Auth] ⚠️ Could not find account for user ${user.id} after all retries`)
+        console.warn(`[Auth] Will try to sync in signIn callback as backup`)
       }
     },
   },

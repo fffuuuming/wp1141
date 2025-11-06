@@ -17,10 +17,17 @@ export async function POST(request: NextRequest) {
     const user = await prisma.user.findUnique({
       where: { userID },
       select: {
+        id: true,
         userID: true,
         name: true,
         provider: true,
         image: true,
+        accounts: {
+          select: {
+            provider: true,
+          },
+          take: 1,
+        },
       },
     })
 
@@ -31,10 +38,26 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if user has a valid provider (not empty string)
-    if (!user.provider || user.provider === '') {
+    // Get provider from user field or from Account (fallback)
+    let provider = user.provider
+    if (!provider || provider === '') {
+      // Fallback: get provider from Account model
+      if (user.accounts && user.accounts.length > 0) {
+        provider = user.accounts[0].provider
+        // Update user record with provider for future lookups
+        if (provider) {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { provider },
+          })
+        }
+      }
+    }
+
+    // Check if we have a valid provider
+    if (!provider || provider === '') {
       return NextResponse.json(
-        { error: 'User account is not properly configured' },
+        { error: 'User account is not properly configured. Please sign in with OAuth first.' },
         { status: 400 }
       )
     }
@@ -42,7 +65,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       userID: user.userID,
       name: user.name,
-      provider: user.provider, // 'google', 'github', or 'facebook'
+      provider: provider, // 'google', 'github', or 'facebook'
       image: user.image,
     })
   } catch (error: any) {
