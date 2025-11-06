@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { validateUserID } from '@/lib/userID'
+import { validateUserID } from '@/lib/userID.server'
 
 export async function POST(request: NextRequest) {
   try {

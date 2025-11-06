@@ -17,6 +17,9 @@ This directory contains all project documentation organized by development stage
 - **[POSTGRESQL_SETUP_EXPLAINED.md](./stage-2/POSTGRESQL_SETUP_EXPLAINED.md)** - PostgreSQL commands explained
 - **[archive/](./stage-2/archive/)** - Detailed step-by-step verification files (archived)
 
+### Stage 4: Core Layout & Navigation
+- **[STAGE4_SUMMARY.md](./stage-4/STAGE4_SUMMARY.md)** - Complete Stage 4 summary and verification ⭐
+
 ### Database Management
 - **[DATABASE_GUIDE.md](./DATABASE_GUIDE.md)** - Complete database setup, management, and troubleshooting guide ⭐
 

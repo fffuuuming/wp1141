@@ -6,8 +6,39 @@ import FacebookProvider from 'next-auth/providers/facebook'
 import NextAuth from 'next-auth'
 import { prisma } from './prisma'
 
+// Create base adapter
+const baseAdapter = PrismaAdapter(prisma) as any
+
+// Custom adapter wrapper to handle userID creation
+const customAdapter = {
+  ...baseAdapter,
+  async createUser(user: any) {
+    // Generate a unique temporary userID
+    let tempUserID = `temp_${Date.now()}_${Math.random().toString(36).substring(7)}`
+    
+    // Ensure uniqueness (in case of collision, which is extremely rare)
+    let exists = await prisma.user.findUnique({ where: { userID: tempUserID } })
+    while (exists) {
+      tempUserID = `temp_${Date.now()}_${Math.random().toString(36).substring(7)}`
+      exists = await prisma.user.findUnique({ where: { userID: tempUserID } })
+    }
+
+    // Create user with temporary userID and default provider values
+    const createdUser = await prisma.user.create({
+      data: {
+        ...user,
+        userID: tempUserID,
+        provider: user.provider || '',
+        providerId: user.providerId || '',
+      },
+    })
+
+    return createdUser
+  },
+}
+
 export const authOptions: NextAuthConfig = {
-  adapter: PrismaAdapter(prisma) as any,
+  adapter: customAdapter as any,
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -31,24 +62,32 @@ export const authOptions: NextAuthConfig = {
   },
   callbacks: {
     async signIn({ user, account, profile }) {
-      if (!account || !user) return false
-
-      // Check if user already exists with this provider
-      const existingUser = await prisma.user.findFirst({
-        where: {
-          provider: account.provider,
-          providerId: account.providerAccountId,
-        },
-      })
-
-      // If user exists, allow sign in
-      if (existingUser) {
-        return true
+      if (!account || !user) {
+        console.error('SignIn callback: Missing account or user', { account: !!account, user: !!user })
+        return false
       }
 
-      // New user - will be created by adapter
-      // We'll handle userID assignment after creation
-      return true
+      try {
+        // Check if user already exists with this provider
+        const existingUser = await prisma.user.findFirst({
+          where: {
+            provider: account.provider,
+            providerId: account.providerAccountId,
+          },
+        })
+
+        // If user exists, allow sign in
+        if (existingUser) {
+          return true
+        }
+
+        // New user - will be created by adapter
+        // We'll handle userID assignment after creation
+        return true
+      } catch (error) {
+        console.error('SignIn callback error:', error)
+        return false
+      }
     },
     async session({ session, user }) {
       if (session.user && user) {
@@ -81,14 +120,23 @@ export const authOptions: NextAuthConfig = {
   },
   events: {
     async createUser({ user }) {
-      // When a new user is created, generate a temporary userID
-      // This will be replaced when user sets their actual userID
+      // When a new user is created, sync provider info from Account
       if (user.id) {
-        const tempUserID = `temp_${Date.now()}_${Math.random().toString(36).substring(7)}`
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { userID: tempUserID },
+        // Get the account to extract provider info
+        const account = await prisma.account.findFirst({
+          where: { userId: user.id },
         })
+
+        // Sync provider info from Account if available
+        if (account) {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              provider: account.provider,
+              providerId: account.providerAccountId,
+            },
+          })
+        }
       }
     },
   },
