@@ -14,12 +14,15 @@ This directory contains all project documentation organized by development stage
 ### Stage 2: Database Schema Design & Setup
 - **[STAGE2_SUMMARY.md](./stage-2/STAGE2_SUMMARY.md)** - Complete Stage 2 summary and verification ⭐
 - **[DATABASE_SCHEMA_DESIGN.md](./stage-2/DATABASE_SCHEMA_DESIGN.md)** - Detailed database schema design
-- **[DATABASE_SETUP.md](./stage-2/DATABASE_SETUP.md)** - Guide for setting up DATABASE_URL
 - **[POSTGRESQL_SETUP_EXPLAINED.md](./stage-2/POSTGRESQL_SETUP_EXPLAINED.md)** - PostgreSQL commands explained
 - **[archive/](./stage-2/archive/)** - Detailed step-by-step verification files (archived)
+
+### Database Management
+- **[DATABASE_GUIDE.md](./DATABASE_GUIDE.md)** - Complete database setup, management, and troubleshooting guide ⭐
 
 ## 🚀 Quick Links
 
 - **Main README**: See [../README.md](../README.md) for project setup and getting started
-- **Database Setup**: See [stage-2/DATABASE_SETUP.md](./stage-2/DATABASE_SETUP.md) for database configuration
+- **Database Guide**: See [DATABASE_GUIDE.md](./DATABASE_GUIDE.md) for complete database setup and management
+- **Testing Guide**: See [TESTING_GUIDE.md](./TESTING_GUIDE.md) for comprehensive testing instructions
 
