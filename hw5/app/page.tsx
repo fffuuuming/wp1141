@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import HomeContent from './HomeContent'
+import { HomeFeed } from '@/components/HomeFeed'
 
 export default async function Home() {
   const session = await auth()
@@ -23,22 +24,8 @@ export default async function Home() {
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Home</h1>
         </div>
       </div>
-      <div className="p-6">
-        <div className="max-w-2xl mx-auto">
-          <div className="text-center py-12">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 rounded-2xl mb-6">
-              <svg className="w-10 h-10 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              Welcome to heya!
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400">
-              Your feed will appear here. Start by creating your first post!
-            </p>
-          </div>
-        </div>
+      <div className="max-w-2xl mx-auto">
+        <HomeFeed />
       </div>
     </div>
   )

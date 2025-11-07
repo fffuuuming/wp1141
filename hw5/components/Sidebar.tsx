@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react'
 import { Logo } from './Logo'
 import { LogoutButton } from './LogoutButton'
+import { PostModal } from './PostModal'
 import Link from 'next/link'
 
 export function Sidebar() {
@@ -12,6 +13,7 @@ export function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const [showLogout, setShowLogout] = useState(false)
+  const [showPostModal, setShowPostModal] = useState(false)
   const logoutRef = useRef<HTMLDivElement>(null)
 
   // Close logout popup when clicking outside
@@ -55,8 +57,11 @@ export function Sidebar() {
   ]
 
   const handlePostClick = () => {
-    // TODO: Open post modal in Stage 6
-    alert('Post feature coming soon!')
+    if (!session) {
+      router.push('/auth/signin')
+      return
+    }
+    setShowPostModal(true)
   }
 
   return (
@@ -150,6 +155,12 @@ export function Sidebar() {
           </Link>
         </div>
       )}
+
+      {/* Post Modal */}
+      <PostModal
+        isOpen={showPostModal}
+        onClose={() => setShowPostModal(false)}
+      />
     </aside>
   )
 }
