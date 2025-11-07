@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { formatDistanceToNow } from 'date-fns'
 import { calculateCharacterCount, parsePostContent, formatUrl } from '@/lib/postUtils'
+import { POST_CONTENT } from '@/lib/constants/validation'
 
 interface PostModalProps {
   isOpen: boolean
@@ -36,7 +37,7 @@ export function PostModal({ isOpen, onClose, draftContent = '', draftId: initial
   }, [])
 
   const charCount = calculateCharacterCount(content)
-  const maxChars = 280
+  const maxChars = POST_CONTENT.MAX_CHARS
   const remainingChars = maxChars - charCount
   const isOverLimit = charCount > maxChars
 

@@ -5,7 +5,7 @@ import { successResponse } from '@/lib/api/helpers/response'
 import { createPostSchema } from '@/lib/validation/schemas/post.schema'
 import { calculateCharacterCount } from '@/lib/postUtils'
 import { createPost } from '@/lib/db/queries/posts'
-import { POST_MAX_CHARS } from '@/lib/constants'
+import { POST_CONTENT } from '@/lib/constants/validation'
 import { HttpStatus, ErrorCode } from '@/types/api/errors'
 
 /**
@@ -22,9 +22,9 @@ export const POST = withAuth(async (request, { session }) => {
   // Check character count
   const charCount = calculateCharacterCount(trimmedContent)
 
-  if (charCount > POST_MAX_CHARS) {
+  if (charCount > POST_CONTENT.MAX_CHARS) {
     throw {
-      error: `Post exceeds ${POST_MAX_CHARS} character limit (current: ${charCount})`,
+      error: `Post exceeds ${POST_CONTENT.MAX_CHARS} character limit (current: ${charCount})`,
       code: ErrorCode.CHARACTER_LIMIT_EXCEEDED,
       status: HttpStatus.BAD_REQUEST,
     }

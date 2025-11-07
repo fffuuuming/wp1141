@@ -5,6 +5,7 @@
 
 /**
  * Post/Comment character limits
+ * @deprecated Use POST_CONTENT.MAX_CHARS from validation.ts instead
  */
 export const POST_MAX_CHARS = 280
 

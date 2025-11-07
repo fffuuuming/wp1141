@@ -4,6 +4,7 @@
  */
 
 import { z } from 'zod'
+import { POST_CONTENT, STRING_VALIDATION } from '@/lib/constants/validation'
 
 /**
  * Create post schema
@@ -11,8 +12,8 @@ import { z } from 'zod'
 export const createPostSchema = z.object({
   content: z
     .string()
-    .min(1, 'Post content cannot be empty')
-    .max(10000, 'Post content is too long'), // Allow longer for validation, check char count separately
+    .min(STRING_VALIDATION.MIN_LENGTH, 'Post content cannot be empty')
+    .max(POST_CONTENT.MAX_LENGTH, 'Post content is too long'), // Allow longer for validation, check char count separately
 })
 
 /**
@@ -21,8 +22,8 @@ export const createPostSchema = z.object({
 export const createCommentSchema = z.object({
   content: z
     .string()
-    .min(1, 'Comment content cannot be empty')
-    .max(10000, 'Comment content is too long'),
+    .min(STRING_VALIDATION.MIN_LENGTH, 'Comment content cannot be empty')
+    .max(POST_CONTENT.MAX_LENGTH, 'Comment content is too long'),
   parentId: z.string().optional(),
 })
 

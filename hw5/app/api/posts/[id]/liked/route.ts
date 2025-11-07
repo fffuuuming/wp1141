@@ -14,16 +14,16 @@ export const GET = withOptionalAuth(async (request, { params, session }) => {
 
   if (!session) {
     return successResponse({ liked: false })
-  }
+    }
 
-  const like = await prisma.like.findUnique({
-    where: {
-      userId_postId: {
-        userId: session.user.id,
-        postId: postId,
+    const like = await prisma.like.findUnique({
+      where: {
+        userId_postId: {
+          userId: session.user.id,
+          postId: postId,
+        },
       },
-    },
-  })
+    })
 
   return successResponse({ liked: !!like })
 })

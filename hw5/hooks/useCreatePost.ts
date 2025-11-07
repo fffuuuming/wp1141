@@ -9,7 +9,9 @@ import { useRouter } from 'next/navigation'
 import { createPost } from '@/lib/api/posts'
 import { calculateCharacterCount } from '@/lib/postUtils'
 
-const MAX_CHARS = 280
+import { POST_CONTENT } from '@/lib/constants/validation'
+
+const MAX_CHARS = POST_CONTENT.MAX_CHARS
 
 /**
  * Hook for creating posts

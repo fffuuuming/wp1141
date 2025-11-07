@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { calculateCharacterCount } from '@/lib/postUtils'
+import { POST_CONTENT } from '@/lib/constants/validation'
 import { Avatar } from '@/components/ui'
 
 export function InlinePost({ onPostCreated }: { onPostCreated?: () => void }) {
@@ -16,7 +17,7 @@ export function InlinePost({ onPostCreated }: { onPostCreated?: () => void }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const charCount = calculateCharacterCount(content)
-  const maxChars = 280
+  const maxChars = POST_CONTENT.MAX_CHARS
   const remainingChars = maxChars - charCount
   const isOverLimit = charCount > maxChars
 
