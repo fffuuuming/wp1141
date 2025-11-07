@@ -77,7 +77,7 @@ export function CommentInput({ postId, onCommentCreated }: CommentInputProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="border-b border-gray-200 dark:border-gray-700 p-4">
+    <form onSubmit={handleSubmit} className="border-b border-gray-200 dark:border-gray-700 px-4 py-2">
       <div className="flex gap-3">
         {/* Avatar */}
         {session.user.image ? (
@@ -104,7 +104,7 @@ export function CommentInput({ postId, onCommentCreated }: CommentInputProps) {
               setError('')
             }}
             placeholder="Post your reply"
-            className="w-full min-h-[60px] px-0 py-2 bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 border-none resize-none focus:outline-none"
+            className="w-full min-h-[40px] px-0 py-1 bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 border-none resize-none focus:outline-none text-base"
             style={{ fontFamily: 'inherit' }}
           />
 
@@ -114,11 +114,11 @@ export function CommentInput({ postId, onCommentCreated }: CommentInputProps) {
             </div>
           )}
 
-          <div className="flex items-center justify-end mt-2">
+          <div className="flex items-center justify-end mt-1.5">
             <button
               type="submit"
               disabled={loading || !content.trim()}
-              className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
             >
               {loading ? (
                 <span className="flex items-center gap-2">

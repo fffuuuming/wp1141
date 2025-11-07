@@ -104,6 +104,7 @@ export function PostDetailContent({ postId }: PostDetailContentProps) {
           }}
           onDelete={handleDeletePost}
           clickable={false}
+          variant="post"
         />
       </div>
 

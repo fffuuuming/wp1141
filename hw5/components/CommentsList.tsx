@@ -138,9 +138,10 @@ export function CommentsList({ postId, onCommentClick }: CommentsListProps) {
                     reposts: 0, // Replies don't have reposts
                   },
                 }}
-                onDelete={handleDeleteComment}
+              onDelete={handleDeleteComment}
                 clickable={true}
-              />
+                variant="comment"
+            />
             </div>
           ))}
         </div>

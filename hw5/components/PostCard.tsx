@@ -26,9 +26,10 @@ interface PostCardProps {
   onDelete?: (postId: string) => void
   onUpdate?: () => void
   clickable?: boolean
+  variant?: 'home' | 'post' | 'comment'
 }
 
-export function PostCard({ post, onDelete, onUpdate, clickable = false }: PostCardProps) {
+export function PostCard({ post, onDelete, onUpdate, clickable = false, variant = 'home' }: PostCardProps) {
   const { data: session } = useSession()
   const isOwnPost = session?.user?.id === post.author.id
   const [liked, setLiked] = useState(false)
@@ -304,6 +305,15 @@ export function PostCard({ post, onDelete, onUpdate, clickable = false }: PostCa
               })}
             </div>
 
+            {/* Detailed Timestamp - only show for post variant, above buttons */}
+            {variant === 'post' && (
+              <div className="mb-3">
+                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                  <span>{formatDetailedTime(post.createdAt)}</span>
+                </div>
+              </div>
+            )}
+
             {/* Interaction Buttons */}
             <div className="flex items-center gap-6 text-gray-500 dark:text-gray-400">
               {/* Comment Button */}
@@ -353,15 +363,6 @@ export function PostCard({ post, onDelete, onUpdate, clickable = false }: PostCa
                 )}
                 <span className="text-sm">{likeCount}</span>
               </button>
-            </div>
-
-            {/* Detailed Timestamp */}
-            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-              <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                <span>{formatDetailedTime(post.createdAt)}</span>
-                <span>·</span>
-                <span>0 Views</span>
-              </div>
             </div>
           </div>
         </div>
