@@ -1,79 +1,50 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { NextRequest } from 'next/server'
+import { withAuth } from '@/lib/api/handlers/wrapper'
+import { validateRequest } from '@/lib/api/middleware/validate'
+import { successResponse } from '@/lib/api/helpers/response'
+import { draftSchema } from '@/lib/validation/schemas/draft.schema'
 import { prisma } from '@/lib/prisma'
 
 /**
  * GET /api/drafts
  * Get user's drafts
  */
-export async function GET(request: NextRequest) {
-  try {
-    const session = await auth()
+export const GET = withAuth(async (request, { session }) => {
+  const drafts = await prisma.draft.findMany({
+    where: { userId: session.user.id },
+    select: {
+      id: true,
+      content: true,
+      updatedAt: true,
+    },
+    orderBy: {
+      updatedAt: 'desc',
+    },
+  })
 
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
-    const drafts = await prisma.draft.findMany({
-      where: { userId: session.user.id },
-      orderBy: {
-        updatedAt: 'desc',
-      },
-    })
-
-    return NextResponse.json({ drafts })
-  } catch (error: any) {
-    console.error('Error fetching drafts:', error)
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    )
-  }
-}
+  return successResponse({ drafts })
+})
 
 /**
  * POST /api/drafts
  * Create a new draft
  */
-export async function POST(request: NextRequest) {
-  try {
-    const session = await auth()
+export const POST = withAuth(async (request, { session }) => {
+  const { content } = await validateRequest(request, draftSchema)
 
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
+  const draft = await prisma.draft.create({
+    data: {
+      userId: session.user.id,
+      content: content.trim(),
+    },
+    select: {
+      id: true,
+      content: true,
+      updatedAt: true,
+    },
+  })
 
-    const body = await request.json()
-    const { content } = body
-
-    if (!content || typeof content !== 'string') {
-      return NextResponse.json(
-        { error: 'Content is required' },
-        { status: 400 }
-      )
-    }
-
-    const draft = await prisma.draft.create({
-      data: {
-        userId: session.user.id,
-        content: content.trim(),
-      },
-    })
-
-    return NextResponse.json({ draft })
-  } catch (error: any) {
-    console.error('Error creating draft:', error)
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    )
-  }
-}
+  return successResponse({ draft })
+})
 
 

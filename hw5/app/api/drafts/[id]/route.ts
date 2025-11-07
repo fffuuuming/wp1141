@@ -1,114 +1,78 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { NextRequest } from 'next/server'
+import { withAuth } from '@/lib/api/handlers/wrapper'
+import { validateRequest, validateParams } from '@/lib/api/middleware/validate'
+import { successResponse } from '@/lib/api/helpers/response'
+import { draftSchema } from '@/lib/validation/schemas/draft.schema'
+import { draftIdSchema } from '@/lib/validation/schemas/params.schema'
 import { prisma } from '@/lib/prisma'
+import { requireOwnership } from '@/lib/api/middleware/auth'
+import { HttpStatus, ErrorCode } from '@/types/api/errors'
 
 /**
  * PUT /api/drafts/[id]
  * Update an existing draft
  */
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const session = await auth()
+export const PUT = withAuth(async (request, { params, session }) => {
+  const { id } = await validateParams(await params, draftIdSchema)
+  const { content } = await validateRequest(request, draftSchema)
 
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+  // Verify draft belongs to user
+  const existingDraft = await prisma.draft.findUnique({
+    where: { id },
+    select: { userId: true },
+  })
+
+  if (!existingDraft) {
+    throw {
+      error: 'Draft not found',
+      code: ErrorCode.NOT_FOUND,
+      status: HttpStatus.NOT_FOUND,
     }
-
-    const { id } = await params
-    const body = await request.json()
-    const { content } = body
-
-    // Verify draft belongs to user
-    const existingDraft = await prisma.draft.findUnique({
-      where: { id },
-    })
-
-    if (!existingDraft) {
-      return NextResponse.json(
-        { error: 'Draft not found' },
-        { status: 404 }
-      )
-    }
-
-    if (existingDraft.userId !== session.user.id) {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 403 }
-      )
-    }
-
-    const draft = await prisma.draft.update({
-      where: { id },
-      data: {
-        content: content.trim(),
-      },
-    })
-
-    return NextResponse.json({ draft })
-  } catch (error: any) {
-    console.error('Error updating draft:', error)
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    )
   }
-}
+
+  requireOwnership(existingDraft.userId, session.user.id)
+
+  const draft = await prisma.draft.update({
+    where: { id },
+    data: {
+      content: content.trim(),
+    },
+    select: {
+      id: true,
+      content: true,
+      updatedAt: true,
+    },
+  })
+
+  return successResponse({ draft })
+})
 
 /**
  * DELETE /api/drafts/[id]
  * Delete a draft
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const session = await auth()
+export const DELETE = withAuth(async (request, { params, session }) => {
+  const { id } = await validateParams(await params, draftIdSchema)
 
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+  // Verify draft belongs to user
+  const draft = await prisma.draft.findUnique({
+    where: { id },
+    select: { userId: true },
+  })
+
+  if (!draft) {
+    throw {
+      error: 'Draft not found',
+      code: ErrorCode.NOT_FOUND,
+      status: HttpStatus.NOT_FOUND,
     }
-
-    const { id } = await params
-
-    // Verify draft belongs to user
-    const draft = await prisma.draft.findUnique({
-      where: { id },
-    })
-
-    if (!draft) {
-      return NextResponse.json(
-        { error: 'Draft not found' },
-        { status: 404 }
-      )
-    }
-
-    if (draft.userId !== session.user.id) {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 403 }
-      )
-    }
-
-    await prisma.draft.delete({
-      where: { id },
-    })
-
-    return NextResponse.json({ success: true })
-  } catch (error: any) {
-    console.error('Error deleting draft:', error)
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    )
   }
-}
+
+  requireOwnership(draft.userId, session.user.id)
+
+  await prisma.draft.delete({
+    where: { id },
+  })
+
+  return successResponse({ success: true })
+})

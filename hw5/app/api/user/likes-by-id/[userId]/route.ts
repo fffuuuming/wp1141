@@ -1,77 +1,42 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { withAuth } from '@/lib/api/handlers/wrapper'
+import { validateParams } from '@/lib/api/middleware/validate'
+import { successResponse } from '@/lib/api/helpers/response'
+import { userIdParamSchema } from '@/lib/validation/schemas/params.schema'
 import { prisma } from '@/lib/prisma'
-import { auth } from '@/lib/auth'
+import { requireOwnership } from '@/lib/api/middleware/auth'
+import { postWithDetailsInclude } from '@/types/entities/post'
 
 /**
  * GET /api/user/likes-by-id/[userId]
  * Get posts that the user has liked by database user ID (only accessible by the user themselves)
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ userId: string }> }
-) {
-  try {
-    const { userId } = await params
-    const session = await auth()
+export const GET = withAuth(async (request, { params, session }) => {
+  const { userId } = await validateParams(await params, userIdParamSchema)
 
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
+  // Only allow users to see their own likes
+  requireOwnership(userId, session.user.id)
 
-    // Only allow users to see their own likes
-    if (userId !== session.user.id) {
-      return NextResponse.json(
-        { error: 'Forbidden: You can only view your own likes' },
-        { status: 403 }
-      )
-    }
-
-    // Fetch liked posts
-    const likes = await prisma.like.findMany({
-      where: {
-        userId,
+  // Fetch liked posts
+  const likes = await prisma.like.findMany({
+    where: {
+      userId,
+    },
+    include: {
+      post: {
+        include: postWithDetailsInclude,
       },
-      include: {
-        post: {
-          include: {
-            author: {
-              select: {
-                userID: true,
-                name: true,
-                image: true,
-              },
-            },
-            _count: {
-              select: {
-                likes: true,
-                replies: true,
-                reposts: true,
-              },
-            },
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    })
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  })
 
-    return NextResponse.json({
-      likedPosts: likes.map((like) => ({
-        id: like.id,
-        post: like.post,
-        createdAt: like.createdAt.toISOString(),
-      })),
-    })
-  } catch (error: any) {
-    console.error('Error fetching liked posts:', error)
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    )
-  }
-}
-
+  return successResponse({
+    likedPosts: likes.map((like) => ({
+      id: like.id,
+      post: like.post,
+      createdAt: like.createdAt.toISOString(),
+    })),
+  })
+})

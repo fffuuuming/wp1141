@@ -1,44 +1,30 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { NextRequest } from 'next/server'
+import { withOptionalAuth } from '@/lib/api/handlers/wrapper'
+import { validateParams } from '@/lib/api/middleware/validate'
+import { successResponse } from '@/lib/api/helpers/response'
+import { postIdSchema } from '@/lib/validation/schemas/params.schema'
 import { prisma } from '@/lib/prisma'
 
 /**
  * GET /api/posts/[id]/liked
  * Check if the current user has liked this post
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const session = await auth()
+export const GET = withOptionalAuth(async (request, { params, session }) => {
+  const { id: postId } = await validateParams(await params, postIdSchema)
 
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
-    const { id: postId } = await params
-
-    // Check if user has liked this post
-    const like = await prisma.like.findUnique({
-      where: {
-        userId_postId: {
-          userId: session.user.id,
-          postId: postId,
-        },
-      },
-    })
-
-    return NextResponse.json({ liked: !!like })
-  } catch (error: any) {
-    console.error('Error checking like status:', error)
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    )
+  if (!session) {
+    return successResponse({ liked: false })
   }
-}
+
+  const like = await prisma.like.findUnique({
+    where: {
+      userId_postId: {
+        userId: session.user.id,
+        postId: postId,
+      },
+    },
+  })
+
+  return successResponse({ liked: !!like })
+})
 

@@ -1,122 +1,60 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { NextRequest } from 'next/server'
+import { withErrorHandling, withAuth } from '@/lib/api/handlers/wrapper'
+import { validateParams } from '@/lib/api/middleware/validate'
+import { successResponse, notFoundResponse } from '@/lib/api/helpers/response'
+import { postIdSchema } from '@/lib/validation/schemas/params.schema'
 import { prisma } from '@/lib/prisma'
+import { postWithParentInclude } from '@/types/entities/post'
+import { requireOwnership } from '@/lib/api/middleware/auth'
 
 /**
  * GET /api/posts/[id]
  * Get a single post by ID
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params
-    const session = await auth()
+export const GET = withErrorHandling(async (request, { params }) => {
+  const { id } = await validateParams(await params, postIdSchema)
 
-    const post = await prisma.post.findUnique({
-      where: { id },
-      include: {
-        author: {
-          select: {
-            id: true,
-            userID: true,
-            name: true,
-            image: true,
-          },
-        },
-        parent: {
-          select: {
-            id: true,
-            content: true,
-            createdAt: true,
-            author: {
-              select: {
-                id: true,
-                userID: true,
-                name: true,
-                image: true,
-              },
-            },
-          },
-        },
-        _count: {
-          select: {
-            likes: true,
-            replies: true,
-            reposts: true,
-          },
-        },
-      },
-    })
+  const post = await prisma.post.findUnique({
+    where: { id },
+    include: postWithParentInclude,
+  })
 
-    if (!post) {
-      return NextResponse.json(
-        { error: 'Post not found' },
-        { status: 404 }
-      )
+  if (!post) {
+    throw {
+      error: 'Post not found',
+      status: 404,
     }
-
-    return NextResponse.json({ post })
-  } catch (error: any) {
-    console.error('Error fetching post:', error)
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    )
   }
-}
+
+  return successResponse({ post })
+})
 
 /**
  * DELETE /api/posts/[id]
  * Delete a post (only by author)
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const session = await auth()
+export const DELETE = withAuth(async (request, { params, session }) => {
+  const { id } = await validateParams(await params, postIdSchema)
 
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+  // Verify post exists and belongs to user
+  const post = await prisma.post.findUnique({
+    where: { id },
+    select: { authorId: true },
+  })
+
+  if (!post) {
+    throw {
+      error: 'Post not found',
+      status: 404,
     }
-
-    const { id } = await params
-
-    // Verify post exists and belongs to user
-    const post = await prisma.post.findUnique({
-      where: { id },
-    })
-
-    if (!post) {
-      return NextResponse.json(
-        { error: 'Post not found' },
-        { status: 404 }
-      )
-    }
-
-    if (post.authorId !== session.user.id) {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 403 }
-      )
-    }
-
-    await prisma.post.delete({
-      where: { id },
-    })
-
-    return NextResponse.json({ success: true })
-  } catch (error: any) {
-    console.error('Error deleting post:', error)
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    )
   }
-}
+
+  requireOwnership(post.authorId, session.user.id)
+
+  await prisma.post.delete({
+    where: { id },
+  })
+
+  return successResponse({ success: true })
+})
 

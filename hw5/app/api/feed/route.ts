@@ -1,120 +1,74 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { NextRequest } from 'next/server'
+import { withAuth } from '@/lib/api/handlers/wrapper'
+import { validateQuery } from '@/lib/api/middleware/validate'
+import { successResponse } from '@/lib/api/helpers/response'
+import { feedQuerySchema } from '@/lib/validation/schemas/params.schema'
 import { prisma } from '@/lib/prisma'
+import { postWithDetailsInclude } from '@/types/entities/post'
 
 /**
  * GET /api/feed?filter=all|following
  * Get home feed posts
  */
-export async function GET(request: NextRequest) {
-  try {
-    const session = await auth()
+export const GET = withAuth(async (request, { session }) => {
+  const { filter } = validateQuery(request, feedQuerySchema)
 
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
-    const searchParams = request.nextUrl.searchParams
-    const filter = searchParams.get('filter') || 'all'
-
-    let posts: Array<{
+  let posts: Array<{
+    id: string
+    content: string
+    createdAt: Date
+    author: {
       id: string
-      content: string
-      createdAt: Date
-      author: {
-        id: string
-        userID: string
-        name: string | null
-        image: string | null
-      }
-      _count: {
-        likes: number
-        replies: number
-        reposts: number
-      }
-    }> = []
+      userID: string
+      name: string | null
+      image: string | null
+    }
+    _count: {
+      likes: number
+      replies: number
+      reposts: number
+    }
+  }> = []
 
-    if (filter === 'following') {
-      // Get posts from users that the current user follows
-      const following = await prisma.follow.findMany({
-        where: { followerId: session.user.id },
-        select: { followingId: true },
-      })
+  if (filter === 'following') {
+    // Get posts from users that the current user follows
+    const following = await prisma.follow.findMany({
+      where: { followerId: session.user.id },
+      select: { followingId: true },
+    })
 
-      const followingIds = following.map(f => f.followingId)
+    const followingIds = following.map(f => f.followingId)
 
-      if (followingIds.length === 0) {
-        // User doesn't follow anyone, return empty array
-        posts = []
-      } else {
-        posts = await prisma.post.findMany({
-          where: {
-            authorId: {
-              in: followingIds,
-            },
-            parentId: null, // Only top-level posts
-          },
-          include: {
-            author: {
-              select: {
-                id: true,
-                userID: true,
-                name: true,
-                image: true,
-              },
-            },
-            _count: {
-              select: {
-                likes: true,
-                replies: true,
-                reposts: true,
-              },
-            },
-          },
-          orderBy: {
-            createdAt: 'desc',
-          },
-        })
-      }
+    if (followingIds.length === 0) {
+      // User doesn't follow anyone, return empty array
+      posts = []
     } else {
-      // Get all top-level posts (no parent)
       posts = await prisma.post.findMany({
         where: {
+          authorId: {
+            in: followingIds,
+          },
           parentId: null, // Only top-level posts
         },
-        include: {
-          author: {
-            select: {
-              id: true,
-              userID: true,
-              name: true,
-              image: true,
-            },
-          },
-          _count: {
-            select: {
-              likes: true,
-              replies: true,
-              reposts: true,
-            },
-          },
-        },
+        include: postWithDetailsInclude,
         orderBy: {
           createdAt: 'desc',
         },
       })
     }
-
-    return NextResponse.json({ posts })
-  } catch (error: any) {
-    console.error('Error fetching feed:', error)
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    )
+  } else {
+    // Get all top-level posts (no parent)
+    posts = await prisma.post.findMany({
+      where: {
+        parentId: null, // Only top-level posts
+      },
+      include: postWithDetailsInclude,
+      orderBy: {
+        createdAt: 'desc',
+      },
+    })
   }
-}
+
+  return successResponse({ posts })
+})
 

@@ -1,138 +1,109 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { withAuth } from '@/lib/api/handlers/wrapper'
+import { validateParams } from '@/lib/api/middleware/validate'
+import { successResponse } from '@/lib/api/helpers/response'
+import { userIdSchema } from '@/lib/validation/schemas/params.schema'
 import { prisma } from '@/lib/prisma'
-import { auth } from '@/lib/auth'
+import { HttpStatus, ErrorCode } from '@/types/api/errors'
 
 /**
  * POST /api/user/[userID]/follow
  * Follow a user
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ userID: string }> }
-) {
-  try {
-    const { userID } = await params
-    const session = await auth()
+export const POST = withAuth(async (request, { params, session }) => {
+  const { userID } = await validateParams(await params, userIdSchema)
 
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+  // Find target user
+  const targetUser = await prisma.user.findUnique({
+    where: { userID },
+    select: { id: true },
+  })
+
+  if (!targetUser) {
+    throw {
+      error: 'User not found',
+      code: ErrorCode.NOT_FOUND,
+      status: HttpStatus.NOT_FOUND,
     }
-
-    // Find target user
-    const targetUser = await prisma.user.findUnique({
-      where: { userID },
-      select: { id: true },
-    })
-
-    if (!targetUser) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      )
-    }
-
-    // Can't follow yourself
-    if (targetUser.id === session.user.id) {
-      return NextResponse.json(
-        { error: 'You cannot follow yourself' },
-        { status: 400 }
-      )
-    }
-
-    // Check if already following
-    const existingFollow = await prisma.follow.findFirst({
-      where: {
-        followerId: session.user.id,
-        followingId: targetUser.id,
-      },
-    })
-
-    if (existingFollow) {
-      return NextResponse.json(
-        { error: 'Already following this user' },
-        { status: 400 }
-      )
-    }
-
-    // Create follow relationship
-    await prisma.follow.create({
-      data: {
-        followerId: session.user.id,
-        followingId: targetUser.id,
-      },
-    })
-
-    return NextResponse.json({ success: true })
-  } catch (error: any) {
-    console.error('Error following user:', error)
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    )
   }
-}
+
+  // Can't follow yourself
+  if (targetUser.id === session.user.id) {
+    throw {
+      error: 'You cannot follow yourself',
+      code: ErrorCode.VALIDATION_ERROR,
+      status: HttpStatus.BAD_REQUEST,
+    }
+  }
+
+  // Check if already following
+  const existingFollow = await prisma.follow.findFirst({
+    where: {
+      followerId: session.user.id,
+      followingId: targetUser.id,
+    },
+  })
+
+  if (existingFollow) {
+    throw {
+      error: 'Already following this user',
+      code: ErrorCode.ALREADY_EXISTS,
+      status: HttpStatus.BAD_REQUEST,
+    }
+  }
+
+  // Create follow relationship
+  await prisma.follow.create({
+    data: {
+      followerId: session.user.id,
+      followingId: targetUser.id,
+    },
+  })
+
+  return successResponse({ success: true })
+})
 
 /**
  * DELETE /api/user/[userID]/follow
  * Unfollow a user
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ userID: string }> }
-) {
-  try {
-    const { userID } = await params
-    const session = await auth()
+export const DELETE = withAuth(async (request, { params, session }) => {
+  const { userID } = await validateParams(await params, userIdSchema)
 
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+  // Find target user
+  const targetUser = await prisma.user.findUnique({
+    where: { userID },
+    select: { id: true },
+  })
+
+  if (!targetUser) {
+    throw {
+      error: 'User not found',
+      code: ErrorCode.NOT_FOUND,
+      status: HttpStatus.NOT_FOUND,
     }
-
-    // Find target user
-    const targetUser = await prisma.user.findUnique({
-      where: { userID },
-      select: { id: true },
-    })
-
-    if (!targetUser) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      )
-    }
-
-    // Find and delete follow relationship
-    const follow = await prisma.follow.findFirst({
-      where: {
-        followerId: session.user.id,
-        followingId: targetUser.id,
-      },
-    })
-
-    if (!follow) {
-      return NextResponse.json(
-        { error: 'Not following this user' },
-        { status: 400 }
-      )
-    }
-
-    await prisma.follow.delete({
-      where: { id: follow.id },
-    })
-
-    return NextResponse.json({ success: true })
-  } catch (error: any) {
-    console.error('Error unfollowing user:', error)
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    )
   }
-}
+
+  // Find and delete follow relationship
+  const follow = await prisma.follow.findFirst({
+    where: {
+      followerId: session.user.id,
+      followingId: targetUser.id,
+    },
+  })
+
+  if (!follow) {
+    throw {
+      error: 'Not following this user',
+      code: ErrorCode.NOT_FOUND,
+      status: HttpStatus.BAD_REQUEST,
+    }
+  }
+
+  await prisma.follow.delete({
+    where: { id: follow.id },
+  })
+
+  return successResponse({ success: true })
+})
 

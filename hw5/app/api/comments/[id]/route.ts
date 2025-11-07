@@ -1,6 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { NextRequest } from 'next/server'
+import { withErrorHandling, withAuth } from '@/lib/api/handlers/wrapper'
+import { validateParams } from '@/lib/api/middleware/validate'
+import { successResponse } from '@/lib/api/helpers/response'
+import { commentIdSchema } from '@/lib/validation/schemas/params.schema'
 import { prisma } from '@/lib/prisma'
+import { requireOwnership } from '@/lib/api/middleware/auth'
+import { HttpStatus, ErrorCode } from '@/types/api/errors'
 
 /**
  * Recursively fetch replies for a comment
@@ -49,147 +54,113 @@ async function fetchCommentReplies(parentId: string): Promise<any[]> {
  * GET /api/comments/[id]
  * Get a single comment with its replies
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params
+export const GET = withErrorHandling(async (request, { params }) => {
+  const { id } = await validateParams(await params, commentIdSchema)
 
-    const comment = await prisma.comment.findUnique({
-      where: { id },
-      include: {
-        author: {
-          select: {
-            id: true,
-            userID: true,
-            name: true,
-            image: true,
-          },
+  const comment = await prisma.comment.findUnique({
+    where: { id },
+    include: {
+      author: {
+        select: {
+          id: true,
+          userID: true,
+          name: true,
+          image: true,
         },
-        post: {
-          select: {
-            id: true,
-            content: true,
-            createdAt: true,
-            author: {
-              select: {
-                id: true,
-                userID: true,
-                name: true,
-                image: true,
-              },
-            },
-            _count: {
-              select: {
-                likes: true,
-                comments: true,
-                reposts: true,
-              },
+      },
+      post: {
+        select: {
+          id: true,
+          content: true,
+          createdAt: true,
+          author: {
+            select: {
+              id: true,
+              userID: true,
+              name: true,
+              image: true,
             },
           },
-        },
-        parent: {
-          select: {
-            id: true,
-            content: true,
-            author: {
-              select: {
-                id: true,
-                userID: true,
-                name: true,
-                image: true,
-              },
+          _count: {
+            select: {
+              likes: true,
+              comments: true,
+              reposts: true,
             },
-          },
-        },
-        _count: {
-          select: {
-            likes: true,
-            replies: true,
           },
         },
       },
-    })
+      parent: {
+        select: {
+          id: true,
+          content: true,
+          author: {
+            select: {
+              id: true,
+              userID: true,
+              name: true,
+              image: true,
+            },
+          },
+        },
+      },
+      _count: {
+        select: {
+          likes: true,
+          replies: true,
+        },
+      },
+    },
+  })
 
-    if (!comment) {
-      return NextResponse.json(
-        { error: 'Comment not found' },
-        { status: 404 }
-      )
+  if (!comment) {
+    throw {
+      error: 'Comment not found',
+      code: ErrorCode.NOT_FOUND,
+      status: HttpStatus.NOT_FOUND,
     }
-
-    // Fetch nested replies
-    const replies = await fetchCommentReplies(comment.id)
-
-    return NextResponse.json({
-      comment: {
-        ...comment,
-        replies,
-      },
-    })
-  } catch (error: any) {
-    console.error('Error fetching comment:', error)
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    )
   }
-}
+
+  // Fetch nested replies
+  const replies = await fetchCommentReplies(comment.id)
+
+  return successResponse({
+    comment: {
+      ...comment,
+      replies,
+    },
+  })
+})
 
 /**
  * DELETE /api/comments/[id]
  * Delete a comment
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const session = await auth()
+export const DELETE = withAuth(async (request, { params, session }) => {
+  const { id } = await validateParams(await params, commentIdSchema)
 
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+  const comment = await prisma.comment.findUnique({
+    where: { id },
+    select: {
+      authorId: true,
+      postId: true,
+    },
+  })
+
+  if (!comment) {
+    throw {
+      error: 'Comment not found',
+      code: ErrorCode.NOT_FOUND,
+      status: HttpStatus.NOT_FOUND,
     }
-
-    const { id } = await params
-
-    const comment = await prisma.comment.findUnique({
-      where: { id },
-      select: {
-        authorId: true,
-        postId: true,
-      },
-    })
-
-    if (!comment) {
-      return NextResponse.json(
-        { error: 'Comment not found' },
-        { status: 404 }
-      )
-    }
-
-    if (comment.authorId !== session.user.id) {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 403 }
-      )
-    }
-
-    // Delete comment (cascade will delete replies)
-    await prisma.comment.delete({
-      where: { id },
-    })
-
-    return NextResponse.json({ success: true })
-  } catch (error: any) {
-    console.error('Error deleting comment:', error)
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    )
   }
-}
+
+  requireOwnership(comment.authorId, session.user.id)
+
+  // Delete comment (cascade will delete replies)
+  await prisma.comment.delete({
+    where: { id },
+  })
+
+  return successResponse({ success: true })
+})
