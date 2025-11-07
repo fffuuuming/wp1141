@@ -4,8 +4,8 @@ import { validateRequest } from '@/lib/api/middleware/validate'
 import { successResponse } from '@/lib/api/helpers/response'
 import { createPostSchema } from '@/lib/validation/schemas/post.schema'
 import { calculateCharacterCount } from '@/lib/postUtils'
-import { prisma } from '@/lib/prisma'
-import { postWithDetailsInclude } from '@/types/entities/post'
+import { createPost } from '@/lib/db/queries/posts'
+import { POST_MAX_CHARS } from '@/lib/constants'
 import { HttpStatus, ErrorCode } from '@/types/api/errors'
 
 /**
@@ -21,23 +21,19 @@ export const POST = withAuth(async (request, { session }) => {
 
   // Check character count
   const charCount = calculateCharacterCount(trimmedContent)
-  const maxChars = 280
 
-  if (charCount > maxChars) {
+  if (charCount > POST_MAX_CHARS) {
     throw {
-      error: `Post exceeds ${maxChars} character limit (current: ${charCount})`,
+      error: `Post exceeds ${POST_MAX_CHARS} character limit (current: ${charCount})`,
       code: ErrorCode.CHARACTER_LIMIT_EXCEEDED,
       status: HttpStatus.BAD_REQUEST,
     }
   }
 
-  // Create post
-  const post = await prisma.post.create({
-    data: {
-      authorId: session.user.id,
-      content: trimmedContent,
-    },
-    include: postWithDetailsInclude,
+  // Create post using query builder
+  const post = await createPost({
+    authorId: session.user.id,
+    content: trimmedContent,
   })
 
   return successResponse({ post })

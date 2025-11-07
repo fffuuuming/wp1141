@@ -7,10 +7,34 @@ import Link from 'next/link'
 export const dynamic = 'force-dynamic'
 
 /**
- * Recursively fetch replies for a comment
+ * Find the root post (top-level post) by traversing up the parent chain
+ */
+async function findRootPost(postId: string): Promise<string | null> {
+  let currentId = postId
+  let depth = 0
+  const maxDepth = 100 // Prevent infinite loops
+
+  while (depth < maxDepth) {
+    const post = await prisma.post.findUnique({
+      where: { id: currentId },
+      select: { parentId: true },
+    })
+
+    if (!post) return null
+    if (!post.parentId) return currentId // Found root post
+
+    currentId = post.parentId
+    depth++
+  }
+
+  return null // Max depth reached
+}
+
+/**
+ * Recursively fetch replies for a comment (which is a Post with parentId)
  */
 async function fetchCommentReplies(parentId: string): Promise<any[]> {
-  const replies = await prisma.comment.findMany({
+  const replies = await prisma.post.findMany({
     where: {
       parentId: parentId,
     },
@@ -19,7 +43,7 @@ async function fetchCommentReplies(parentId: string): Promise<any[]> {
       content: true,
       createdAt: true,
       updatedAt: true,
-      postId: true,
+      parentId: true,
       author: {
         select: {
           id: true,
@@ -66,14 +90,14 @@ export default async function CommentPage({ params }: CommentPageProps) {
     redirect('/auth/signin')
   }
 
-  const comment = await prisma.comment.findUnique({
+  const comment = await prisma.post.findUnique({
     where: { id },
     select: {
       id: true,
       content: true,
       createdAt: true,
       updatedAt: true,
-      postId: true,
+      parentId: true,
       author: {
         select: {
           id: true,
@@ -82,11 +106,12 @@ export default async function CommentPage({ params }: CommentPageProps) {
           image: true,
         },
       },
-      post: {
+      parent: {
         select: {
           id: true,
           content: true,
           createdAt: true,
+          parentId: true,
           author: {
             select: {
               id: true,
@@ -98,23 +123,8 @@ export default async function CommentPage({ params }: CommentPageProps) {
           _count: {
             select: {
               likes: true,
-              comments: true,
+              replies: true,
               reposts: true,
-            },
-          },
-        },
-      },
-      parent: {
-        select: {
-          id: true,
-          content: true,
-          createdAt: true,
-          author: {
-            select: {
-              id: true,
-              userID: true,
-              name: true,
-              image: true,
             },
           },
         },
@@ -123,6 +133,7 @@ export default async function CommentPage({ params }: CommentPageProps) {
         select: {
           likes: true,
           replies: true,
+          reposts: true,
         },
       },
     },
@@ -132,6 +143,35 @@ export default async function CommentPage({ params }: CommentPageProps) {
     redirect('/')
   }
 
+  // Find the root post (original post this comment is on)
+  const rootPostId = await findRootPost(comment.id)
+  let rootPost = null
+  if (rootPostId) {
+    rootPost = await prisma.post.findUnique({
+      where: { id: rootPostId },
+      select: {
+        id: true,
+        content: true,
+        createdAt: true,
+        author: {
+          select: {
+            id: true,
+            userID: true,
+            name: true,
+            image: true,
+          },
+        },
+        _count: {
+          select: {
+            likes: true,
+            replies: true,
+            reposts: true,
+          },
+        },
+      },
+    })
+  }
+
   // Fetch nested replies
   const replies = await fetchCommentReplies(comment.id)
 
@@ -139,14 +179,17 @@ export default async function CommentPage({ params }: CommentPageProps) {
     id: comment.id,
     content: comment.content,
     createdAt: comment.createdAt.toISOString(),
-    updatedAt: comment.updatedAt.toISOString(),
-    postId: comment.postId,
+    updatedAt: comment.updatedAt?.toISOString(),
+    postId: rootPostId, // Original post ID
     author: comment.author,
-    post: comment.post ? {
-      ...comment.post,
-      createdAt: comment.post.createdAt.toISOString(),
+    post: rootPost ? {
+      ...rootPost,
+      createdAt: rootPost.createdAt.toISOString(),
     } : null,
-    parent: comment.parent || null,
+    parent: comment.parent ? {
+      ...comment.parent,
+      createdAt: comment.parent.createdAt.toISOString(),
+    } : null,
     _count: comment._count,
     replies,
   }
@@ -161,8 +204,8 @@ export default async function CommentPage({ params }: CommentPageProps) {
   if (comment.parent) {
     backUrl = `/comment/${comment.parent.id}`
     backLabel = 'Post'
-  } else if (comment.postId) {
-    backUrl = `/post/${comment.postId}`
+  } else if (rootPostId) {
+    backUrl = `/post/${rootPostId}`
     backLabel = 'Post'
   }
 

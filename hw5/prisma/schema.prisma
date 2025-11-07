@@ -14,7 +14,7 @@ model User {
   id              String    @id @default(cuid())
   userID          String    @unique // Will be set to temporary value in createUser event, but needs default for PrismaAdapter
   name            String?
-  email           String?   // Not unique - same email can be used with different providers
+  email           String? // Not unique - same email can be used with different providers
   emailVerified   DateTime?
   image           String?
   provider        String    @default("") // Temporary default, will be updated in createUser event
@@ -33,8 +33,8 @@ model User {
   likes     Like[]
   reposts   Repost[]
   drafts    Draft[]
-  following Follow[]  @relation("UserFollowers")
-  followers Follow[]  @relation("UserFollowing")
+  following Follow[] @relation("UserFollowers")
+  followers Follow[] @relation("UserFollowing")
 
   @@unique([provider, providerId]) // Same OAuth provider + ID = same user
   @@index([userID])
@@ -85,23 +85,22 @@ model Post {
   id        String   @id @default(cuid())
   authorId  String
   content   String
-  parentId  String?  // Self-referential: parent post (null for top-level posts)
+  parentId  String? // Self-referential: parent post (null for top-level posts)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations
-  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  parent   Post?  @relation("PostReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies  Post[] @relation("PostReplies")
-  likes    Like[]
-  reposts  Repost[]
+  author  User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent  Post?    @relation("PostReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies Post[]   @relation("PostReplies")
+  likes   Like[]
+  reposts Repost[]
 
   @@index([authorId])
   @@index([createdAt])
   @@index([parentId])
   @@map("posts")
 }
-
 
 model Like {
   id        String   @id @default(cuid())

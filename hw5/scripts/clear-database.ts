@@ -7,12 +7,12 @@ async function clearDatabase() {
   
   try {
     // Delete in order to respect foreign key constraints
+    // Note: Comments are stored as Posts with parentId, so deleting posts will delete all comments
     await prisma.like.deleteMany()
-    await prisma.comment.deleteMany()
     await prisma.repost.deleteMany()
     await prisma.follow.deleteMany()
     await prisma.draft.deleteMany()
-    await prisma.post.deleteMany()
+    await prisma.post.deleteMany() // This deletes all posts and comments (replies)
     await prisma.user.deleteMany()
     
     console.log('✅ All data cleared successfully!')

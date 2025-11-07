@@ -3,115 +3,19 @@ import { withErrorHandling, withAuth } from '@/lib/api/handlers/wrapper'
 import { validateParams } from '@/lib/api/middleware/validate'
 import { successResponse } from '@/lib/api/helpers/response'
 import { commentIdSchema } from '@/lib/validation/schemas/params.schema'
-import { prisma } from '@/lib/prisma'
 import { requireOwnership } from '@/lib/api/middleware/auth'
+import { getPostById, findRootPost, getPostRepliesRecursive, deletePost } from '@/lib/db/queries/posts'
 import { HttpStatus, ErrorCode } from '@/types/api/errors'
 
 /**
- * Recursively fetch replies for a comment
- */
-async function fetchCommentReplies(parentId: string): Promise<any[]> {
-  const replies = await prisma.comment.findMany({
-    where: {
-      parentId: parentId,
-    },
-    include: {
-      author: {
-        select: {
-          id: true,
-          userID: true,
-          name: true,
-          image: true,
-        },
-      },
-      _count: {
-        select: {
-          likes: true,
-          replies: true,
-        },
-      },
-    },
-    orderBy: {
-      createdAt: 'asc',
-    },
-  })
-
-  // Recursively fetch nested replies
-  const repliesWithNested = await Promise.all(
-    replies.map(async (reply) => {
-      const nestedReplies = await fetchCommentReplies(reply.id)
-      return {
-        ...reply,
-        replies: nestedReplies,
-      }
-    })
-  )
-
-  return repliesWithNested
-}
-
-/**
  * GET /api/comments/[id]
- * Get a single comment with its replies
+ * Get a single comment (Post with parentId) with its replies
  */
 export const GET = withErrorHandling(async (request, { params }) => {
   const { id } = await validateParams(await params, commentIdSchema)
 
-  const comment = await prisma.comment.findUnique({
-    where: { id },
-    include: {
-      author: {
-        select: {
-          id: true,
-          userID: true,
-          name: true,
-          image: true,
-        },
-      },
-      post: {
-        select: {
-          id: true,
-          content: true,
-          createdAt: true,
-          author: {
-            select: {
-              id: true,
-              userID: true,
-              name: true,
-              image: true,
-            },
-          },
-          _count: {
-            select: {
-              likes: true,
-              comments: true,
-              reposts: true,
-            },
-          },
-        },
-      },
-      parent: {
-        select: {
-          id: true,
-          content: true,
-          author: {
-            select: {
-              id: true,
-              userID: true,
-              name: true,
-              image: true,
-            },
-          },
-        },
-      },
-      _count: {
-        select: {
-          likes: true,
-          replies: true,
-        },
-      },
-    },
-  })
+  // Get comment (which is a Post with parentId) using query builder
+  const comment = await getPostById(id)
 
   if (!comment) {
     throw {
@@ -121,12 +25,24 @@ export const GET = withErrorHandling(async (request, { params }) => {
     }
   }
 
-  // Fetch nested replies
-  const replies = await fetchCommentReplies(comment.id)
+  // Get parent post if exists
+  let parent = null
+  if (comment.parentId) {
+    parent = await getPostById(comment.parentId)
+  }
+
+  // Find the root post (original post this comment is on)
+  const rootPostId = await findRootPost(comment.id)
+  const rootPost = rootPostId ? await getPostById(rootPostId) : null
+
+  // Fetch nested replies using query builder
+  const replies = await getPostRepliesRecursive(comment.id)
 
   return successResponse({
     comment: {
       ...comment,
+      parent,
+      post: rootPost, // Original post this comment is on
       replies,
     },
   })
@@ -134,18 +50,13 @@ export const GET = withErrorHandling(async (request, { params }) => {
 
 /**
  * DELETE /api/comments/[id]
- * Delete a comment
+ * Delete a comment (Post with parentId)
  */
 export const DELETE = withAuth(async (request, { params, session }) => {
   const { id } = await validateParams(await params, commentIdSchema)
 
-  const comment = await prisma.comment.findUnique({
-    where: { id },
-    select: {
-      authorId: true,
-      postId: true,
-    },
-  })
+  // Get comment to check ownership
+  const comment = await getPostById(id)
 
   if (!comment) {
     throw {
@@ -157,10 +68,8 @@ export const DELETE = withAuth(async (request, { params, session }) => {
 
   requireOwnership(comment.authorId, session.user.id)
 
-  // Delete comment (cascade will delete replies)
-  await prisma.comment.delete({
-    where: { id },
-  })
+  // Delete comment using query builder (cascade will delete replies)
+  await deletePost(id)
 
   return successResponse({ success: true })
 })
