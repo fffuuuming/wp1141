@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth, AuthenticatedSession } from '../middleware/auth'
-import { handleApiError } from '../middleware/error'
+import { handleApiError } from '@/lib/errors/handlers'
 
 /**
  * Route handler function type
@@ -28,7 +28,7 @@ export function withAuth(handler: RouteHandler): RouteHandler {
       const session = await requireAuth()
       return handler(request, { ...context, session })
     } catch (error) {
-      return handleApiError(error)
+      return handleApiError(error, request, { userId: context.session?.user.id })
     }
   }
 }
@@ -43,7 +43,7 @@ export function withOptionalAuth(handler: RouteHandler): RouteHandler {
       const session = await getOptionalSession()
       return handler(request, { ...context, session: session || undefined })
     } catch (error) {
-      return handleApiError(error)
+      return handleApiError(error, request, { userId: context.session?.user.id })
     }
   }
 }
@@ -56,7 +56,7 @@ export function withErrorHandling(handler: RouteHandler): RouteHandler {
     try {
       return handler(request, context)
     } catch (error) {
-      return handleApiError(error)
+      return handleApiError(error, request, { userId: context.session?.user.id })
     }
   }
 }

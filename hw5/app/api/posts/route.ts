@@ -7,6 +7,7 @@ import { calculateCharacterCount } from '@/lib/postUtils'
 import { createPost } from '@/lib/db/queries/posts'
 import { POST_CONTENT } from '@/lib/constants/validation'
 import { HttpStatus, ErrorCode } from '@/types/api/errors'
+import { throwError } from '@/lib/errors/handlers'
 
 /**
  * POST /api/posts
@@ -23,11 +24,12 @@ export const POST = withAuth(async (request, { session }) => {
   const charCount = calculateCharacterCount(trimmedContent)
 
   if (charCount > POST_CONTENT.MAX_CHARS) {
-    throw {
-      error: `Post exceeds ${POST_CONTENT.MAX_CHARS} character limit (current: ${charCount})`,
-      code: ErrorCode.CHARACTER_LIMIT_EXCEEDED,
-      status: HttpStatus.BAD_REQUEST,
-    }
+    throwError(
+      ErrorCode.CHARACTER_LIMIT_EXCEEDED,
+      HttpStatus.BAD_REQUEST,
+      `Post exceeds ${POST_CONTENT.MAX_CHARS} character limit (current: ${charCount})`,
+      { charCount, maxChars: POST_CONTENT.MAX_CHARS }
+    )
   }
 
   // Create post using query builder
