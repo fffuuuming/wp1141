@@ -174,38 +174,43 @@ export const authOptions: NextAuthConfig = {
           },
         })
 
-        // If user exists with this provider, allow sign in
+        // For existing users, always sync image and provider info from OAuth provider
+        // This ensures the database always has the latest info from the OAuth provider
         if (existingUser) {
+          const updateData: any = {}
+          let needsUpdate = false
+
+          // Get image from user object or profile (OAuth providers may pass it in different places)
+          const oauthImage = user.image || (profile as any)?.avatar_url || (profile as any)?.picture || (profile as any)?.image
+
+          // Always sync image from OAuth provider to ensure it's up-to-date
+          // Update if: OAuth has image AND (DB image is null OR different)
+          if (oauthImage && (!existingUser.image || oauthImage !== existingUser.image)) {
+            updateData.image = oauthImage
+            needsUpdate = true
+          }
+
+          // Sync provider info if missing
+          if (!existingUser.provider || !existingUser.providerId) {
+            updateData.provider = account.provider
+            updateData.providerId = account.providerAccountId
+            needsUpdate = true
+          }
+
+          // Update user if needed
+          if (needsUpdate) {
+            await prisma.user.update({
+              where: { id: existingUser.id },
+              data: updateData,
+            })
+            console.log(`[Auth] ✅ Synced user info in signIn callback for existing user ${existingUser.id}`, updateData)
+          }
+
           return true
         }
 
-        // For new users, check if provider info needs to be synced
-        // This is a backup in case the createUser event didn't sync it
-        if (user.id) {
-          const dbUser = await prisma.user.findUnique({
-            where: { id: user.id },
-            select: { provider: true, providerId: true },
-          })
-
-          // If provider info is missing, try to sync it from Account
-          if (dbUser && (!dbUser.provider || !dbUser.providerId)) {
-            const accountRecord = await prismaClient.account.findFirst({
-              where: { userId: user.id },
-            })
-
-            if (accountRecord) {
-              await prisma.user.update({
-                where: { id: user.id },
-                data: {
-                  provider: accountRecord.provider,
-                  providerId: accountRecord.providerAccountId,
-                },
-              })
-              console.log(`[Auth] ✅ Synced provider info in signIn callback for user ${user.id}: ${accountRecord.provider}`)
-            }
-          }
-        }
-
+        // For new users being created, sync image after user is created
+        // The image will be synced in the createUser event
         // New account - allow creation
         // The adapter will handle creating a new user with temporary userID
         return true
@@ -284,16 +289,24 @@ export const authOptions: NextAuthConfig = {
         }
       }
 
-      // Sync provider info from Account to User model
+      // Sync provider info and image from Account to User model
       if (account) {
+        const updateData: any = {
+          provider: account.provider,
+          providerId: account.providerAccountId,
+        }
+
+        // Also sync image if it's available from the user object
+        // This ensures the GitHub/GitHub/Facebook avatar is saved
+        if (user.image) {
+          updateData.image = user.image
+        }
+
         await prisma.user.update({
           where: { id: user.id },
-          data: {
-            provider: account.provider,
-            providerId: account.providerAccountId,
-          },
+          data: updateData,
         })
-        console.log(`[Auth] ✅ Synced provider info for user ${user.id}: ${account.provider} (${account.providerAccountId})`)
+        console.log(`[Auth] ✅ Synced provider info and image for user ${user.id}: ${account.provider} (${account.providerAccountId})`)
       } else {
         console.warn(`[Auth] ⚠️ Could not find account for user ${user.id} after all retries`)
         console.warn(`[Auth] Will try to sync in signIn callback as backup`)

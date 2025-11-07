@@ -5,6 +5,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { parsePostContent, formatUrl } from '@/lib/postUtils'
 import { useSession } from 'next-auth/react'
 import { useState } from 'react'
+import { Avatar } from '@/components/ui'
 
 interface CommentCardProps {
   comment: {
@@ -56,21 +57,11 @@ export function CommentCard({ comment, onDelete, onReply, showReplyButton = fals
       <div className="p-4">
         <div className="flex items-start gap-3">
           {/* Author Avatar */}
-          <Link href={`/profile/${comment.author.userID}`} className="flex-shrink-0">
-            {comment.author.image ? (
-              <img
-                src={comment.author.image}
-                alt={comment.author.name || 'User'}
-                className="w-10 h-10 rounded-full object-cover"
-              />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                <span className="text-sm font-semibold text-gray-600 dark:text-gray-300">
-                  {comment.author.name?.[0]?.toUpperCase() || comment.author.userID[0]?.toUpperCase() || 'U'}
-                </span>
-              </div>
-            )}
-          </Link>
+          <Avatar
+            user={comment.author}
+            href={`/profile/${comment.author.userID}`}
+            size="sm"
+          />
 
           {/* Comment Content */}
           <div className="flex-1 min-w-0">

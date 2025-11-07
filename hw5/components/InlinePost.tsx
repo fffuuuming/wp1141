@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { calculateCharacterCount } from '@/lib/postUtils'
+import { Avatar } from '@/components/ui'
 
 export function InlinePost({ onPostCreated }: { onPostCreated?: () => void }) {
   const { data: session } = useSession()
@@ -106,21 +107,14 @@ export function InlinePost({ onPostCreated }: { onPostCreated?: () => void }) {
       <div className="p-4">
         <div className="flex gap-3">
           {/* Profile Avatar */}
-          <div className="flex-shrink-0">
-            {session.user.image ? (
-              <img
-                src={session.user.image}
-                alt={session.user.name || 'User'}
-                className="w-12 h-12 rounded-full object-cover"
-              />
-            ) : (
-              <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                <span className="text-lg font-semibold text-gray-600 dark:text-gray-300">
-                  {session.user.name?.[0]?.toUpperCase() || session.user.userID?.[0]?.toUpperCase() || 'U'}
-                </span>
-              </div>
-            )}
-          </div>
+          <Avatar
+            user={{
+              id: session.user.id,
+              userID: session.user.userID || '',
+              name: session.user.name || null,
+              image: session.user.image || null,
+            }}
+          />
 
           {/* Post Input Area */}
           <div className="flex-1 min-w-0">

@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { Avatar } from '@/components/ui'
 
 interface ExpandableCommentInputProps {
   postId: string
@@ -113,19 +114,15 @@ export function ExpandableCommentInput({ postId, parentId, onCommentCreated, rep
           onClick={() => setIsExpanded(true)}
         >
           {/* Avatar */}
-          {session.user.image ? (
-            <img
-              src={session.user.image}
-              alt={session.user.name || 'User'}
-              className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-            />
-          ) : (
-            <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-              <span className="text-sm font-semibold text-gray-600 dark:text-gray-300">
-                {session.user.name?.[0]?.toUpperCase() || session.user.userID?.[0]?.toUpperCase() || 'U'}
-              </span>
-            </div>
-          )}
+          <Avatar
+            user={{
+              id: session.user.id,
+              userID: session.user.userID || '',
+              name: session.user.name || null,
+              image: session.user.image || null,
+            }}
+            size="sm"
+          />
 
           {/* Placeholder text */}
           <div className="flex-1 text-gray-500 dark:text-gray-400 text-sm">
@@ -159,19 +156,15 @@ export function ExpandableCommentInput({ postId, parentId, onCommentCreated, rep
 
           <div className="flex gap-3">
             {/* Avatar */}
-            {session.user.image ? (
-              <img
-                src={session.user.image}
-                alt={session.user.name || 'User'}
-                className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-              />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-                <span className="text-sm font-semibold text-gray-600 dark:text-gray-300">
-                  {session.user.name?.[0]?.toUpperCase() || session.user.userID?.[0]?.toUpperCase() || 'U'}
-                </span>
-              </div>
-            )}
+            <Avatar
+              user={{
+                id: session.user.id,
+                userID: session.user.userID || '',
+                name: session.user.name || null,
+                image: session.user.image || null,
+              }}
+              size="sm"
+            />
 
             {/* Input Area */}
             <div className="flex-1 min-w-0">
