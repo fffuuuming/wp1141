@@ -5,8 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { PostCard } from './PostCard'
 import { InlinePost } from './InlinePost'
-
-type FilterType = 'all' | 'following'
+import { useHomeFilter } from './HomeHeader'
 
 interface Post {
   id: string
@@ -28,7 +27,7 @@ interface Post {
 export function HomeFeed() {
   const { data: session } = useSession()
   const router = useRouter()
-  const [filter, setFilter] = useState<FilterType>('all')
+  const { filter } = useHomeFilter()
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -102,38 +101,6 @@ export function HomeFeed() {
     <div className="w-full">
       {/* Inline Post Creation */}
       <InlinePost onPostCreated={fetchPosts} />
-
-      {/* Tabs */}
-      <div className="sticky top-0 z-10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
-        <div className="flex">
-          <button
-            onClick={() => setFilter('all')}
-            className={`flex-1 px-4 py-3 font-semibold text-sm relative transition-colors ${
-              filter === 'all'
-                ? 'text-gray-900 dark:text-white'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-            }`}
-          >
-            All
-            {filter === 'all' && (
-              <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-500 rounded-t-full" />
-            )}
-          </button>
-          <button
-            onClick={() => setFilter('following')}
-            className={`flex-1 px-4 py-3 font-semibold text-sm relative transition-colors ${
-              filter === 'following'
-                ? 'text-gray-900 dark:text-white'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-            }`}
-          >
-            Following
-            {filter === 'following' && (
-              <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-500 rounded-t-full" />
-            )}
-          </button>
-        </div>
-      </div>
 
       {/* Posts */}
       {loading ? (
