@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { PostCard } from '@/components/PostCard'
+import { CommentsList } from '@/components/CommentsList'
 import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
@@ -72,15 +73,8 @@ export default async function PostPage({ params }: PostPageProps) {
           }}
         />
 
-        {/* Comments Section - Placeholder for Stage 8 */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
-            Comments
-          </h2>
-          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-            <p>Comments will be available in Stage 8</p>
-          </div>
-        </div>
+        {/* Comments Section */}
+        <CommentsList postId={post.id} />
       </div>
     </div>
   )

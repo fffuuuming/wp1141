@@ -170,7 +170,12 @@ export function HomeFeed() {
       ) : (
         <div>
           {posts.map((post) => (
-            <PostCard key={post.id} post={post} onDelete={handleDeletePost} />
+            <PostCard
+              key={post.id}
+              post={post}
+              onDelete={handleDeletePost}
+              onUpdate={fetchPosts}
+            />
           ))}
         </div>
       )}
