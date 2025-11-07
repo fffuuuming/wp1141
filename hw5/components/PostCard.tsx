@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { formatDistanceToNow } from 'date-fns'
 import { parsePostContent, formatUrl } from '@/lib/postUtils'
+import { formatShortTime, formatDetailedTime } from '@/lib/timeUtils'
 import { useSession } from 'next-auth/react'
 
 interface PostCardProps {
@@ -19,15 +19,16 @@ interface PostCardProps {
     }
     _count: {
       likes: number
-      comments: number
+      replies: number
       reposts: number
     }
   }
   onDelete?: (postId: string) => void
   onUpdate?: () => void
+  clickable?: boolean
 }
 
-export function PostCard({ post, onDelete, onUpdate }: PostCardProps) {
+export function PostCard({ post, onDelete, onUpdate, clickable = false }: PostCardProps) {
   const { data: session } = useSession()
   const isOwnPost = session?.user?.id === post.author.id
   const [liked, setLiked] = useState(false)
@@ -170,9 +171,29 @@ export function PostCard({ post, onDelete, onUpdate }: PostCardProps) {
     }
   }
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    if (!clickable) return
+    
+    // Don't navigate if clicking on links, buttons, or interactive elements
+    const target = e.target as HTMLElement
+    if (
+      target.closest('a') ||
+      target.closest('button') ||
+      target.closest('[role="button"]')
+    ) {
+      return
+    }
+    
+    // Navigate to post detail page
+    window.location.href = `/post/${post.id}`
+  }
+
   return (
-    <div className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-      <div className="p-4">
+    <div 
+      className={`border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors ${clickable ? 'cursor-pointer' : ''}`}
+      onClick={handleCardClick}
+    >
+      <div className="px-4 py-3">
         <div className="flex items-start gap-3">
           {/* Author Avatar */}
           <Link href={`/profile/${post.author.userID}`} className="flex-shrink-0">
@@ -194,52 +215,53 @@ export function PostCard({ post, onDelete, onUpdate }: PostCardProps) {
           {/* Post Content */}
           <div className="flex-1 min-w-0">
             {/* Author Info */}
-            <div className="flex items-center gap-2 mb-1">
-              <Link
-                href={`/profile/${post.author.userID}`}
-                className="font-semibold text-gray-900 dark:text-white hover:underline"
-              >
-                {post.author.name || 'User'}
-              </Link>
-              <Link
-                href={`/profile/${post.author.userID}`}
-                className="text-gray-500 dark:text-gray-400 hover:underline text-sm"
-              >
-                @{post.author.userID}
-              </Link>
-              <span className="text-gray-500 dark:text-gray-400 text-sm">·</span>
-              <Link
-                href={`/post/${post.id}`}
-                className="text-gray-500 dark:text-gray-400 hover:underline text-sm"
-              >
-                {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
-              </Link>
-              {isOwnPost && (
-                <>
+            <div className="mb-1 flex items-start justify-between">
+              <div>
+                <Link
+                  href={`/profile/${post.author.userID}`}
+                  className="font-semibold text-gray-900 dark:text-white hover:underline block"
+                >
+                  {post.author.name || 'User'}
+                </Link>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <Link
+                    href={`/profile/${post.author.userID}`}
+                    className="text-gray-500 dark:text-gray-400 hover:underline text-sm"
+                  >
+                    @{post.author.userID}
+                  </Link>
                   <span className="text-gray-500 dark:text-gray-400 text-sm">·</span>
-                  <div className="relative group">
-                    <button
-                      className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-                      title="More options"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                      </svg>
-                    </button>
-                    <div className="absolute right-0 top-full mt-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
-                      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 min-w-[120px]">
-                        {onDelete && (
-                          <button
-                            onClick={() => onDelete(post.id)}
-                            className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-                          >
-                            Delete
-                          </button>
-                        )}
-                      </div>
+                  <Link
+                    href={`/post/${post.id}`}
+                    className="text-gray-500 dark:text-gray-400 hover:underline text-sm"
+                  >
+                    {formatShortTime(post.createdAt)}
+                  </Link>
+                </div>
+              </div>
+              {isOwnPost && (
+                <div className="relative group">
+                  <button
+                    className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                    title="More options"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                    </svg>
+                  </button>
+                  <div className="absolute right-0 top-full mt-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 min-w-[120px]">
+                      {onDelete && (
+                        <button
+                          onClick={() => onDelete(post.id)}
+                          className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                          Delete
+                        </button>
+                      )}
                     </div>
                   </div>
-                </>
+                </div>
               )}
             </div>
 
@@ -292,7 +314,7 @@ export function PostCard({ post, onDelete, onUpdate }: PostCardProps) {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
-                <span className="text-sm">{post._count.comments}</span>
+                <span className="text-sm">{post._count.replies}</span>
               </Link>
 
               {/* Repost Button */}
@@ -331,6 +353,15 @@ export function PostCard({ post, onDelete, onUpdate }: PostCardProps) {
                 )}
                 <span className="text-sm">{likeCount}</span>
               </button>
+            </div>
+
+            {/* Detailed Timestamp */}
+            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                <span>{formatDetailedTime(post.createdAt)}</span>
+                <span>·</span>
+                <span>0 Views</span>
+              </div>
             </div>
           </div>
         </div>

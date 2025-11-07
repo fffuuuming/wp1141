@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 
 /**
  * POST /api/posts/[id]/comments
- * Create a comment on a post
+ * Create a reply (sub-post) on a post
  */
 export async function POST(
   request: NextRequest,
@@ -26,28 +26,28 @@ export async function POST(
 
     if (!content || typeof content !== 'string' || !content.trim()) {
       return NextResponse.json(
-        { error: 'Comment content is required' },
+        { error: 'Reply content is required' },
         { status: 400 }
       )
     }
 
-    // Check if post exists
-    const post = await prisma.post.findUnique({
+    // Check if parent post exists
+    const parentPost = await prisma.post.findUnique({
       where: { id: postId },
     })
 
-    if (!post) {
+    if (!parentPost) {
       return NextResponse.json(
         { error: 'Post not found' },
         { status: 404 }
       )
     }
 
-    // Create comment
-    const comment = await prisma.comment.create({
+    // Create reply (sub-post)
+    const reply = await prisma.post.create({
       data: {
         authorId: session.user.id,
-        postId: postId,
+        parentId: postId,
         content: content.trim(),
       },
       include: {
@@ -68,14 +68,14 @@ export async function POST(
       },
     })
 
-    // Get updated comment count
-    const commentCount = await prisma.comment.count({
-      where: { postId },
+    // Get updated reply count
+    const replyCount = await prisma.post.count({
+      where: { parentId: postId },
     })
 
-    return NextResponse.json({ comment, count: commentCount })
+    return NextResponse.json({ post: reply, count: replyCount })
   } catch (error: any) {
-    console.error('Error creating comment:', error)
+    console.error('Error creating reply:', error)
     return NextResponse.json(
       { error: error.message || 'Internal server error' },
       { status: 500 }
@@ -84,8 +84,56 @@ export async function POST(
 }
 
 /**
+ * Recursively fetch replies for a post
+ */
+async function fetchPostReplies(parentId: string): Promise<any[]> {
+  const replies = await prisma.post.findMany({
+    where: {
+      parentId: parentId,
+    },
+    select: {
+      id: true,
+      content: true,
+      createdAt: true,
+      updatedAt: true,
+      parentId: true,
+      author: {
+        select: {
+          id: true,
+          userID: true,
+          name: true,
+          image: true,
+        },
+      },
+      _count: {
+        select: {
+          likes: true,
+          replies: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: 'asc',
+    },
+  })
+
+  // Recursively fetch nested replies
+  const repliesWithNested = await Promise.all(
+    replies.map(async (reply) => {
+      const nestedReplies = await fetchPostReplies(reply.id)
+      return {
+        ...reply,
+        replies: nestedReplies,
+      }
+    })
+  )
+
+  return repliesWithNested
+}
+
+/**
  * GET /api/posts/[id]/comments
- * Get comments for a post
+ * Get replies (sub-posts) for a post (with nested replies)
  */
 export async function GET(
   request: NextRequest,
@@ -94,12 +142,17 @@ export async function GET(
   try {
     const { id: postId } = await params
 
-    const comments = await prisma.comment.findMany({
+    // Get direct replies (sub-posts) to this post
+    const replies = await prisma.post.findMany({
       where: {
-        postId: postId,
-        parentId: null, // Only top-level comments for now
+        parentId: postId,
       },
-      include: {
+      select: {
+        id: true,
+        content: true,
+        createdAt: true,
+        updatedAt: true,
+        parentId: true,
         author: {
           select: {
             id: true,
@@ -120,9 +173,20 @@ export async function GET(
       },
     })
 
-    return NextResponse.json({ comments })
+    // Fetch nested replies for each reply
+    const repliesWithNested = await Promise.all(
+      replies.map(async (reply) => {
+        const nestedReplies = await fetchPostReplies(reply.id)
+        return {
+          ...reply,
+          replies: nestedReplies,
+        }
+      })
+    )
+
+    return NextResponse.json({ comments: repliesWithNested })
   } catch (error: any) {
-    console.error('Error fetching comments:', error)
+    console.error('Error fetching replies:', error)
     return NextResponse.json(
       { error: error.message || 'Internal server error' },
       { status: 500 }

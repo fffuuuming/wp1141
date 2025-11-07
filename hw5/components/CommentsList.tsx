@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
-import { CommentInput } from './CommentInput'
-import { CommentCard } from './CommentCard'
+import { PostCard } from './PostCard'
 
 interface Comment {
   id: string
   content: string
   createdAt: string
+  parentId: string | null
   author: {
     id: string
     userID: string
@@ -19,13 +19,15 @@ interface Comment {
     likes: number
     replies: number
   }
+  replies?: Comment[]
 }
 
 interface CommentsListProps {
   postId: string
+  onCommentClick?: (commentId: string) => void
 }
 
-export function CommentsList({ postId }: CommentsListProps) {
+export function CommentsList({ postId, onCommentClick }: CommentsListProps) {
   const { data: session } = useSession()
   const [comments, setComments] = useState<Comment[]>([])
   const [loading, setLoading] = useState(true)
@@ -33,6 +35,16 @@ export function CommentsList({ postId }: CommentsListProps) {
 
   useEffect(() => {
     fetchComments()
+    
+    // Listen for comment creation events
+    const handleCommentCreated = () => {
+      fetchComments()
+    }
+    window.addEventListener('commentCreated', handleCommentCreated)
+    
+    return () => {
+      window.removeEventListener('commentCreated', handleCommentCreated)
+    }
   }, [postId])
 
   const fetchComments = async () => {
@@ -55,19 +67,13 @@ export function CommentsList({ postId }: CommentsListProps) {
     }
   }
 
-  const handleCommentCreated = () => {
-    fetchComments()
-    // Trigger event to update comment count on post cards
-    window.dispatchEvent(new Event('commentCreated'))
-  }
-
   const handleDeleteComment = async (commentId: string) => {
     if (!confirm('Are you sure you want to delete this comment?')) {
       return
     }
 
     try {
-      const response = await fetch(`/api/comments/${commentId}`, {
+      const response = await fetch(`/api/posts/${commentId}`, {
         method: 'DELETE',
       })
 
@@ -84,18 +90,14 @@ export function CommentsList({ postId }: CommentsListProps) {
     }
   }
 
+  const handleCardClick = (commentId: string) => {
+    if (onCommentClick) {
+      onCommentClick(commentId)
+    }
+  }
+
   return (
     <div className="border-t border-gray-200 dark:border-gray-700">
-      {/* Comment Input */}
-      {session && <CommentInput postId={postId} onCommentCreated={handleCommentCreated} />}
-
-      {/* Comments Header */}
-      <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-        <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-          Comments
-        </h2>
-      </div>
-
       {/* Comments List */}
       {loading ? (
         <div className="p-8 text-center">
@@ -114,20 +116,35 @@ export function CommentsList({ postId }: CommentsListProps) {
         </div>
       ) : comments.length === 0 ? (
         <div className="p-8 text-center">
-          <p className="text-gray-500 dark:text-gray-400 text-sm">No comments yet. Be the first to comment!</p>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">No replies yet. Be the first to reply!</p>
         </div>
       ) : (
         <div>
           {comments.map((comment) => (
-            <CommentCard
+            <div
               key={comment.id}
-              comment={comment}
-              onDelete={handleDeleteComment}
-            />
+              onClick={() => handleCardClick(comment.id)}
+              className="cursor-pointer"
+            >
+              <PostCard
+                post={{
+                  id: comment.id,
+                  content: comment.content,
+                  createdAt: comment.createdAt,
+                  author: comment.author,
+                  _count: {
+                    likes: comment._count.likes,
+                    replies: comment._count.replies,
+                    reposts: 0, // Replies don't have reposts
+                  },
+                }}
+                onDelete={handleDeleteComment}
+                clickable={true}
+              />
+            </div>
           ))}
         </div>
       )}
     </div>
   )
 }
-

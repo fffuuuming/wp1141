@@ -175,6 +175,7 @@ export function HomeFeed() {
               post={post}
               onDelete={handleDeletePost}
               onUpdate={fetchPosts}
+              clickable={true}
             />
           ))}
         </div>

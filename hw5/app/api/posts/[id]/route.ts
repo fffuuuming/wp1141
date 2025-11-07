@@ -25,10 +25,25 @@ export async function GET(
             image: true,
           },
         },
+        parent: {
+          select: {
+            id: true,
+            content: true,
+            createdAt: true,
+            author: {
+              select: {
+                id: true,
+                userID: true,
+                name: true,
+                image: true,
+              },
+            },
+          },
+        },
         _count: {
           select: {
             likes: true,
-            comments: true,
+            replies: true,
             reposts: true,
           },
         },

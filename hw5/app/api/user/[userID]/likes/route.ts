@@ -46,7 +46,6 @@ export async function GET(
     const likes = await prisma.like.findMany({
       where: {
         userId: user.id,
-        postId: { not: null }, // Only post likes, not comment likes
       },
       include: {
         post: {
@@ -61,7 +60,7 @@ export async function GET(
             _count: {
               select: {
                 likes: true,
-                comments: true,
+                replies: true,
                 reposts: true,
               },
             },

@@ -12,9 +12,12 @@ export async function GET(
   try {
     const { userId } = await params
 
-    // Fetch user's posts
+    // Fetch user's top-level posts (not replies)
     const posts = await prisma.post.findMany({
-      where: { authorId: userId },
+      where: {
+        authorId: userId,
+        parentId: null, // Only top-level posts
+      },
       include: {
         author: {
           select: {
@@ -26,7 +29,7 @@ export async function GET(
         _count: {
           select: {
             likes: true,
-            comments: true,
+            replies: true,
             reposts: true,
           },
         },
@@ -52,7 +55,7 @@ export async function GET(
             _count: {
               select: {
                 likes: true,
-                comments: true,
+                replies: true,
                 reposts: true,
               },
             },

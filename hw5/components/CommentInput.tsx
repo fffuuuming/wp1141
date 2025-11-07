@@ -27,12 +27,12 @@ export function CommentInput({ postId, onCommentCreated }: CommentInputProps) {
     e.preventDefault()
 
     if (!session?.user?.id) {
-      setError('You must be logged in to comment')
+      setError('You must be logged in to reply')
       return
     }
 
     if (!content.trim()) {
-      setError('Comment cannot be empty')
+      setError('Reply cannot be empty')
       return
     }
 
@@ -40,7 +40,9 @@ export function CommentInput({ postId, onCommentCreated }: CommentInputProps) {
     setError('')
 
     try {
-      const response = await fetch(`/api/posts/${postId}/comments`, {
+      const url = `/api/posts/${postId}/comments`
+      
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -52,7 +54,7 @@ export function CommentInput({ postId, onCommentCreated }: CommentInputProps) {
 
       if (!response.ok) {
         const data = await response.json()
-        setError(data.error || 'Failed to create comment')
+        setError(data.error || 'Failed to create reply')
         setLoading(false)
         return
       }
@@ -63,8 +65,8 @@ export function CommentInput({ postId, onCommentCreated }: CommentInputProps) {
         onCommentCreated()
       }
     } catch (error) {
-      console.error('Error creating comment:', error)
-      setError('An error occurred while creating comment')
+      console.error('Error creating reply:', error)
+      setError('An error occurred while creating reply')
     } finally {
       setLoading(false)
     }

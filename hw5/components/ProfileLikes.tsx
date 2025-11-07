@@ -21,7 +21,7 @@ interface LikedPost {
     }
     _count: {
       likes: number
-      comments: number
+      replies: number
       reposts: number
     }
   }
@@ -145,7 +145,7 @@ export function ProfileLikes({ userID, isOwnProfile }: ProfileLikesProps) {
                 </p>
                 <div className="flex items-center gap-6 text-sm text-gray-500 dark:text-gray-400">
                   <span>{like.post._count.likes} likes</span>
-                  <span>{like.post._count.comments} comments</span>
+                  <span>{like.post._count.replies} replies</span>
                   <span>{like.post._count.reposts} reposts</span>
                 </div>
               </div>

@@ -30,7 +30,6 @@ model User {
 
   // Application relations
   posts     Post[]
-  comments  Comment[]
   likes     Like[]
   reposts   Repost[]
   drafts    Draft[]
@@ -86,59 +85,36 @@ model Post {
   id        String   @id @default(cuid())
   authorId  String
   content   String
+  parentId  String?  // Self-referential: parent post (null for top-level posts)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations
-  author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  comments Comment[]
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent   Post?  @relation("PostReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  Post[] @relation("PostReplies")
   likes    Like[]
   reposts  Repost[]
 
   @@index([authorId])
   @@index([createdAt])
+  @@index([parentId])
   @@map("posts")
 }
 
-model Comment {
-  id        String   @id @default(cuid())
-  authorId  String
-  postId    String?
-  parentId  String?
-  content   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  author  User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  post    Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies Comment[] @relation("CommentReplies")
-  likes   Like[]
-
-  @@index([authorId])
-  @@index([postId])
-  @@index([parentId])
-  @@index([createdAt])
-  @@map("comments")
-}
 
 model Like {
   id        String   @id @default(cuid())
   userId    String
-  postId    String?
-  commentId String?
+  postId    String
   createdAt DateTime @default(now())
 
   // Relations
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  post    Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
-  comment Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@unique([userId, postId]) // User can only like a post once
-  @@unique([userId, commentId]) // User can only like a comment once
   @@index([postId])
-  @@index([commentId])
   @@map("likes")
 }
 

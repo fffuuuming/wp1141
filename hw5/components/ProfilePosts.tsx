@@ -29,7 +29,7 @@ interface PostItem {
     }
     _count: {
       likes: number
-      comments: number
+      replies: number
       reposts: number
     }
   }
@@ -150,7 +150,7 @@ export function ProfilePosts({ userID, isOwnProfile }: ProfilePostsProps) {
                     </p>
                     <div className="flex items-center gap-6 text-sm text-gray-500 dark:text-gray-400">
                       <span>{item.post._count.likes} likes</span>
-                      <span>{item.post._count.comments} comments</span>
+                      <span>{item.post._count.replies} replies</span>
                       <span>{item.post._count.reposts} reposts</span>
                     </div>
                   </div>
@@ -191,7 +191,7 @@ export function ProfilePosts({ userID, isOwnProfile }: ProfilePostsProps) {
                   {item._count && (
                     <div className="flex items-center gap-6 text-sm text-gray-500 dark:text-gray-400">
                       <span>{item._count.likes} likes</span>
-                      <span>{item._count.comments} comments</span>
+                      <span>{item._count.replies} replies</span>
                       <span>{item._count.reposts} reposts</span>
                     </div>
                   )}

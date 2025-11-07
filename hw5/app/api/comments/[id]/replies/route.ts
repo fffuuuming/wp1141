@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { calculateCharacterCount } from '@/lib/postUtils'
 
 /**
- * POST /api/posts
- * Create a new post
+ * POST /api/comments/[id]/replies
+ * Create a reply to a comment
  */
-export async function POST(request: NextRequest) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const session = await auth()
 
@@ -18,41 +20,40 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const { id: parentId } = await params
     const body = await request.json()
     const { content } = body
 
-    if (!content || typeof content !== 'string') {
+    if (!content || typeof content !== 'string' || !content.trim()) {
       return NextResponse.json(
-        { error: 'Content is required' },
+        { error: 'Comment content is required' },
         { status: 400 }
       )
     }
 
-    const trimmedContent = content.trim()
+    // Check if parent comment exists
+    const parentComment = await prisma.comment.findUnique({
+      where: { id: parentId },
+      select: {
+        id: true,
+        postId: true,
+      },
+    })
 
-    if (trimmedContent.length === 0) {
+    if (!parentComment) {
       return NextResponse.json(
-        { error: 'Post content cannot be empty' },
-        { status: 400 }
+        { error: 'Parent comment not found' },
+        { status: 404 }
       )
     }
 
-    // Check character count
-    const charCount = calculateCharacterCount(trimmedContent)
-    const maxChars = 280
-
-    if (charCount > maxChars) {
-      return NextResponse.json(
-        { error: `Post exceeds ${maxChars} character limit (current: ${charCount})` },
-        { status: 400 }
-      )
-    }
-
-    // Create post
-    const post = await prisma.post.create({
+    // Create reply
+    const reply = await prisma.comment.create({
       data: {
         authorId: session.user.id,
-        content: trimmedContent,
+        postId: parentComment.postId, // Keep reference to original post
+        parentId: parentId,
+        content: content.trim(),
       },
       include: {
         author: {
@@ -67,15 +68,14 @@ export async function POST(request: NextRequest) {
           select: {
             likes: true,
             replies: true,
-            reposts: true,
           },
         },
       },
     })
 
-    return NextResponse.json({ post })
+    return NextResponse.json({ comment: reply })
   } catch (error: any) {
-    console.error('Error creating post:', error)
+    console.error('Error creating reply:', error)
     return NextResponse.json(
       { error: error.message || 'Internal server error' },
       { status: 500 }

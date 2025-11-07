@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
       }
       _count: {
         likes: number
-        comments: number
+        replies: number
         reposts: number
       }
     }> = []
@@ -55,6 +55,7 @@ export async function GET(request: NextRequest) {
             authorId: {
               in: followingIds,
             },
+            parentId: null, // Only top-level posts
           },
           include: {
             author: {
@@ -68,7 +69,7 @@ export async function GET(request: NextRequest) {
             _count: {
               select: {
                 likes: true,
-                comments: true,
+                replies: true,
                 reposts: true,
               },
             },
@@ -79,8 +80,11 @@ export async function GET(request: NextRequest) {
         })
       }
     } else {
-      // Get all posts
+      // Get all top-level posts (no parent)
       posts = await prisma.post.findMany({
+        where: {
+          parentId: null, // Only top-level posts
+        },
         include: {
           author: {
             select: {
@@ -93,7 +97,7 @@ export async function GET(request: NextRequest) {
           _count: {
             select: {
               likes: true,
-              comments: true,
+              replies: true,
               reposts: true,
             },
           },
