@@ -29,7 +29,6 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
       createdAt: true,
       _count: {
         select: {
-          posts: true,
           following: true,
           followers: true,
         },
@@ -40,6 +39,15 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   if (!user) {
     redirect('/')
   }
+
+  // Count only top-level posts (not replies/comments)
+  // This ensures reposts don't affect the count, and replies aren't counted as posts
+  const topLevelPostCount = await prisma.post.count({
+    where: {
+      authorId: user.id,
+      parentId: null, // Only count top-level posts, not replies
+    },
+  })
 
   // Check if current user follows this user
   let isFollowing = false
@@ -79,7 +87,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                   {user.name || 'User'}
                 </h1>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {user._count.posts} posts
+                  {topLevelPostCount} posts
                 </p>
               </div>
             </div>
@@ -106,7 +114,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
           createdAt: user.createdAt,
         }}
         stats={{
-          posts: user._count.posts,
+          posts: topLevelPostCount,
           following: user._count.following,
           followers: user._count.followers,
         }}

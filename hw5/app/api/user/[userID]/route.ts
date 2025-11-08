@@ -27,13 +27,6 @@ export const GET = withOptionalAuth(async (request, { params, session }) => {
       bio: true,
       backgroundImage: true,
       createdAt: true,
-      _count: {
-        select: {
-          posts: true,
-          following: true,
-          followers: true,
-        },
-      },
     },
   })
 
@@ -44,6 +37,23 @@ export const GET = withOptionalAuth(async (request, { params, session }) => {
       status: HttpStatus.NOT_FOUND,
     }
   }
+
+  // Count only top-level posts (not replies/comments)
+  const topLevelPostCount = await prisma.post.count({
+    where: {
+      authorId: user.id,
+      parentId: null, // Only count top-level posts, not replies
+    },
+  })
+
+  // Get following and followers counts
+  const followingCount = await prisma.follow.count({
+    where: { followerId: user.id },
+  })
+
+  const followersCount = await prisma.follow.count({
+    where: { followingId: user.id },
+  })
 
   const currentUserId = session?.user?.id
 
@@ -73,9 +83,9 @@ export const GET = withOptionalAuth(async (request, { params, session }) => {
       backgroundImage: user.backgroundImage,
       createdAt: user.createdAt,
       stats: {
-        posts: user._count.posts,
-        following: user._count.following,
-        followers: user._count.followers,
+        posts: topLevelPostCount,
+        following: followingCount,
+        followers: followersCount,
       },
     },
     isFollowing,
