@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { USER_PROFILE } from '@/lib/constants/validation'
 
 interface EditProfileModalProps {
   user: {
@@ -17,6 +18,7 @@ interface EditProfileModalProps {
 }
 
 export function EditProfileModal({ user, onClose, onUpdate }: EditProfileModalProps) {
+  const [name, setName] = useState(user.name || '')
   const [bio, setBio] = useState(user.bio || '')
   const [backgroundImage, setBackgroundImage] = useState(user.backgroundImage || '')
   const [image, setImage] = useState(user.image || '')
@@ -56,6 +58,7 @@ export function EditProfileModal({ user, onClose, onUpdate }: EditProfileModalPr
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          name: name.trim() || null,
           bio: bio.trim() || null,
           backgroundImage: backgroundImage.trim() || null,
           image: image.trim() || null,
@@ -106,6 +109,24 @@ export function EditProfileModal({ user, onClose, onUpdate }: EditProfileModalPr
 
         {/* Content */}
         <div className="p-6 space-y-6">
+          {/* Name */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              Name
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Your name"
+              maxLength={USER_PROFILE.NAME_MAX_LENGTH}
+              className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 transition-all duration-200"
+            />
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 text-right">
+              {name.length}/{USER_PROFILE.NAME_MAX_LENGTH}
+            </p>
+          </div>
+
           {/* Background Image */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
