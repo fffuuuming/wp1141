@@ -20,9 +20,20 @@ export const POST = withAuth(async (request, { session }) => {
     }
   }
 
+  // withAuth guarantees session exists, but TypeScript doesn't know that
+  if (!session || !session.user || !session.user.id) {
+    throw {
+      error: 'Unauthorized',
+      code: ErrorCode.UNAUTHORIZED,
+      status: HttpStatus.UNAUTHORIZED,
+    }
+  }
+
+  const userId = session.user.id
+
   // Check if user already has a userID (and it's not a temporary one)
   const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
+    where: { id: userId },
     select: { userID: true },
   })
 
@@ -36,7 +47,7 @@ export const POST = withAuth(async (request, { session }) => {
 
   // Update user with userID
   await prisma.user.update({
-    where: { id: session.user.id },
+    where: { id: userId },
     data: { userID },
   })
 
