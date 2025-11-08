@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { EditProfileModal } from './EditProfileModal'
 import { FollowButton } from './FollowButton'
@@ -34,6 +34,13 @@ export function ProfileContent({ user, stats, isFollowing, isOwnProfile }: Profi
   const [showEditModal, setShowEditModal] = useState(false)
   const [activeTab, setActiveTab] = useState<TabType>('posts')
   const [profileData, setProfileData] = useState(user)
+
+  // Reset to 'posts' tab if viewing someone else's profile and 'likes' is active
+  useEffect(() => {
+    if (!isOwnProfile && activeTab === 'likes') {
+      setActiveTab('posts')
+    }
+  }, [isOwnProfile, activeTab])
   
   // Use real-time follower count hook
   const { followerCount, followingCount } = useFollowerCount(
@@ -157,7 +164,7 @@ export function ProfileContent({ user, stats, isFollowing, isOwnProfile }: Profi
         </div>
       </div>
 
-      {/* Tabs: Posts and Likes */}
+      {/* Tabs: Posts and Likes (Likes only visible on own profile) */}
       <div className="border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-4xl mx-auto px-6">
           <div className="flex">
@@ -174,19 +181,21 @@ export function ProfileContent({ user, stats, isFollowing, isOwnProfile }: Profi
                 <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-500 rounded-t-full" />
               )}
             </button>
-            <button
-              onClick={() => setActiveTab('likes')}
-              className={`px-4 py-4 font-semibold text-sm relative transition-colors ${
-                activeTab === 'likes'
-                  ? 'text-gray-900 dark:text-white'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-              }`}
-            >
-              Likes
-              {activeTab === 'likes' && (
-                <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-500 rounded-t-full" />
-              )}
-            </button>
+            {isOwnProfile && (
+              <button
+                onClick={() => setActiveTab('likes')}
+                className={`px-4 py-4 font-semibold text-sm relative transition-colors ${
+                  activeTab === 'likes'
+                    ? 'text-gray-900 dark:text-white'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
+              >
+                Likes
+                {activeTab === 'likes' && (
+                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-500 rounded-t-full" />
+                )}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -195,9 +204,9 @@ export function ProfileContent({ user, stats, isFollowing, isOwnProfile }: Profi
       <div className="max-w-4xl mx-auto">
         {activeTab === 'posts' ? (
           <ProfilePosts userID={profileData.id} isOwnProfile={isOwnProfile} />
-        ) : (
+        ) : activeTab === 'likes' && isOwnProfile ? (
           <ProfileLikes userID={profileData.id} isOwnProfile={isOwnProfile} />
-        )}
+        ) : null}
       </div>
 
       {/* Edit Profile Modal */}
