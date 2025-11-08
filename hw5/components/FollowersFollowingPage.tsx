@@ -214,7 +214,7 @@ export function FollowersFollowingPage({ userID, userName, initialTab }: Followe
                       </div>
 
                       {/* Follow Button */}
-                      {session?.user?.userID && session.user.userID !== user.userID && (
+                      {session?.user?.userID && (session.user as { userID: string }).userID !== user.userID && (
                         <div className="flex-shrink-0">
                           <FollowButton
                             userID={user.userID}

@@ -55,7 +55,7 @@ export function Sidebar() {
     },
     {
       name: 'Profile',
-      path: session?.user?.userID ? `/profile/${session.user.userID}` : '/profile',
+      path: session?.user?.userID ? `/profile/${(session.user as { userID: string }).userID}` : '/profile',
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -116,41 +116,47 @@ export function Sidebar() {
         {session?.user ? (
           <div className="p-4 border-t border-gray-200 dark:border-gray-800">
           <div className="relative" ref={logoutRef}>
-            <button
-              onClick={() => setShowLogout(!showLogout)}
-              aria-label={`User menu for ${session.user.name || 'User'} (@${session.user.userID || 'userid'})`}
-              aria-expanded={showLogout}
-              aria-haspopup="menu"
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200"
-            >
-              {session.user.image ? (
-                <img
-                  src={session.user.image}
-                  alt={`${session.user.name || 'User'}'s avatar`}
-                  className="w-10 h-10 rounded-full"
-                />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-700 flex items-center justify-center" aria-hidden="true">
-                  <span className="text-gray-600 dark:text-gray-300 font-semibold">
-                    {session.user.name?.[0]?.toUpperCase() || 'U'}
-                  </span>
-                </div>
-              )}
-              <div className="flex-1 text-left hidden lg:block">
-                <p className="font-bold text-sm text-white">{session.user.name || 'User'}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  @{session.user.userID || 'userid'}
-                </p>
-              </div>
-              <svg
-                className="w-5 h-5 text-white"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
-              </svg>
-            </button>
+            {(() => {
+              // Type assertion: session.user has userID from our extended Session type
+              const user = session.user as { id: string; userID: string; name?: string | null; email?: string | null; image?: string | null }
+              return (
+                <button
+                  onClick={() => setShowLogout(!showLogout)}
+                  aria-label={`User menu for ${user.name || 'User'} (@${user.userID || 'userid'})`}
+                  aria-expanded={showLogout}
+                  aria-haspopup="menu"
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200"
+                >
+                  {user.image ? (
+                    <img
+                      src={user.image}
+                      alt={`${user.name || 'User'}'s avatar`}
+                      className="w-10 h-10 rounded-full"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-700 flex items-center justify-center" aria-hidden="true">
+                      <span className="text-gray-600 dark:text-gray-300 font-semibold">
+                        {user.name?.[0]?.toUpperCase() || 'U'}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex-1 text-left hidden lg:block">
+                    <p className="font-bold text-sm text-white">{user.name || 'User'}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      @{user.userID || 'userid'}
+                    </p>
+                  </div>
+                  <svg
+                    className="w-5 h-5 text-white"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+                  </svg>
+                </button>
+              )
+            })()}
 
             {/* Logout Popup */}
             {showLogout && (

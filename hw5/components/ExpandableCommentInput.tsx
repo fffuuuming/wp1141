@@ -100,6 +100,9 @@ export function ExpandableCommentInput({ postId, parentId, onCommentCreated, rep
     return null
   }
 
+  // Type assertion: session.user has userID from our extended Session type
+  const user = session.user as { id: string; userID: string; name?: string | null; email?: string | null; image?: string | null }
+
   return (
     <div 
       ref={containerRef}
@@ -116,10 +119,10 @@ export function ExpandableCommentInput({ postId, parentId, onCommentCreated, rep
           {/* Avatar */}
           <Avatar
             user={{
-              id: session.user.id,
-              userID: session.user.userID || '',
-              name: session.user.name || null,
-              image: session.user.image || null,
+              id: user.id,
+              userID: user.userID || '',
+              name: user.name || null,
+              image: user.image || null,
             }}
             size="sm"
           />
@@ -158,10 +161,10 @@ export function ExpandableCommentInput({ postId, parentId, onCommentCreated, rep
             {/* Avatar */}
             <Avatar
               user={{
-                id: session.user.id,
-                userID: session.user.userID || '',
-                name: session.user.name || null,
-                image: session.user.image || null,
+                id: user.id,
+                userID: user.userID || '',
+                name: user.name || null,
+                image: user.image || null,
               }}
               size="sm"
             />

@@ -19,7 +19,7 @@ export function NewPostNotification({ onRefresh }: { onRefresh?: () => void }) {
 
   // Listen for new posts from followed users on user's own channel
   usePusherChannel(
-    session?.user?.userID ? PUSHER_CHANNELS.user(session.user.userID) : '',
+    session?.user?.userID ? PUSHER_CHANNELS.user((session.user as { userID: string }).userID) : '',
     PUSHER_EVENTS.POST_CREATED,
     (data: { postId: string; userId: string; author: NotificationUser }) => {
       // Only show notification if it's not from the current user and author exists
@@ -32,7 +32,7 @@ export function NewPostNotification({ onRefresh }: { onRefresh?: () => void }) {
 
   // Listen for reposts from followed users on user's own channel
   usePusherChannel(
-    session?.user?.userID ? PUSHER_CHANNELS.user(session.user.userID) : '',
+    session?.user?.userID ? PUSHER_CHANNELS.user((session.user as { userID: string }).userID) : '',
     PUSHER_EVENTS.REPOST,
     (data: { postId: string; userId: string; author: NotificationUser }) => {
       // Only show notification if it's not from the current user and author exists

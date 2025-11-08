@@ -102,6 +102,9 @@ export function InlinePost({ onPostCreated }: { onPostCreated?: () => void }) {
     return null
   }
 
+  // Type assertion: session.user has userID from our extended Session type
+  const user = session.user as { id: string; userID: string; name?: string | null; email?: string | null; image?: string | null }
+
   return (
     <div className={`border-b border-gray-200 dark:border-gray-700 transition-all duration-200 ${
       expanded ? 'bg-white dark:bg-gray-900' : ''
@@ -112,10 +115,10 @@ export function InlinePost({ onPostCreated }: { onPostCreated?: () => void }) {
           <div className={expanded ? '' : 'flex-shrink-0'}>
             <Avatar
               user={{
-                id: session.user.id,
-                userID: session.user.userID || '',
-                name: session.user.name || null,
-                image: session.user.image || null,
+                id: user.id,
+                userID: user.userID || '',
+                name: user.name || null,
+                image: user.image || null,
               }}
               size={expanded ? 'md' : 'sm'}
             />
