@@ -66,8 +66,14 @@ export function RightSidebar() {
     return () => clearTimeout(timeoutId)
   }, [searchQuery, currentUserId, currentUserID])
 
-  // Load recommendations on mount
+  // Load recommendations on mount (only if authenticated)
   useEffect(() => {
+    // Only load recommendations if user is authenticated
+    if (!session?.user?.id) {
+      setIsLoadingRecommendations(false)
+      return
+    }
+
     const loadRecommendations = async () => {
       try {
         setIsLoadingRecommendations(true)
@@ -76,6 +82,7 @@ export function RightSidebar() {
         const users = (response as any).users || (response as any).data?.users || []
         setRecommendations(users)
       } catch (error) {
+        // Silently fail - recommendations are optional
         console.error('Error loading recommendations:', error)
         setRecommendations([])
       } finally {
@@ -84,7 +91,7 @@ export function RightSidebar() {
     }
 
     loadRecommendations()
-  }, [])
+  }, [session?.user?.id])
 
   const handleFollowChange = useCallback((userID: string, following: boolean) => {
     // Update recommendations
@@ -199,55 +206,57 @@ export function RightSidebar() {
           )}
         </div>
 
-        {/* Who to Follow */}
-        <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-4">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-            Who to follow
-          </h2>
-          {isLoadingRecommendations ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : recommendations.length > 0 ? (
-            <div className="space-y-4">
-              {recommendations.map((user) => (
-                <div
-                  key={user.id}
-                  className="flex items-center gap-3"
-                >
-                  <Link href={`/profile/${user.userID}`} className="flex items-center gap-3 flex-1 min-w-0 rounded-xl p-1 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                    <Avatar
-                      user={{
-                        id: user.id,
-                        userID: user.userID,
-                        name: user.name,
-                        image: user.image,
-                      }}
-                      size="sm"
+        {/* Who to Follow - Only show when authenticated */}
+        {session?.user?.id && (
+          <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-4">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+              Who to follow
+            </h2>
+            {isLoadingRecommendations ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : recommendations.length > 0 ? (
+              <div className="space-y-4">
+                {recommendations.map((user) => (
+                  <div
+                    key={user.id}
+                    className="flex items-center gap-3"
+                  >
+                    <Link href={`/profile/${user.userID}`} className="flex items-center gap-3 flex-1 min-w-0 rounded-xl p-1 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                      <Avatar
+                        user={{
+                          id: user.id,
+                          userID: user.userID,
+                          name: user.name,
+                          image: user.image,
+                        }}
+                        size="sm"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-gray-900 dark:text-white truncate">
+                          {user.name || user.userID}
+                        </p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                          @{user.userID}
+                        </p>
+                      </div>
+                    </Link>
+                    <FollowButton
+                      userID={user.userID}
+                      initialFollowing={user.isFollowing}
+                      onFollowChange={(following) => handleFollowChange(user.userID, following)}
                     />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900 dark:text-white truncate">
-                        {user.name || user.userID}
-                      </p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                        @{user.userID}
-                      </p>
-                    </div>
-                  </Link>
-                  <FollowButton
-                    userID={user.userID}
-                    initialFollowing={user.isFollowing}
-                    onFollowChange={(following) => handleFollowChange(user.userID, following)}
-                  />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
-              No recommendations available
-            </p>
-          )}
-        </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+                No recommendations available
+              </p>
+            )}
+          </div>
+        )}
       </div>
     </aside>
   )
