@@ -74,8 +74,11 @@ export function FollowersFollowingPage({ userID, userName, initialTab }: Followe
     setFollowing(updateUser(following))
   }
 
+  // Extract current user ID to avoid TypeScript issues
+  const currentUserID = session?.user?.userID ?? null
+
   const currentUsers = activeTab === 'followers' ? followers : following
-  const isOwnProfile = session?.user?.userID ? (session.user as { userID: string }).userID === userID : false
+  const isOwnProfile = currentUserID === userID
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
@@ -214,7 +217,7 @@ export function FollowersFollowingPage({ userID, userName, initialTab }: Followe
                       </div>
 
                       {/* Follow Button */}
-                      {session?.user?.userID && (session.user as { userID: string }).userID !== user.userID && (
+                      {currentUserID && currentUserID !== user.userID && (
                         <div className="flex-shrink-0">
                           <FollowButton
                             userID={user.userID}

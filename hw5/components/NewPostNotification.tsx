@@ -17,9 +17,12 @@ export function NewPostNotification({ onRefresh }: { onRefresh?: () => void }) {
   const [users, setUsers] = useState<NotificationUser[]>([])
   const usersRef = useRef<Map<string, NotificationUser>>(new Map())
 
+  // Extract current user ID to avoid TypeScript issues
+  const currentUserID = session?.user?.userID ?? null
+
   // Listen for new posts from followed users on user's own channel
   usePusherChannel(
-    session?.user?.userID ? PUSHER_CHANNELS.user((session.user as { userID: string }).userID) : '',
+    currentUserID ? PUSHER_CHANNELS.user(currentUserID) : '',
     PUSHER_EVENTS.POST_CREATED,
     (data: { postId: string; userId: string; author: NotificationUser }) => {
       // Only show notification if it's not from the current user and author exists
@@ -27,12 +30,12 @@ export function NewPostNotification({ onRefresh }: { onRefresh?: () => void }) {
         addUser(data.author)
       }
     },
-    !!session?.user?.userID
+    !!currentUserID
   )
 
   // Listen for reposts from followed users on user's own channel
   usePusherChannel(
-    session?.user?.userID ? PUSHER_CHANNELS.user((session.user as { userID: string }).userID) : '',
+    currentUserID ? PUSHER_CHANNELS.user(currentUserID) : '',
     PUSHER_EVENTS.REPOST,
     (data: { postId: string; userId: string; author: NotificationUser }) => {
       // Only show notification if it's not from the current user and author exists
@@ -40,7 +43,7 @@ export function NewPostNotification({ onRefresh }: { onRefresh?: () => void }) {
         addUser(data.author)
       }
     },
-    !!session?.user?.userID
+    !!currentUserID
   )
 
   const addUser = (user: NotificationUser) => {
