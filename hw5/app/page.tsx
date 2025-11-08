@@ -22,7 +22,7 @@ export default async function Home() {
     <HomeFilterProvider>
       <div className="min-h-screen bg-white dark:bg-gray-900">
         <HomeHeader />
-        <div className="max-w-2xl mx-auto">
+        <div className="w-full">
           <HomeFeed />
         </div>
       </div>

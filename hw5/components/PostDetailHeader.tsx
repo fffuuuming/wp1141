@@ -14,8 +14,8 @@ export function PostDetailHeader({ postId }: PostDetailHeaderProps) {
   }
 
   return (
-    <div className="sticky top-0 z-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
-      <div className="px-4 py-3 flex items-center gap-4">
+    <div className="sticky top-0 z-20 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+      <div className="w-full px-4 py-3 flex items-center gap-4">
         <button
           onClick={handleBack}
           className="inline-flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"

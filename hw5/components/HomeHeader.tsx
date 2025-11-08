@@ -32,8 +32,8 @@ export function HomeHeader() {
   const { filter, setFilter } = useHomeFilter()
 
   return (
-    <div className="border-b border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm sticky top-0 z-10">
-      <div className="max-w-2xl mx-auto">
+    <div className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 sticky top-0 z-10">
+      <div className="w-full">
         <div className="flex">
           <button
             onClick={() => setFilter('all')}

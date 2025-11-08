@@ -59,8 +59,8 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
       {/* Top Header: Back Arrow, Name, Post Count, Search Icon */}
-      <div className="sticky top-0 z-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-4xl mx-auto px-4">
+      <div className="sticky top-0 z-20 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+        <div className="w-full px-4">
           <div className="flex items-center justify-between py-3">
             <div className="flex items-center gap-4">
               {/* Back Arrow */}

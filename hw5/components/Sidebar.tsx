@@ -65,7 +65,7 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-20 lg:w-64 border-r border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl flex flex-col z-10 shadow-lg">
+    <aside className="fixed left-0 top-0 h-screen w-20 lg:w-64 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex flex-col z-10">
       {/* Logo */}
       <div className="p-4">
         <Logo />
