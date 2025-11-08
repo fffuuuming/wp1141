@@ -65,8 +65,8 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-20 lg:w-[576px] border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex flex-col z-10">
-      <div className="flex flex-col h-full w-[300px] ml-auto">
+    <aside className="fixed left-0 top-0 h-screen w-20 lg:w-[27vw] border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex flex-col z-10">
+      <div className="flex flex-col h-full ml-auto w-[52%] lg:w-[300px]">
         {/* Logo */}
         <div className="p-4">
           <Logo />

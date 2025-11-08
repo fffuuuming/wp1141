@@ -2,8 +2,8 @@
 
 export function RightSidebar() {
   return (
-    <aside className="hidden xl:block fixed right-0 top-0 h-screen w-[720px] border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 z-10 flex justify-end">
-      <div className="p-4 max-w-[350px] w-full">
+    <aside className="hidden xl:block fixed right-0 top-0 h-screen w-[28vw] border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 z-10 flex justify-end">
+      <div className="p-4 w-full max-w-[320px]">
         {/* Search Bar - Placeholder for future implementation */}
         <div className="mb-6">
           <div className="relative">
