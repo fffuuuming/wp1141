@@ -69,12 +69,14 @@ export function CommentCard({ comment, onDelete, onReply, showReplyButton = fals
             <div className="flex items-center gap-2 mb-1">
               <Link
                 href={`/profile/${comment.author.userID}`}
+                onClick={(e) => e.stopPropagation()}
                 className="font-semibold text-gray-900 dark:text-white hover:underline text-sm"
               >
                 {comment.author.name || 'User'}
               </Link>
               <Link
                 href={`/profile/${comment.author.userID}`}
+                onClick={(e) => e.stopPropagation()}
                 className="text-gray-500 dark:text-gray-400 hover:underline text-xs"
               >
                 @{comment.author.userID}

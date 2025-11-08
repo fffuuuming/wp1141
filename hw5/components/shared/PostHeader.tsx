@@ -29,6 +29,7 @@ export function PostHeader({
       <div>
         <Link
           href={`/profile/${author.userID}`}
+          onClick={(e) => e.stopPropagation()}
           className="font-semibold text-gray-900 dark:text-white hover:underline block"
         >
           {author.name || 'User'}
@@ -36,6 +37,7 @@ export function PostHeader({
         <div className="flex items-center gap-2 mt-0.5">
           <Link
             href={`/profile/${author.userID}`}
+            onClick={(e) => e.stopPropagation()}
             className="text-gray-500 dark:text-gray-400 hover:underline text-sm"
           >
             @{author.userID}
