@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
+import { usePathname } from 'next/navigation'
+import Link from 'next/link'
 import { EditProfileModal } from './EditProfileModal'
 import { FollowButton } from './FollowButton'
 import { ProfilePosts } from './ProfilePosts'
@@ -31,9 +33,14 @@ type TabType = 'posts' | 'likes'
 
 export function ProfileContent({ user, stats, isFollowing, isOwnProfile }: ProfileContentProps) {
   const { data: session } = useSession()
+  const pathname = usePathname()
   const [showEditModal, setShowEditModal] = useState(false)
   const [activeTab, setActiveTab] = useState<TabType>('posts')
   const [profileData, setProfileData] = useState(user)
+  
+  // Check if we're on followers or following page
+  const isOnFollowersPage = pathname?.includes('/followers')
+  const isOnFollowingPage = pathname?.includes('/following')
 
   // Reset to 'posts' tab if viewing someone else's profile and 'likes' is active
   useEffect(() => {
@@ -153,14 +160,26 @@ export function ProfileContent({ user, stats, isFollowing, isOwnProfile }: Profi
 
         {/* Stats: Following and Followers */}
         <div className="flex gap-6 text-sm mb-4">
-          <div>
+          <Link 
+            href={`/profile/${profileData.userID}/following`}
+            className={`hover:underline cursor-pointer relative ${isOnFollowingPage ? 'pb-1' : ''}`}
+          >
             <span className="font-semibold text-gray-900 dark:text-white">{followingCount}</span>
             <span className="text-gray-500 dark:text-gray-400 ml-1">Following</span>
-          </div>
-          <div>
+            {isOnFollowingPage && (
+              <div className="absolute bottom-0 left-0 right-0 h-px border-b-2 border-dashed border-gray-900 dark:border-white" />
+            )}
+          </Link>
+          <Link 
+            href={`/profile/${profileData.userID}/followers`}
+            className={`hover:underline cursor-pointer relative ${isOnFollowersPage ? 'pb-1' : ''}`}
+          >
             <span className="font-semibold text-gray-900 dark:text-white">{followerCount}</span>
             <span className="text-gray-500 dark:text-gray-400 ml-1">Followers</span>
-          </div>
+            {isOnFollowersPage && (
+              <div className="absolute bottom-0 left-0 right-0 h-px border-b-2 border-dashed border-gray-900 dark:border-white" />
+            )}
+          </Link>
         </div>
       </div>
 

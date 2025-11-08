@@ -35,6 +35,8 @@ export const endpoints = {
     unfollow: (userID: string) => `/api/user/${userID}/follow`,
     posts: (userID: string) => `/api/user/${userID}/posts`,
     likes: (userID: string) => `/api/user/${userID}/likes`,
+    followers: (userID: string) => `/api/user/${userID}/followers`,
+    following: (userID: string) => `/api/user/${userID}/following`,
     lookup: '/api/user/lookup',
     list: '/api/user/list',
     search: (query: string, limit?: number) => `/api/user/search?q=${encodeURIComponent(query)}${limit ? `&limit=${limit}` : ''}`,
