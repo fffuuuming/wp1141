@@ -162,23 +162,25 @@ export function ProfileContent({ user, stats, isFollowing, isOwnProfile }: Profi
         <div className="flex gap-6 text-sm mb-4">
           <Link 
             href={`/profile/${profileData.userID}/following`}
-            className={`hover:underline cursor-pointer relative ${isOnFollowingPage ? 'pb-1' : ''}`}
+            className={`cursor-pointer relative group ${isOnFollowingPage ? 'pb-1' : ''}`}
           >
             <span className="font-semibold text-gray-900 dark:text-white">{followingCount}</span>
             <span className="text-gray-500 dark:text-gray-400 ml-1">Following</span>
             {isOnFollowingPage && (
               <div className="absolute bottom-0 left-0 right-0 h-px border-b-2 border-dashed border-gray-900 dark:border-white" />
             )}
+            <div className="absolute bottom-0 left-0 right-0 h-px border-b border-solid border-white opacity-0 group-hover:opacity-100 transition-opacity" />
           </Link>
           <Link 
             href={`/profile/${profileData.userID}/followers`}
-            className={`hover:underline cursor-pointer relative ${isOnFollowersPage ? 'pb-1' : ''}`}
+            className={`cursor-pointer relative group ${isOnFollowersPage ? 'pb-1' : ''}`}
           >
             <span className="font-semibold text-gray-900 dark:text-white">{followerCount}</span>
             <span className="text-gray-500 dark:text-gray-400 ml-1">Followers</span>
             {isOnFollowersPage && (
               <div className="absolute bottom-0 left-0 right-0 h-px border-b-2 border-dashed border-gray-900 dark:border-white" />
             )}
+            <div className="absolute bottom-0 left-0 right-0 h-px border-b border-solid border-white opacity-0 group-hover:opacity-100 transition-opacity" />
           </Link>
         </div>
       </div>
