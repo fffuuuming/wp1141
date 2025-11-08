@@ -75,7 +75,7 @@ export function FollowersFollowingPage({ userID, userName, initialTab }: Followe
   }
 
   const currentUsers = activeTab === 'followers' ? followers : following
-  const isOwnProfile = session?.user?.userID === userID
+  const isOwnProfile = session?.user?.userID ? (session.user as { userID: string }).userID === userID : false
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
