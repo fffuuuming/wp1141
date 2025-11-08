@@ -34,7 +34,18 @@ export async function requireAuth(): Promise<AuthenticatedSession> {
     }
   }
 
-  return session as AuthenticatedSession
+  // Type assertion: session.user has userID from our extended Session type
+  // We check for userID to ensure it exists before asserting
+  const user = session.user as { id: string; userID?: string; name?: string | null; email?: string | null; image?: string | null }
+  if (!user.userID) {
+    throw {
+      error: 'Unauthorized: User ID not found',
+      code: ErrorCode.UNAUTHORIZED,
+      status: HttpStatus.UNAUTHORIZED,
+    }
+  }
+
+  return session as unknown as AuthenticatedSession
 }
 
 /**
@@ -47,7 +58,14 @@ export async function getOptionalSession(): Promise<AuthenticatedSession | null>
     return null
   }
 
-  return session as AuthenticatedSession
+  // Type assertion: session.user has userID from our extended Session type
+  // Check if userID exists before returning
+  const user = session.user as { id: string; userID?: string; name?: string | null; email?: string | null; image?: string | null }
+  if (!user.userID) {
+    return null
+  }
+
+  return session as unknown as AuthenticatedSession
 }
 
 /**
