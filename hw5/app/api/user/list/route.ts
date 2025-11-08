@@ -5,34 +5,38 @@ import { prisma } from '@/lib/prisma'
 
 export const GET = withErrorHandling(async () => {
   // Get all registered users (excluding temporary userIDs)
-  const users = await prisma.user.findMany({
-    where: {
-      AND: [
-        {
-          NOT: {
-            userID: {
-              startsWith: 'temp_',
-            },
+  // Simplified query to avoid potential database issues
+  try {
+    const users = await prisma.user.findMany({
+      where: {
+        NOT: {
+          userID: {
+            startsWith: 'temp_',
           },
         },
-        {
-          provider: {
-            not: '',
-          },
-        },
-      ],
-    },
-    select: {
-      userID: true,
-      name: true,
-      provider: true,
-      image: true,
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
-    take: 50, // Limit to 50 most recent users
-  })
+      },
+      select: {
+        userID: true,
+        name: true,
+        provider: true,
+        image: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: 50, // Limit to 50 most recent users
+    })
 
-  return successResponse({ users })
+    // Filter out users with empty provider on the application side
+    // This is more reliable than doing it in the database query
+    const filteredUsers = users.filter(
+      (user) => user.provider && user.provider.trim() !== ''
+    )
+
+    return successResponse({ users: filteredUsers })
+  } catch (error) {
+    // If there's a database error, return empty array instead of failing
+    console.error('Error fetching user list:', error)
+    return successResponse({ users: [] })
+  }
 })

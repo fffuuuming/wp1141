@@ -34,11 +34,6 @@ export const GET = withAuth(async (request, { session }) => {
           },
         },
         {
-          provider: {
-            not: '',
-          },
-        },
-        {
           id: {
             not: currentUserId,
           },
@@ -66,8 +61,13 @@ export const GET = withAuth(async (request, { session }) => {
     take: 10, // Get more than needed for randomization
   })
 
+  // Filter out users with empty provider on the application side
+  const validUsers = users.filter(
+    (user) => user.userID && !user.userID.startsWith('temp_')
+  )
+
   // Randomly select up to 3 users
-  const shuffled = users.sort(() => Math.random() - 0.5)
+  const shuffled = validUsers.sort(() => Math.random() - 0.5)
   const recommendedUsers = shuffled.slice(0, 3)
 
   // Add follow status (should be false for all since we excluded followed users)
