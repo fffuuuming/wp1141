@@ -22,7 +22,7 @@ function ErrorContent() {
       Configuration: {
         title: 'Configuration Error',
         message: 'There is a problem with the server configuration.',
-        details: 'Please check your environment variables (GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, NEXTAUTH_URL, NEXTAUTH_SECRET).',
+        details: 'Please check your environment variables. For Google: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET. For GitHub: GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET. Also ensure NEXTAUTH_URL and NEXTAUTH_SECRET are set.',
       },
       AccessDenied: {
         title: 'Access Denied',
@@ -42,7 +42,7 @@ function ErrorContent() {
       OAuthCallback: {
         title: 'OAuth Callback Error',
         message: 'Error in OAuth callback.',
-        details: 'Please check your GitHub OAuth app callback URL is set to: http://localhost:3000/api/auth/callback/github',
+        details: 'Please check your OAuth app callback URLs: Google: http://localhost:3000/api/auth/callback/google, GitHub: http://localhost:3000/api/auth/callback/github, Facebook: http://localhost:3000/api/auth/callback/facebook',
       },
       OAuthCreateAccount: {
         title: 'Account Creation Error',
@@ -57,12 +57,12 @@ function ErrorContent() {
       Callback: {
         title: 'Callback Error',
         message: 'Error in OAuth callback.',
-        details: 'Please check your GitHub OAuth app settings and callback URL.',
+        details: 'Please check your OAuth app settings and callback URLs for the provider you are using.',
       },
       OAuthSignin: {
         title: 'OAuth Sign In Error',
-        message: 'Error attempting to sign in with GitHub.',
-        details: 'Please check your GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET in your .env file.',
+        message: 'Error attempting to sign in with OAuth provider.',
+        details: 'Please check your OAuth credentials in your .env file. For Google: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET. For GitHub: GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET. For Facebook: FACEBOOK_CLIENT_ID, FACEBOOK_CLIENT_SECRET.',
       },
       EmailSignin: {
         title: 'Email Sign In Error',
@@ -122,10 +122,12 @@ function ErrorContent() {
             Back to Sign In
           </Link>
           <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
-            <p className="font-semibold mb-1">Common GitHub OAuth Issues:</p>
+            <p className="font-semibold mb-1">Common OAuth Issues:</p>
             <ul className="list-disc list-inside space-y-1 text-left">
-              <li>Callback URL must be: <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">http://localhost:3000/api/auth/callback/github</code></li>
-              <li>Check GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET in .env</li>
+              <li>Callback URLs must match: <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">http://localhost:3000/api/auth/callback/{'{provider}'}</code></li>
+              <li>Google: Check GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in .env</li>
+              <li>GitHub: Check GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET in .env</li>
+              <li>Facebook: Check FACEBOOK_CLIENT_ID and FACEBOOK_CLIENT_SECRET in .env</li>
               <li>Ensure NEXTAUTH_URL and NEXTAUTH_SECRET are set</li>
             </ul>
           </div>

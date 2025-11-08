@@ -18,6 +18,7 @@
     "test:delete-user": "tsx scripts/delete-test-user.ts",
     "fix:providers": "tsx scripts/fix-user-providers.ts",
     "check:accounts": "tsx scripts/check-accounts.ts",
+    "fix:provider-info": "tsx scripts/fix-provider-info.ts",
     "unlink:accounts": "tsx scripts/unlink-and-separate-accounts.ts",
     "fix:orphaned": "tsx scripts/fix-orphaned-users.ts"
   },

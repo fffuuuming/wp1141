@@ -73,13 +73,62 @@ const customAdapter = {
    * We should NOT create a new user here - we should link the account to the existing user.
    * The base adapter handles this correctly, so we just call it.
    * 
+   * CRITICAL: After linking the account, we immediately sync provider info to the User model.
+   * This ensures provider and providerId are set right away, avoiding timing issues.
+   * 
    * The account linking prevention is handled by:
    * 1. getUserByEmail returning null (prevents email-based linking)
    * 2. getUserByAccount only finding by provider+providerId (prevents cross-provider linking)
    */
   async linkAccount(account: any) {
     // Use base adapter's linkAccount - it will link to the user created in createUser
-    return await baseAdapter.linkAccount(account)
+    const linkedAccount = await baseAdapter.linkAccount(account)
+    
+    // Immediately sync provider info to User model after account is linked
+    // This fixes the issue where provider/providerId weren't being set
+    // We get userId from account.userId or find it via the account we just created
+    const userId = account.userId || linkedAccount?.userId
+    
+    if (linkedAccount && userId) {
+      try {
+        await prisma.user.update({
+          where: { id: userId },
+          data: {
+            provider: account.provider,
+            providerId: account.providerAccountId,
+          },
+        })
+        console.log(`[Auth] ✅ Synced provider info in linkAccount for user ${userId}: ${account.provider} (${account.providerAccountId})`)
+      } catch (error) {
+        console.error(`[Auth] ⚠️ Failed to sync provider info in linkAccount for user ${userId}:`, error)
+        // Fallback: try to find user by account and update
+        try {
+          const accountRecord = await prismaClient.account.findUnique({
+            where: {
+              provider_providerAccountId: {
+                provider: account.provider,
+                providerAccountId: account.providerAccountId,
+              },
+            },
+          })
+          if (accountRecord) {
+            await prisma.user.update({
+              where: { id: accountRecord.userId },
+              data: {
+                provider: account.provider,
+                providerId: account.providerAccountId,
+              },
+            })
+            console.log(`[Auth] ✅ Synced provider info via fallback for user ${accountRecord.userId}`)
+          }
+        } catch (fallbackError) {
+          console.error(`[Auth] ⚠️ Fallback sync also failed:`, fallbackError)
+          // Don't throw - the createUser event will retry as backup
+        }
+      }
+    }
+    
+    return linkedAccount
   },
 
   /**
@@ -114,29 +163,64 @@ const customAdapter = {
 }
 
 /**
+ * Build providers array conditionally based on available credentials
+ * This prevents configuration errors when credentials are missing
+ */
+function buildProviders() {
+  const providers = []
+  
+  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    providers.push(
+      GoogleProvider({
+        clientId: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      })
+    )
+  } else {
+    console.warn('[Auth] ⚠️ Google OAuth credentials not found. Google provider disabled.')
+  }
+  
+  if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
+    providers.push(
+      GitHubProvider({
+        clientId: process.env.GITHUB_CLIENT_ID,
+        clientSecret: process.env.GITHUB_CLIENT_SECRET,
+      })
+    )
+  } else {
+    console.warn('[Auth] ⚠️ GitHub OAuth credentials not found. GitHub provider disabled.')
+  }
+  
+  if (process.env.FACEBOOK_CLIENT_ID && process.env.FACEBOOK_CLIENT_SECRET) {
+    providers.push(
+      FacebookProvider({
+        clientId: process.env.FACEBOOK_CLIENT_ID,
+        clientSecret: process.env.FACEBOOK_CLIENT_SECRET,
+      })
+    )
+  } else {
+    console.warn('[Auth] ⚠️ Facebook OAuth credentials not found. Facebook provider disabled.')
+  }
+  
+  if (providers.length === 0) {
+    console.error('[Auth] ❌ No OAuth providers configured! Please set at least one provider\'s credentials in .env')
+  }
+  
+  return providers
+}
+
+/**
  * NextAuth configuration
  * Key features:
  * - Database session strategy (sessions stored in DB)
  * - Custom adapter prevents account linking
  * - Provider info synced after user creation
+ * - Conditional provider loading (only enabled providers with credentials)
  */
 export const authOptions: NextAuthConfig = {
   adapter: customAdapter as any,
   
-  providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
-    GitHubProvider({
-      clientId: process.env.GITHUB_CLIENT_ID!,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-    }),
-    FacebookProvider({
-      clientId: process.env.FACEBOOK_CLIENT_ID!,
-      clientSecret: process.env.FACEBOOK_CLIENT_SECRET!,
-    }),
-  ],
+  providers: buildProviders(),
 
   session: {
     strategy: 'database',
@@ -166,13 +250,30 @@ export const authOptions: NextAuthConfig = {
 
       try {
         // Check if user already exists with this EXACT provider + providerId
-        // This ensures different providers create separate accounts
-        const existingUser = await prisma.user.findFirst({
+        // First check User table, then check Account table as fallback (for users with missing provider/providerId)
+        let existingUser = await prisma.user.findFirst({
           where: {
             provider: account.provider,
             providerId: account.providerAccountId,
           },
         })
+        
+        // Fallback: If not found in User table, check Account table
+        // This handles cases where provider/providerId weren't synced properly
+        if (!existingUser) {
+          const accountRecord = await prismaClient.account.findUnique({
+            where: {
+              provider_providerAccountId: {
+                provider: account.provider,
+                providerAccountId: account.providerAccountId,
+              },
+            },
+            include: {
+              user: true,
+            },
+          })
+          existingUser = accountRecord?.user ?? null
+        }
 
         // For existing users, always sync image and provider info from OAuth provider
         // This ensures the database always has the latest info from the OAuth provider
