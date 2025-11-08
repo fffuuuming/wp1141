@@ -46,9 +46,12 @@ function SignInContent() {
   useEffect(() => {
     // Check if user is signed in but needs to set userID
     if (status === 'authenticated' && session?.user) {
-      if (session.user.userID && session.user.userID.startsWith('temp_')) {
+      // Type assertion: session.user has userID from our extended Session type
+      // The Session interface declares userID as string, but TypeScript may not recognize it
+      const user = session.user as { id: string; userID: string; name?: string | null; email?: string | null; image?: string | null }
+      if (user.userID && user.userID.startsWith('temp_')) {
         setNeedsUserID(true)
-      } else if (session.user.userID && !session.user.userID.startsWith('temp_')) {
+      } else if (user.userID && !user.userID.startsWith('temp_')) {
         // User has userID, redirect to home
         router.push('/')
       }

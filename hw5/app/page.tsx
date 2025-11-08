@@ -13,7 +13,9 @@ export default async function Home() {
   }
 
   // If authenticated but has temporary userID, redirect to sign-in to set userID
-  if (session.user.userID && session.user.userID.startsWith('temp_')) {
+  // Type assertion: session.user has userID from our extended Session type
+  const user = session.user as { id: string; userID: string; name?: string | null; email?: string | null; image?: string | null }
+  if (user.userID && user.userID.startsWith('temp_')) {
     redirect('/auth/signin')
   }
 
