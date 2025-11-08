@@ -40,6 +40,7 @@ export function PostModal({ isOpen, onClose, draftContent = '', draftId: initial
   const maxChars = POST_CONTENT.MAX_CHARS
   const remainingChars = maxChars - charCount
   const isOverLimit = charCount > maxChars
+  const isAtLimit = charCount >= maxChars
 
   // Load draft content when provided
   useEffect(() => {
@@ -430,8 +431,47 @@ export function PostModal({ isOpen, onClose, draftContent = '', draftId: initial
                   ref={textareaRef}
                   value={content}
                   onChange={(e) => {
-                    setContent(e.target.value)
-                    setError('')
+                    const newValue = e.target.value
+                    const newCharCount = calculateCharacterCount(newValue)
+                    
+                    // If deleting, always allow
+                    if (newValue.length < content.length) {
+                      setContent(newValue)
+                      setError('')
+                      return
+                    }
+                    
+                    // If under or at limit, allow
+                    if (newCharCount <= maxChars) {
+                      setContent(newValue)
+                      setError('')
+                      return
+                    }
+                    
+                    // If over limit, find the maximum prefix that fits
+                    // Use binary search to find the right length
+                    let left = content.length
+                    let right = newValue.length
+                    let bestLength = left
+                    
+                    while (left <= right) {
+                      const mid = Math.floor((left + right) / 2)
+                      const testValue = newValue.substring(0, mid)
+                      const testCount = calculateCharacterCount(testValue)
+                      
+                      if (testCount <= maxChars) {
+                        bestLength = mid
+                        left = mid + 1
+                      } else {
+                        right = mid - 1
+                      }
+                    }
+                    
+                    // Set content to the maximum length that fits
+                    if (bestLength > content.length) {
+                      setContent(newValue.substring(0, bestLength))
+                      setError('')
+                    }
                   }}
                   placeholder="What's happening?"
                   className="w-full min-h-[200px] px-0 py-2 bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 border-none resize-none focus:outline-none text-lg"
@@ -484,27 +524,6 @@ export function PostModal({ isOpen, onClose, draftContent = '', draftId: initial
               </div>
             </div>
 
-            {/* Character Counter */}
-            <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <div className="flex items-center gap-4">
-                <span
-                  className={`text-sm font-semibold ${
-                    remainingChars < 0
-                      ? 'text-red-500'
-                      : remainingChars < 20
-                      ? 'text-yellow-500'
-                      : 'text-gray-500 dark:text-gray-400'
-                  }`}
-                >
-                  {remainingChars} characters remaining
-                </span>
-                {remainingChars < 0 && (
-                  <span className="text-xs text-red-500">
-                    (Over limit by {Math.abs(remainingChars)})
-                  </span>
-                )}
-              </div>
-            </div>
 
             {error && (
               <div className="mt-4 rounded-xl bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 p-4">
@@ -515,6 +534,40 @@ export function PostModal({ isOpen, onClose, draftContent = '', draftId: initial
 
           {/* Footer */}
           <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-end gap-3">
+            {content && (
+              <div className="relative w-6 h-6">
+                <svg className="w-6 h-6 transform -rotate-90" viewBox="0 0 24 24">
+                  {/* Background circle */}
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    fill="none"
+                    className={isAtLimit ? 'text-red-200 dark:text-red-900' : 'text-gray-200 dark:text-gray-700'}
+                  />
+                  {/* Progress circle */}
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    fill="none"
+                    strokeLinecap="round"
+                    className={isAtLimit ? 'text-red-500' : 'text-blue-500 transition-all duration-300'}
+                    strokeDasharray={`${2 * Math.PI * 10}`}
+                    strokeDashoffset={`${2 * Math.PI * 10 * (1 - Math.min(charCount / maxChars, 1))}`}
+                  />
+                </svg>
+                {isAtLimit && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-2 h-2 bg-red-500 rounded-full" />
+                  </div>
+                )}
+              </div>
+            )}
             <button
               onClick={handlePost}
               disabled={loading || isOverLimit || !content.trim()}
