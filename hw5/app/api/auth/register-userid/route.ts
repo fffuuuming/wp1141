@@ -6,6 +6,7 @@ import { registerUserIDSchema } from '@/lib/validation/schemas/user.schema'
 import { validateUserID } from '@/lib/userID.server'
 import { prisma } from '@/lib/prisma'
 import { HttpStatus, ErrorCode } from '@/types/api/errors'
+import type { AuthenticatedSession } from '@/lib/api/middleware/auth'
 
 export const POST = withAuth(async (request, { session }) => {
   const { userID } = await validateRequest(request, registerUserIDSchema)
@@ -21,7 +22,8 @@ export const POST = withAuth(async (request, { session }) => {
   }
 
   // withAuth guarantees session exists, but TypeScript doesn't know that
-  if (!session || !session.user || !session.user.id) {
+  // Use type assertion since withAuth ensures session is AuthenticatedSession
+  if (!session) {
     throw {
       error: 'Unauthorized',
       code: ErrorCode.UNAUTHORIZED,
@@ -29,7 +31,8 @@ export const POST = withAuth(async (request, { session }) => {
     }
   }
 
-  const userId = session.user.id
+  const authenticatedSession = session as AuthenticatedSession
+  const userId = authenticatedSession.user.id
 
   // Check if user already has a userID (and it's not a temporary one)
   const user = await prisma.user.findUnique({
