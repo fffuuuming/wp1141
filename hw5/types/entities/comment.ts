@@ -45,7 +45,7 @@ export interface CommentWithPost extends CommentWithDetails {
     author: UserBasic
     _count: {
       likes: number
-      comments: number
+      replies: number
       reposts: number
     }
   }

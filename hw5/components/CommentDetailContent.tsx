@@ -32,7 +32,7 @@ interface CommentDetailContentProps {
       }
       _count: {
         likes: number
-        comments: number
+        replies: number
         reposts: number
       }
     } | null
@@ -138,6 +138,7 @@ export function CommentDetailContent({ comment, backUrl, backLabel }: CommentDet
               createdAt: typeof comment.post.createdAt === 'string' 
                 ? comment.post.createdAt 
                 : comment.post.createdAt.toISOString(),
+              authorId: comment.post.author.id,
               author: comment.post.author,
               _count: comment.post._count,
             }}

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { CommentCard } from './CommentCard'
-import { CommentInput } from './CommentInput'
+import { ExpandableCommentInput } from './ExpandableCommentInput'
 import { useSession } from 'next-auth/react'
 
 interface Comment {
@@ -57,7 +57,7 @@ export function CommentTree({ comment, onDelete, depth = 0, maxDepth = 10 }: Com
       {/* Reply Input */}
       {showReplyInput && canReply && comment.postId && (
         <div className="ml-12 border-l-2 border-gray-200 dark:border-gray-700 pl-4">
-          <CommentInput
+          <ExpandableCommentInput
             postId={comment.postId}
             parentId={comment.id}
             onCommentCreated={handleReplyCreated}

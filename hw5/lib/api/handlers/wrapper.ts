@@ -20,9 +20,21 @@ type RouteHandler = (
 ) => Promise<NextResponse>
 
 /**
+ * Authenticated route handler function type
+ * Session is guaranteed to be present when wrapped with withAuth
+ */
+type AuthenticatedRouteHandler = (
+  request: NextRequest,
+  context: {
+    params: Promise<Record<string, string | undefined>> | Record<string, string | undefined>
+    session: AuthenticatedSession
+  }
+) => Promise<NextResponse>
+
+/**
  * Wrap route handler with authentication
  */
-export function withAuth(handler: RouteHandler): RouteHandler {
+export function withAuth(handler: AuthenticatedRouteHandler): RouteHandler {
   return async (request, context) => {
     try {
       const session = await requireAuth()

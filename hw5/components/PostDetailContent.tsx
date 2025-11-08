@@ -233,6 +233,7 @@ export function PostDetailContent({ postId }: PostDetailContentProps) {
             id: post.id,
             content: post.content,
             createdAt: post.createdAt,
+            authorId: post.author.id,
             author: post.author,
             _count: post._count,
           }}

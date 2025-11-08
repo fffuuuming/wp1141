@@ -25,11 +25,11 @@ export async function validateRequest<T>(
     return schema.parse(body)
   } catch (error) {
     if (error instanceof ZodError) {
-      const firstError = error.errors[0]
+      const firstError = error.issues[0]
       throw {
         error: firstError?.message || 'Validation failed',
         code: ErrorCode.VALIDATION_ERROR,
-        details: error.errors,
+        details: error.issues,
         status: HttpStatus.BAD_REQUEST,
       }
     }
@@ -54,11 +54,11 @@ export function validateQuery<T>(
     return schema.parse(params)
   } catch (error) {
     if (error instanceof ZodError) {
-      const firstError = error.errors[0]
+      const firstError = error.issues[0]
       throw {
         error: firstError?.message || 'Validation failed',
         code: ErrorCode.VALIDATION_ERROR,
-        details: error.errors,
+        details: error.issues,
         status: HttpStatus.BAD_REQUEST,
       }
     }
@@ -83,11 +83,11 @@ export async function validateParams<T>(
     return schema.parse(resolvedParams)
   } catch (error) {
     if (error instanceof ZodError) {
-      const firstError = error.errors[0]
+      const firstError = error.issues[0]
       throw {
         error: firstError?.message || 'Validation failed',
         code: ErrorCode.VALIDATION_ERROR,
-        details: error.errors,
+        details: error.issues,
         status: HttpStatus.BAD_REQUEST,
       }
     }

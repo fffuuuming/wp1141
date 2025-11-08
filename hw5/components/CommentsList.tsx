@@ -159,6 +159,7 @@ export function CommentsList({ postId, onCommentClick }: CommentsListProps) {
                   id: comment.id,
                   content: comment.content,
                   createdAt: comment.createdAt,
+                  authorId: comment.author.id,
                   author: comment.author,
                   _count: {
                     likes: comment._count.likes,

@@ -17,9 +17,9 @@ export const registerUserIDSchema = z.object({
     .max(USERID.MAX_LENGTH, `UserID must be at most ${USERID.MAX_LENGTH} characters`)
     .refine(
       (val) => validateUserIDFormat(val).valid,
-      (val) => ({
-        message: validateUserIDFormat(val).error || 'Invalid userID format',
-      })
+      {
+        message: 'Invalid userID format',
+      }
     ),
 })
 
