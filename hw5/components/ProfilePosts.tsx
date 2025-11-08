@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { PostCard } from './PostCard'
+import type { PostWithDetails } from '@/types/entities/post'
 
 interface ProfilePostsProps {
   userID: string
@@ -14,6 +16,7 @@ interface PostItem {
   createdAt?: string
   repostedAt?: string
   author?: {
+    id: string
     userID: string
     name: string | null
     image: string | null
@@ -23,6 +26,7 @@ interface PostItem {
     content: string
     createdAt: string
     author: {
+      id: string
       userID: string
       name: string | null
       image: string | null
@@ -35,7 +39,7 @@ interface PostItem {
   }
   _count?: {
     likes: number
-    comments: number
+    replies: number
     reposts: number
   }
 }
@@ -101,105 +105,103 @@ export function ProfilePosts({ userID, isOwnProfile }: ProfilePostsProps) {
     )
   }
 
+  // Transform API data to PostWithDetails format
+  const transformToPost = (item: PostItem): PostWithDetails | null => {
+    if (item.type === 'repost' && item.post) {
+      // For reposts, return the nested post
+      return {
+        id: item.post.id,
+        content: item.post.content,
+        createdAt: item.post.createdAt,
+        authorId: item.post.author.id,
+        author: item.post.author,
+        _count: {
+          likes: item.post._count.likes,
+          replies: item.post._count.replies,
+          reposts: item.post._count.reposts,
+        },
+      }
+    } else if (item.type === 'post' && item.author && item.content && item.createdAt && item._count) {
+      // For regular posts
+      return {
+        id: item.id,
+        content: item.content,
+        createdAt: item.createdAt,
+        authorId: item.author.id,
+        author: item.author,
+        _count: {
+          likes: item._count.likes,
+          replies: item._count.replies || 0,
+          reposts: item._count.reposts,
+        },
+      }
+    }
+    return null
+  }
+
+  const handleDeletePost = async (postId: string) => {
+    if (!confirm('Are you sure you want to delete this post?')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/posts/${postId}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        // Refresh posts
+        const fetchPosts = async () => {
+          try {
+            const response = await fetch(`/api/user/posts-by-id/${userID}`)
+            if (response.ok) {
+              const data = await response.json()
+              setContent(data.content || [])
+            }
+          } catch (error) {
+            console.error('Error fetching posts:', error)
+          }
+        }
+        fetchPosts()
+      } else {
+        const data = await response.json()
+        alert(data.error || 'Failed to delete post')
+      }
+    } catch (error) {
+      console.error('Error deleting post:', error)
+      alert('An error occurred while deleting post')
+    }
+  }
+
   return (
-    <div className="px-4 py-4">
+    <div className="w-full">
       <div className="space-y-0">
-        {content.map((item) => (
-          <div
-            key={item.id}
-            className="border-b border-gray-200 dark:border-gray-700 pb-4 pt-4 first:pt-0 last:border-b-0"
-          >
-            {item.type === 'repost' && item.post ? (
-              // Repost
-              <div>
-                <div className="flex items-center gap-2 mb-3 text-gray-500 dark:text-gray-400 text-sm">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M23.77 15.67c-.292-.293-.767-.293-1.06 0l-2.226 2.226V7.65c0-2.068-1.683-3.75-3.75-3.75h-5.85c-.414 0-.75.336-.75.75s.336.75.75.75h5.85c1.24 0 2.25 1.01 2.25 2.25v10.24l-2.226-2.226c-.293-.293-.768-.293-1.06 0s-.294.768 0 1.06l3.5 3.5c.145.147.337.22.53.22s.383-.072.53-.22l3.5-3.5c.294-.292.294-.767 0-1.06zm-10.66 3.28H7.26c-1.24 0-2.25-1.01-2.25-2.25V6.46l2.226 2.226c.148.147.34.22.532.22s.384-.073.53-.22c.293-.293.293-.768 0-1.06l-3.5-3.5c-.293-.294-.768-.294-1.06 0l-3.5 3.5c-.294.292-.294.767 0 1.06s.768.293 1.06 0l2.226-2.226V16.7c0 2.068 1.683 3.75 3.75 3.75h5.85c.414 0 .75-.336.75-.75s-.336-.75-.75-.75z" />
-                  </svg>
-                  <span>You reposted</span>
-                </div>
-                <div className="flex gap-3">
-                  {item.post.author.image ? (
-                    <img
-                      src={item.post.author.image}
-                      alt={item.post.author.name || 'User'}
-                      className="w-12 h-12 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 rounded-full bg-gray-300 dark:bg-gray-700 flex items-center justify-center">
-                      <span className="text-lg font-semibold text-gray-600 dark:text-gray-300">
-                        {item.post.author.name?.[0]?.toUpperCase() || item.post.author.userID[0]?.toUpperCase() || 'U'}
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-semibold text-gray-900 dark:text-white">
-                        {item.post.author.name || 'User'}
-                      </span>
-                      <span className="text-gray-500 dark:text-gray-400">
-                        @{item.post.author.userID}
-                      </span>
-                      <span className="text-gray-500 dark:text-gray-400">·</span>
-                      <span className="text-gray-500 dark:text-gray-400 text-sm">
-                        {new Date(item.post.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <p className="text-gray-900 dark:text-white whitespace-pre-wrap mb-2">
-                      {item.post.content}
-                    </p>
-                    <div className="flex items-center gap-6 text-sm text-gray-500 dark:text-gray-400">
-                      <span>{item.post._count.likes} likes</span>
-                      <span>{item.post._count.replies} replies</span>
-                      <span>{item.post._count.reposts} reposts</span>
-                    </div>
+        {content.map((item) => {
+          const post = transformToPost(item)
+          if (!post) return null
+
+          return (
+            <div key={item.id}>
+              {item.type === 'repost' && (
+                // Repost indicator
+                <div className="px-4 pt-4 pb-2">
+                  <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-sm">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M23.77 15.67c-.292-.293-.767-.293-1.06 0l-2.226 2.226V7.65c0-2.068-1.683-3.75-3.75-3.75h-5.85c-.414 0-.75.336-.75.75s.336.75.75.75h5.85c1.24 0 2.25 1.01 2.25 2.25v10.24l-2.226-2.226c-.293-.293-.768-.293-1.06 0s-.294.768 0 1.06l3.5 3.5c.145.147.337.22.53.22s.383-.072.53-.22l3.5-3.5c.294-.292.294-.767 0-1.06zm-10.66 3.28H7.26c-1.24 0-2.25-1.01-2.25-2.25V6.46l2.226 2.226c.148.147.34.22.532.22s.384-.073.53-.22c.293-.293.293-.768 0-1.06l-3.5-3.5c-.293-.294-.768-.294-1.06 0l-3.5 3.5c-.294.292-.294.767 0 1.06s.768.293 1.06 0l2.226-2.226V16.7c0 2.068 1.683 3.75 3.75 3.75h5.85c.414 0 .75-.336.75-.75s-.336-.75-.75-.75z" />
+                    </svg>
+                    <span>{isOwnProfile ? 'You reposted' : 'Reposted'}</span>
                   </div>
                 </div>
-              </div>
-            ) : (
-              // Regular Post
-              <div className="flex gap-3">
-                {item.author?.image ? (
-                  <img
-                    src={item.author.image}
-                    alt={item.author.name || 'User'}
-                    className="w-12 h-12 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-12 h-12 rounded-full bg-gray-300 dark:bg-gray-700 flex items-center justify-center">
-                    <span className="text-lg font-semibold text-gray-600 dark:text-gray-300">
-                      {item.author?.name?.[0]?.toUpperCase() || item.author?.userID?.[0]?.toUpperCase() || 'U'}
-                    </span>
-                  </div>
-                )}
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-semibold text-gray-900 dark:text-white">
-                      {item.author?.name || 'User'}
-                    </span>
-                    <span className="text-gray-500 dark:text-gray-400">
-                      @{item.author?.userID}
-                    </span>
-                    <span className="text-gray-500 dark:text-gray-400">·</span>
-                    <span className="text-gray-500 dark:text-gray-400 text-sm">
-                      {item.createdAt && new Date(item.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <p className="text-gray-900 dark:text-white whitespace-pre-wrap mb-2">
-                    {item.content}
-                  </p>
-                  {item._count && (
-                    <div className="flex items-center gap-6 text-sm text-gray-500 dark:text-gray-400">
-                      <span>{item._count.likes} likes</span>
-                      <span>{item._count.replies} replies</span>
-                      <span>{item._count.reposts} reposts</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
+              )}
+              <PostCard
+                post={post}
+                onDelete={isOwnProfile && item.type === 'post' ? handleDeletePost : undefined}
+                clickable={true}
+                variant="home"
+              />
+            </div>
+          )
+        })}
       </div>
     </div>
   )

@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { PostCard } from './PostCard'
 import { InlinePost } from './InlinePost'
+import { NewPostNotification } from './NewPostNotification'
 import { useHomeFilter } from './HomeHeader'
 
 interface Post {
@@ -99,6 +100,9 @@ export function HomeFeed() {
 
   return (
     <div className="w-full">
+      {/* New Post Notification */}
+      <NewPostNotification onRefresh={fetchPosts} />
+      
       {/* Inline Post Creation */}
       <InlinePost onPostCreated={fetchPosts} />
 

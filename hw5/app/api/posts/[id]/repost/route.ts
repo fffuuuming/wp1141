@@ -78,7 +78,30 @@ export const POST = withAuth(async (request, { params, session }) => {
       where: { postId },
     })
 
-    // Broadcast repost event
+    // Get reposter (current user) info for broadcasting
+    const reposter = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        id: true,
+        userID: true,
+        name: true,
+        image: true,
+      },
+    })
+
+    // Get all followers of the reposter
+    const followers = await prisma.follow.findMany({
+      where: { followingId: session.user.id },
+      select: {
+        follower: {
+          select: {
+            userID: true,
+          },
+        },
+      },
+    })
+
+    // Broadcast repost event to post channel
     await broadcastEvent(
       PUSHER_CHANNELS.post(postId),
       PUSHER_EVENTS.REPOST,
@@ -89,6 +112,43 @@ export const POST = withAuth(async (request, { params, session }) => {
         reposted: true,
       }
     )
+
+    // Broadcast to feed channel and each follower's user channel
+    if (reposter) {
+      // Broadcast to global feed channel
+      await broadcastEvent(
+        PUSHER_CHANNELS.feed,
+        PUSHER_EVENTS.REPOST,
+        {
+          postId,
+          userId: session.user.id,
+          author: {
+            id: reposter.id,
+            userID: reposter.userID,
+            name: reposter.name,
+            image: reposter.image,
+          },
+        }
+      )
+
+      // Also broadcast to each follower's user channel
+      for (const follow of followers) {
+        await broadcastEvent(
+          PUSHER_CHANNELS.user(follow.follower.userID),
+          PUSHER_EVENTS.REPOST,
+          {
+            postId,
+            userId: session.user.id,
+            author: {
+              id: reposter.id,
+              userID: reposter.userID,
+              name: reposter.name,
+              image: reposter.image,
+            },
+          }
+        )
+      }
+    }
 
     return successResponse({ reposted: true, count })
   }

@@ -8,6 +8,8 @@ import { createPost } from '@/lib/db/queries/posts'
 import { POST_CONTENT } from '@/lib/constants/validation'
 import { HttpStatus, ErrorCode } from '@/types/api/errors'
 import { throwError } from '@/lib/errors/handlers'
+import { prisma } from '@/lib/prisma'
+import { broadcastEvent, PUSHER_CHANNELS, PUSHER_EVENTS } from '@/lib/pusher'
 
 /**
  * POST /api/posts
@@ -37,6 +39,66 @@ export const POST = withAuth(async (request, { session }) => {
     authorId: session.user.id,
     content: trimmedContent,
   })
+
+  // Get author info for broadcasting
+  const author = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: {
+      id: true,
+      userID: true,
+      name: true,
+      image: true,
+    },
+  })
+
+  // Get all followers of the author
+  const followers = await prisma.follow.findMany({
+    where: { followingId: session.user.id },
+    select: {
+      follower: {
+        select: {
+          userID: true,
+        },
+      },
+    },
+  })
+
+  // Broadcast to feed channel and each follower's user channel
+  if (author) {
+    // Broadcast to global feed channel (for clients to filter)
+    await broadcastEvent(
+      PUSHER_CHANNELS.feed,
+      PUSHER_EVENTS.POST_CREATED,
+      {
+        postId: post.id,
+        userId: session.user.id,
+        author: {
+          id: author.id,
+          userID: author.userID,
+          name: author.name,
+          image: author.image,
+        },
+      }
+    )
+
+    // Also broadcast to each follower's user channel for direct notifications
+    for (const follow of followers) {
+      await broadcastEvent(
+        PUSHER_CHANNELS.user(follow.follower.userID),
+        PUSHER_EVENTS.POST_CREATED,
+        {
+          postId: post.id,
+          userId: session.user.id,
+          author: {
+            id: author.id,
+            userID: author.userID,
+            name: author.name,
+            image: author.image,
+          },
+        }
+      )
+    }
+  }
 
   return successResponse({ post })
 })
