@@ -42,7 +42,7 @@ function ErrorContent() {
       OAuthCallback: {
         title: 'OAuth Callback Error',
         message: 'Error in OAuth callback.',
-        details: 'Please check your OAuth app callback URLs: Google: http://localhost:3000/api/auth/callback/google, GitHub: http://localhost:3000/api/auth/callback/github',
+        details: 'Please check your OAuth app callback URLs match your deployment URL. For production, use: https://your-domain.vercel.app/api/auth/callback/{provider}',
       },
       OAuthCreateAccount: {
         title: 'Account Creation Error',
@@ -124,10 +124,11 @@ function ErrorContent() {
           <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
             <p className="font-semibold mb-1">Common OAuth Issues:</p>
             <ul className="list-disc list-inside space-y-1 text-left">
-              <li>Callback URLs must match: <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">http://localhost:3000/api/auth/callback/{'{provider}'}</code></li>
-              <li>Google: Check GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in .env</li>
-              <li>GitHub: Check GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET in .env</li>
-              <li>Ensure NEXTAUTH_URL and NEXTAUTH_SECRET are set</li>
+              <li>Callback URLs must match your deployment URL: <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">https://your-domain.vercel.app/api/auth/callback/{'{provider}'}</code></li>
+              <li>For production: Update OAuth app callback URLs in GitHub/Google settings</li>
+              <li>Google: Check GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in Vercel environment variables</li>
+              <li>GitHub: Check GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET in Vercel environment variables</li>
+              <li>Ensure NEXTAUTH_URL and NEXTAUTH_SECRET are set in Vercel</li>
             </ul>
           </div>
         </div>
