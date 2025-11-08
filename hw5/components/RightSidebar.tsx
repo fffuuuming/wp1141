@@ -33,8 +33,9 @@ export function RightSidebar() {
   const router = useRouter()
   
   // Use stable values for current user to avoid dependency array size changes
+  // Type assertion: session.user has userID from our extended Session type
   const currentUserId = session?.user?.id ?? null
-  const currentUserID = session?.user?.userID ?? null
+  const currentUserID = session?.user ? (session.user as { userID?: string }).userID ?? null : null
 
   // Debounced search
   useEffect(() => {

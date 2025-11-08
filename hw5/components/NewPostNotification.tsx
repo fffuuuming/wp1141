@@ -18,7 +18,8 @@ export function NewPostNotification({ onRefresh }: { onRefresh?: () => void }) {
   const usersRef = useRef<Map<string, NotificationUser>>(new Map())
 
   // Extract current user ID to avoid TypeScript issues
-  const currentUserID = session?.user?.userID ?? null
+  // Type assertion: session.user has userID from our extended Session type
+  const currentUserID = session?.user ? (session.user as { userID?: string }).userID ?? null : null
 
   // Listen for new posts from followed users on user's own channel
   usePusherChannel(

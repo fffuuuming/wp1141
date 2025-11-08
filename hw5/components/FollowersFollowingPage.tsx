@@ -75,7 +75,8 @@ export function FollowersFollowingPage({ userID, userName, initialTab }: Followe
   }
 
   // Extract current user ID to avoid TypeScript issues
-  const currentUserID = session?.user?.userID ?? null
+  // Type assertion: session.user has userID from our extended Session type
+  const currentUserID = session?.user ? (session.user as { userID?: string }).userID ?? null : null
 
   const currentUsers = activeTab === 'followers' ? followers : following
   const isOwnProfile = currentUserID === userID
