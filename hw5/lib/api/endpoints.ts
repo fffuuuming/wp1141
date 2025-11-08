@@ -37,6 +37,8 @@ export const endpoints = {
     likes: (userID: string) => `/api/user/${userID}/likes`,
     lookup: '/api/user/lookup',
     list: '/api/user/list',
+    search: (query: string, limit?: number) => `/api/user/search?q=${encodeURIComponent(query)}${limit ? `&limit=${limit}` : ''}`,
+    recommendations: '/api/user/recommendations',
     delete: '/api/user/delete',
   },
 

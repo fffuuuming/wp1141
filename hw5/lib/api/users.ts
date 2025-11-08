@@ -85,3 +85,17 @@ export async function registerUserID(data: RegisterUserIDRequest): Promise<{ suc
   return apiClient.post(endpoints.auth.registerUserID, data)
 }
 
+/**
+ * Search for users by name or userID
+ */
+export async function searchUsers(query: string, limit: number = 10): Promise<UsersResponse> {
+  return apiClient.get(endpoints.users.search(query, limit))
+}
+
+/**
+ * Get user recommendations
+ */
+export async function getRecommendations(): Promise<UsersResponse> {
+  return apiClient.get(endpoints.users.recommendations)
+}
+
