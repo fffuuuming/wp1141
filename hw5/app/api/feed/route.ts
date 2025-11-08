@@ -8,7 +8,7 @@ import { postWithDetailsInclude } from '@/types/entities/post'
 
 /**
  * GET /api/feed?filter=all|following
- * Get home feed posts
+ * Get home feed posts and reposts
  */
 export const GET = withAuth(async (request, { session }) => {
   const { filter } = validateQuery(request, feedQuerySchema)
@@ -30,6 +30,33 @@ export const GET = withAuth(async (request, { session }) => {
     }
   }> = []
 
+  let reposts: Array<{
+    id: string
+    createdAt: Date
+    user: {
+      id: string
+      userID: string
+      name: string | null
+      image: string | null
+    }
+    post: {
+      id: string
+      content: string
+      createdAt: Date
+      author: {
+        id: string
+        userID: string
+        name: string | null
+        image: string | null
+      }
+      _count: {
+        likes: number
+        replies: number
+        reposts: number
+      }
+    }
+  }> = []
+
   if (filter === 'following') {
     // Get posts from users that the current user follows
     const following = await prisma.follow.findMany({
@@ -40,9 +67,11 @@ export const GET = withAuth(async (request, { session }) => {
     const followingIds = following.map(f => f.followingId)
 
     if (followingIds.length === 0) {
-      // User doesn't follow anyone, return empty array
+      // User doesn't follow anyone, return empty arrays
       posts = []
+      reposts = []
     } else {
+      // Get posts from followed users
       posts = await prisma.post.findMany({
         where: {
           authorId: {
@@ -51,6 +80,31 @@ export const GET = withAuth(async (request, { session }) => {
           parentId: null, // Only top-level posts
         },
         include: postWithDetailsInclude,
+        orderBy: {
+          createdAt: 'desc',
+        },
+      })
+
+      // Get reposts from followed users
+      reposts = await prisma.repost.findMany({
+        where: {
+          userId: {
+            in: followingIds,
+          },
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              userID: true,
+              name: true,
+              image: true,
+            },
+          },
+          post: {
+            include: postWithDetailsInclude,
+          },
+        },
         orderBy: {
           createdAt: 'desc',
         },
@@ -67,8 +121,57 @@ export const GET = withAuth(async (request, { session }) => {
         createdAt: 'desc',
       },
     })
+
+    // Get all reposts
+    reposts = await prisma.repost.findMany({
+      include: {
+        user: {
+          select: {
+            id: true,
+            userID: true,
+            name: true,
+            image: true,
+          },
+        },
+        post: {
+          include: postWithDetailsInclude,
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    })
   }
 
-  return successResponse({ posts })
+  // Combine posts and reposts, sort by date (repost date for reposts, post date for posts)
+  const allContent = [
+    ...posts.map((post) => ({
+      type: 'post' as const,
+      id: post.id,
+      content: post.content,
+      createdAt: post.createdAt.toISOString(),
+      author: post.author,
+      _count: post._count,
+    })),
+    ...reposts.map((repost) => ({
+      type: 'repost' as const,
+      id: repost.id,
+      repostedAt: repost.createdAt.toISOString(),
+      repostedBy: repost.user,
+      post: {
+        id: repost.post.id,
+        content: repost.post.content,
+        createdAt: repost.post.createdAt.toISOString(),
+        author: repost.post.author,
+        _count: repost.post._count,
+      },
+    })),
+  ].sort((a, b) => {
+    const dateA = a.type === 'post' ? a.createdAt : a.repostedAt
+    const dateB = b.type === 'post' ? b.createdAt : b.repostedAt
+    return new Date(dateB).getTime() - new Date(dateA).getTime()
+  })
+
+  return successResponse({ posts: allContent })
 })
 

@@ -7,20 +7,45 @@ import { PostCard } from './PostCard'
 import { InlinePost } from './InlinePost'
 import { NewPostNotification } from './NewPostNotification'
 import { useHomeFilter } from './HomeHeader'
+import type { PostWithDetails } from '@/types/entities/post'
 
-interface Post {
+interface FeedItem {
+  type: 'post' | 'repost'
   id: string
-  content: string
-  createdAt: string
-  author: {
+  content?: string
+  createdAt?: string
+  repostedAt?: string
+  repostedBy?: {
     id: string
     userID: string
     name: string | null
     image: string | null
   }
-  _count: {
+  author?: {
+    id: string
+    userID: string
+    name: string | null
+    image: string | null
+  }
+  post?: {
+    id: string
+    content: string
+    createdAt: string
+    author: {
+      id: string
+      userID: string
+      name: string | null
+      image: string | null
+    }
+    _count: {
+      likes: number
+      replies: number
+      reposts: number
+    }
+  }
+  _count?: {
     likes: number
-    comments: number
+    replies: number
     reposts: number
   }
 }
@@ -29,7 +54,7 @@ export function HomeFeed() {
   const { data: session } = useSession()
   const router = useRouter()
   const { filter } = useHomeFilter()
-  const [posts, setPosts] = useState<Post[]>([])
+  const [feedItems, setFeedItems] = useState<FeedItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -57,7 +82,7 @@ export function HomeFeed() {
       const response = await fetch(`/api/feed?filter=${filter}`)
       if (response.ok) {
         const data = await response.json()
-        setPosts(data.posts || [])
+        setFeedItems(data.posts || [])
       } else {
         const data = await response.json()
         setError(data.error || 'Failed to load posts')
@@ -68,6 +93,40 @@ export function HomeFeed() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Transform feed items to PostWithDetails format
+  const transformToPost = (item: FeedItem): PostWithDetails | null => {
+    if (item.type === 'repost' && item.post) {
+      // For reposts, return the nested post
+      return {
+        id: item.post.id,
+        content: item.post.content,
+        createdAt: item.post.createdAt,
+        authorId: item.post.author.id,
+        author: item.post.author,
+        _count: {
+          likes: item.post._count.likes,
+          replies: item.post._count.replies,
+          reposts: item.post._count.reposts,
+        },
+      }
+    } else if (item.type === 'post' && item.author && item.content && item.createdAt && item._count) {
+      // For regular posts
+      return {
+        id: item.id,
+        content: item.content,
+        createdAt: item.createdAt,
+        authorId: item.author.id,
+        author: item.author,
+        _count: {
+          likes: item._count.likes,
+          replies: item._count.replies || 0,
+          reposts: item._count.reposts,
+        },
+      }
+    }
+    return null
   }
 
 
@@ -99,7 +158,7 @@ export function HomeFeed() {
             Retry
           </button>
         </div>
-      ) : posts.length === 0 ? (
+      ) : feedItems.length === 0 ? (
         <div className="p-12 text-center">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-2xl mb-4">
             <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -117,14 +176,33 @@ export function HomeFeed() {
         </div>
       ) : (
         <div>
-          {posts.map((post) => (
-            <PostCard
-              key={post.id}
-              post={post}
-              onUpdate={fetchPosts}
-              clickable={true}
-            />
-          ))}
+          {feedItems.map((item) => {
+            const post = transformToPost(item)
+            if (!post) return null
+
+            const isOwnRepost = item.type === 'repost' && item.repostedBy?.id === session?.user?.id
+
+            return (
+              <div key={item.id}>
+                {item.type === 'repost' && (
+                  // Repost indicator
+                  <div className="px-4 pt-4 pb-2">
+                    <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-sm">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M23.77 15.67c-.292-.293-.767-.293-1.06 0l-2.226 2.226V7.65c0-2.068-1.683-3.75-3.75-3.75h-5.85c-.414 0-.75.336-.75.75s.336.75.75.75h5.85c1.24 0 2.25 1.01 2.25 2.25v10.24l-2.226-2.226c-.293-.293-.768-.293-1.06 0s-.294.768 0 1.06l3.5 3.5c.145.147.337.22.53.22s.383-.072.53-.22l3.5-3.5c.294-.292.294-.767 0-1.06zm-10.66 3.28H7.26c-1.24 0-2.25-1.01-2.25-2.25V6.46l2.226 2.226c.148.147.34.22.532.22s.384-.073.53-.22c.293-.293.293-.768 0-1.06l-3.5-3.5c-.293-.294-.768-.294-1.06 0l-3.5 3.5c-.294.292-.294.767 0 1.06s.768.293 1.06 0l2.226-2.226V16.7c0 2.068 1.683 3.75 3.75 3.75h5.85c.414 0 .75-.336.75-.75s-.336-.75-.75-.75z" />
+                      </svg>
+                      <span>{isOwnRepost ? 'You reposted' : `${item.repostedBy?.name || item.repostedBy?.userID || 'Someone'} reposted`}</span>
+                    </div>
+                  </div>
+                )}
+                <PostCard
+                  post={post}
+                  onUpdate={fetchPosts}
+                  clickable={true}
+                />
+              </div>
+            )
+          })}
         </div>
       )}
     </div>
