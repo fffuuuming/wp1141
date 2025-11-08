@@ -90,7 +90,7 @@ export function getPusherClient(): PusherClient | null {
 
   // Enable Pusher logging in development
   if (process.env.NODE_ENV === 'development') {
-    pusherClientInstance.logToConsole = true
+    PusherClient.logToConsole = true
   }
 
   // Log connection events

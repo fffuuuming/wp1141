@@ -3,7 +3,7 @@
  * Centralized HTTP client with interceptors, error handling, and type safety
  */
 
-import { ApiErrorResponse, HttpStatus, ErrorCode } from '@/types/api/errors'
+import { ErrorResponse, HttpStatus, ErrorCode } from '@/types/api/errors'
 
 /**
  * API client configuration
@@ -60,7 +60,7 @@ class ApiClient {
   /**
    * Handle API errors
    */
-  private handleError(error: unknown, response?: Response): ApiErrorResponse {
+  private handleError(error: unknown, response?: Response): ErrorResponse {
     if (error instanceof Error) {
       return {
         error: error.message,
@@ -84,7 +84,7 @@ class ApiClient {
   /**
    * Parse error response
    */
-  private async parseErrorResponse(response: Response): Promise<ApiErrorResponse> {
+  private async parseErrorResponse(response: Response): Promise<ErrorResponse> {
     try {
       const data = await response.json()
       return {
