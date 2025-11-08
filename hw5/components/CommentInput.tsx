@@ -73,7 +73,7 @@ export function CommentInput({ postId, onCommentCreated }: CommentInputProps) {
     }
   }
 
-  if (!session) {
+  if (!session || !session.user?.id) {
     return null
   }
 

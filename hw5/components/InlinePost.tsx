@@ -98,7 +98,7 @@ export function InlinePost({ onPostCreated }: { onPostCreated?: () => void }) {
     }
   }
 
-  if (!session) {
+  if (!session || !session.user?.id) {
     return null
   }
 

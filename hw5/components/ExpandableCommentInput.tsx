@@ -96,7 +96,7 @@ export function ExpandableCommentInput({ postId, parentId, onCommentCreated, rep
     }
   }
 
-  if (!session) {
+  if (!session || !session.user?.id) {
     return null
   }
 
