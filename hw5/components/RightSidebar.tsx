@@ -214,7 +214,7 @@ export function RightSidebar() {
                   key={user.id}
                   className="flex items-center gap-3"
                 >
-                  <Link href={`/profile/${user.userID}`} className="flex items-center gap-3 flex-1 min-w-0">
+                  <Link href={`/profile/${user.userID}`} className="flex items-center gap-3 flex-1 min-w-0 rounded-xl p-1 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                     <Avatar
                       user={{
                         id: user.id,

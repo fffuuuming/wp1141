@@ -29,7 +29,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
       <Sidebar />
-      <main className="ml-20 lg:ml-[27vw] xl:mr-[28vw] bg-white dark:bg-gray-900 min-h-screen">
+      <main id="main-content" className="ml-20 lg:ml-[27vw] xl:mr-[28vw] bg-white dark:bg-gray-900 min-h-screen" tabIndex={-1}>
         {children}
       </main>
       <RightSidebar />

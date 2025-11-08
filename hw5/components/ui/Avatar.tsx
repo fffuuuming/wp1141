@@ -44,7 +44,7 @@ export function Avatar({ user, size = 'md', href, className = '' }: AvatarProps)
 
   if (href) {
     return (
-      <Link href={href} className="flex-shrink-0">
+      <Link href={href} className="flex-shrink-0 transition-opacity duration-200 hover:opacity-80">
         {avatarContent}
       </Link>
     )

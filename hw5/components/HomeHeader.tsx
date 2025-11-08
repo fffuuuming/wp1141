@@ -37,7 +37,7 @@ export function HomeHeader() {
         <div className="flex">
           <button
             onClick={() => setFilter('all')}
-            className={`flex-1 px-4 py-3 font-semibold text-sm relative transition-colors ${
+            className={`flex-1 px-4 py-4 font-semibold text-base relative transition-colors ${
               filter === 'all'
                 ? 'text-gray-900 dark:text-white'
                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
@@ -50,7 +50,7 @@ export function HomeHeader() {
           </button>
           <button
             onClick={() => setFilter('following')}
-            className={`flex-1 px-4 py-3 font-semibold text-sm relative transition-colors ${
+            className={`flex-1 px-4 py-4 font-semibold text-base relative transition-colors ${
               filter === 'following'
                 ? 'text-gray-900 dark:text-white'
                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
