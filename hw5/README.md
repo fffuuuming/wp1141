@@ -21,9 +21,6 @@ GOOGLE_CLIENT_SECRET="your-google-client-secret"
 GITHUB_CLIENT_ID="your-github-client-id"
 GITHUB_CLIENT_SECRET="your-github-client-secret"
 
-FACEBOOK_CLIENT_ID="your-facebook-client-id"
-FACEBOOK_CLIENT_SECRET="your-facebook-client-secret"
-
 # Pusher (Server-side)
 PUSHER_APP_ID="your-pusher-app-id"
 PUSHER_KEY="your-pusher-key"

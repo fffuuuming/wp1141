@@ -63,7 +63,7 @@ export const POST = withErrorHandling(async (request) => {
   return successResponse({
     userID: user.userID,
     name: user.name,
-    provider: provider, // 'google', 'github', or 'facebook'
+    provider: provider, // 'google' or 'github'
     image: user.image,
   })
 })

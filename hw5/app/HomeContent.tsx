@@ -59,8 +59,8 @@ export default function HomeContent() {
       }
 
       // Validate provider
-      const provider = data.provider as 'google' | 'github' | 'facebook'
-      if (!provider || !['google', 'github', 'facebook'].includes(provider)) {
+      const provider = data.provider as 'google' | 'github'
+      if (!provider || !['google', 'github'].includes(provider)) {
         setError('Invalid provider. Please contact support.')
         setLoading(false)
         return

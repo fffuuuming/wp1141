@@ -2,7 +2,6 @@ import type { NextAuthConfig } from 'next-auth'
 import { PrismaAdapter } from '@auth/prisma-adapter'
 import GoogleProvider from 'next-auth/providers/google'
 import GitHubProvider from 'next-auth/providers/github'
-import FacebookProvider from 'next-auth/providers/facebook'
 import NextAuth from 'next-auth'
 import { prisma } from './prisma'
 
@@ -189,17 +188,6 @@ function buildProviders() {
     )
   } else {
     console.warn('[Auth] ⚠️ GitHub OAuth credentials not found. GitHub provider disabled.')
-  }
-  
-  if (process.env.FACEBOOK_CLIENT_ID && process.env.FACEBOOK_CLIENT_SECRET) {
-    providers.push(
-      FacebookProvider({
-        clientId: process.env.FACEBOOK_CLIENT_ID,
-        clientSecret: process.env.FACEBOOK_CLIENT_SECRET,
-      })
-    )
-  } else {
-    console.warn('[Auth] ⚠️ Facebook OAuth credentials not found. Facebook provider disabled.')
   }
   
   if (providers.length === 0) {
@@ -398,7 +386,7 @@ export const authOptions: NextAuthConfig = {
         }
 
         // Also sync image if it's available from the user object
-        // This ensures the GitHub/GitHub/Facebook avatar is saved
+        // This ensures the GitHub/Google avatar is saved
         if (user.image) {
           updateData.image = user.image
         }
