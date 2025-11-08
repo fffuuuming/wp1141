@@ -9,7 +9,7 @@ import { postWithDetailsInclude } from '@/types/entities/post'
 
 /**
  * GET /api/user/likes-by-id/[userId]
- * Get posts that the user has liked by database user ID (only accessible by the user themselves)
+ * Get posts and comments that the user has liked by database user ID (only accessible by the user themselves)
  */
 export const GET = withAuth(async (request, { params, session }) => {
   const { userId } = await validateParams(await params, userIdParamSchema)
@@ -17,7 +17,7 @@ export const GET = withAuth(async (request, { params, session }) => {
   // Only allow users to see their own likes
   requireOwnership(userId, session.user.id)
 
-  // Fetch liked posts
+  // Fetch liked posts and comments (comments are posts with parentId)
   const likes = await prisma.like.findMany({
     where: {
       userId,
@@ -36,6 +36,7 @@ export const GET = withAuth(async (request, { params, session }) => {
     likedPosts: likes.map((like) => ({
       id: like.id,
       post: like.post,
+      isComment: like.post.parentId !== null, // Comments have a parentId
       createdAt: like.createdAt.toISOString(),
     })),
   })
