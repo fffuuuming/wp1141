@@ -181,37 +181,50 @@ export function InlinePost({ onPostCreated }: { onPostCreated?: () => void }) {
             {/* Character Counter and Post Button */}
             <div className={`flex items-center justify-end gap-3 ${expanded ? 'mt-3' : 'mt-1'}`}>
               {content && (
-                <div className="relative w-6 h-6">
-                  <svg className="w-6 h-6 transform -rotate-90" viewBox="0 0 24 24">
-                    {/* Background circle */}
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      fill="none"
-                      className={isAtLimit ? 'text-red-200 dark:text-red-900' : 'text-gray-200 dark:text-gray-700'}
-                    />
-                    {/* Progress circle */}
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      fill="none"
-                      strokeLinecap="round"
-                      className={isAtLimit ? 'text-red-500' : 'text-blue-500 transition-all duration-300'}
-                      strokeDasharray={`${2 * Math.PI * 10}`}
-                      strokeDashoffset={`${2 * Math.PI * 10 * (1 - Math.min(charCount / maxChars, 1))}`}
-                    />
-                  </svg>
-                  {isAtLimit && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-2 h-2 bg-red-500 rounded-full" />
-                    </div>
-                )}
+                <div className="flex items-center gap-2">
+                  <div className="relative w-6 h-6">
+                    <svg className="w-6 h-6 transform -rotate-90" viewBox="0 0 24 24">
+                      {/* Background circle */}
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        fill="none"
+                        className={isAtLimit ? 'text-red-200 dark:text-red-900' : 'text-gray-200 dark:text-gray-700'}
+                      />
+                      {/* Progress circle */}
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        fill="none"
+                        strokeLinecap="round"
+                        className={isAtLimit ? 'text-red-500' : 'text-blue-500 transition-all duration-300'}
+                        strokeDasharray={`${2 * Math.PI * 10}`}
+                        strokeDashoffset={`${2 * Math.PI * 10 * (1 - Math.min(charCount / maxChars, 1))}`}
+                      />
+                    </svg>
+                    {isAtLimit && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-2 h-2 bg-red-500 rounded-full" />
+                      </div>
+                    )}
+                  </div>
+                  <span
+                    className={`text-sm font-semibold ${
+                      isAtLimit
+                        ? 'text-red-500'
+                        : remainingChars < 20
+                        ? 'text-yellow-500'
+                        : 'text-gray-500 dark:text-gray-400'
+                    }`}
+                  >
+                    {remainingChars}
+                  </span>
                 </div>
               )}
               <button
