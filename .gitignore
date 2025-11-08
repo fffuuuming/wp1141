@@ -13,6 +13,11 @@ package-lock.json
 **/*.d.ts
 **/*.js
 !**/src/**/*.ts
+# Exceptions for config files that should be tracked
+!**/postcss.config.js
+!**/next.config.js
+!**/jest.config.js
+!**/tailwind.config.js
 
 # IDE and Editor files
 .vscode/
