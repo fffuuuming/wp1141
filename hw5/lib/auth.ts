@@ -10,6 +10,39 @@ import { prisma } from './prisma'
 const prismaClient = prisma as typeof prisma & { account: any }
 
 /**
+ * Validate required environment variables for NextAuth
+ * NextAuth v5 supports both AUTH_SECRET/NEXTAUTH_SECRET and AUTH_URL/NEXTAUTH_URL
+ * This validation logs warnings but doesn't throw to avoid breaking the build
+ */
+function validateAuthConfig() {
+  const authSecret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET
+  const authUrl = process.env.AUTH_URL || process.env.NEXTAUTH_URL
+
+  if (!authSecret) {
+    console.error('[Auth] ❌ CRITICAL: AUTH_SECRET or NEXTAUTH_SECRET is not set!')
+    console.error('[Auth] NextAuth requires a secret key. Set AUTH_SECRET or NEXTAUTH_SECRET in your environment variables.')
+    // Don't throw in production - let NextAuth handle the error gracefully
+  } else {
+    console.log('[Auth] ✅ Secret found:', authSecret ? 'Set' : 'Missing')
+  }
+
+  if (!authUrl && process.env.NODE_ENV === 'production') {
+    console.warn('[Auth] ⚠️ AUTH_URL or NEXTAUTH_URL is not set in production. This may cause OAuth callback issues.')
+    console.warn('[Auth] Set AUTH_URL or NEXTAUTH_URL to your production URL (e.g., https://wp-hw5-heya.vercel.app)')
+  } else if (authUrl) {
+    console.log('[Auth] ✅ Auth URL found:', authUrl)
+  }
+
+  return { authSecret, authUrl }
+}
+
+// Validate configuration on module load (non-blocking)
+if (typeof window === 'undefined') {
+  // Only run on server side
+  validateAuthConfig()
+}
+
+/**
  * Generate a unique temporary userID for new users
  * Format: temp_{timestamp}_{random}
  */
@@ -207,6 +240,12 @@ function buildProviders() {
  */
 export const authOptions: NextAuthConfig = {
   adapter: customAdapter as any,
+  
+  // Explicitly set secret - NextAuth v5 prefers AUTH_SECRET but supports NEXTAUTH_SECRET
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
+  
+  // Explicitly set trustHost for production deployments
+  trustHost: true,
   
   providers: buildProviders(),
 

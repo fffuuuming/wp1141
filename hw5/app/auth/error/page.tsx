@@ -22,7 +22,7 @@ function ErrorContent() {
       Configuration: {
         title: 'Configuration Error',
         message: 'There is a problem with the server configuration.',
-        details: 'Please check your environment variables. For Google: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET. For GitHub: GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET. Also ensure NEXTAUTH_URL and NEXTAUTH_SECRET are set.',
+        details: 'Please check your environment variables. For Google: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET. For GitHub: GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET. Also ensure AUTH_SECRET (or NEXTAUTH_SECRET) and AUTH_URL (or NEXTAUTH_URL) are set in Vercel. After adding variables, you must redeploy your application.',
       },
       AccessDenied: {
         title: 'Access Denied',
@@ -128,7 +128,8 @@ function ErrorContent() {
               <li>For production: Update OAuth app callback URLs in GitHub/Google settings</li>
               <li>Google: Check GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in Vercel environment variables</li>
               <li>GitHub: Check GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET in Vercel environment variables</li>
-              <li>Ensure NEXTAUTH_URL and NEXTAUTH_SECRET are set in Vercel</li>
+              <li>Ensure AUTH_SECRET (or NEXTAUTH_SECRET) and AUTH_URL (or NEXTAUTH_URL) are set in Vercel</li>
+              <li><strong>Important:</strong> After adding/updating environment variables, you must redeploy your application</li>
             </ul>
           </div>
         </div>
