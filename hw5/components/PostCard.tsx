@@ -1,7 +1,9 @@
 'use client'
 
+import { useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { usePostLike, usePostRepost, usePostDelete } from '@/hooks'
+import { usePostReplyCount } from '@/hooks/usePostReplyCount'
 import { PostHeader, PostContent, PostActions, DeleteButton } from '@/components/shared'
 import { Avatar, Timestamp } from '@/components/ui'
 import type { PostCardProps } from '@/types/components/props'
@@ -11,9 +13,25 @@ export function PostCard({ post, onDelete, onUpdate, clickable = false, variant 
   const isOwnPost = session?.user?.id === post.author.id
   
   // Use custom hooks for interactions
+  // These hooks subscribe to Pusher channels and update counts in real-time
   const { liked, likeCount, toggleLike } = usePostLike(post.id, post._count.likes)
   const { reposted, repostCount, toggleRepost } = usePostRepost(post.id, post._count.reposts)
   const { deletePost: handleDelete } = usePostDelete(post.id)
+  const replyCount = usePostReplyCount(post.id, post._count.replies)
+
+  // Debug: Log when PostCard mounts/updates (development only)
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[PostCard] Rendered for post ${post.id} with counts:`, {
+        likes: likeCount,
+        reposts: repostCount,
+        replies: replyCount,
+        initialLikes: post._count.likes,
+        initialReposts: post._count.reposts,
+        initialReplies: post._count.replies,
+      })
+    }
+  }, [post.id, likeCount, repostCount, replyCount, post._count.likes, post._count.reposts, post._count.replies])
 
   const handleDeleteClick = async () => {
     const success = await handleDelete()
@@ -97,7 +115,7 @@ export function PostCard({ post, onDelete, onUpdate, clickable = false, variant 
               reposted={reposted}
               repostCount={repostCount}
               onRepost={toggleRepost}
-              replyCount={post._count.replies}
+              replyCount={replyCount}
             />
           </div>
         </div>

@@ -4,8 +4,9 @@ import { validateParams } from '@/lib/api/middleware/validate'
 import { successResponse } from '@/lib/api/helpers/response'
 import { commentIdSchema } from '@/lib/validation/schemas/params.schema'
 import { requireOwnership } from '@/lib/api/middleware/auth'
-import { getPostById, findRootPost, getPostRepliesRecursive, deletePost } from '@/lib/db/queries/posts'
+import { getPostById, findRootPost, getPostRepliesRecursive, deletePost, getPostReplyCount } from '@/lib/db/queries/posts'
 import { HttpStatus, ErrorCode } from '@/types/api/errors'
+import { broadcastEvent, PUSHER_CHANNELS, PUSHER_EVENTS } from '@/lib/pusher'
 
 /**
  * GET /api/comments/[id]
@@ -68,8 +69,27 @@ export const DELETE = withAuth(async (request, { params, session }) => {
 
   requireOwnership(comment.authorId, session.user.id)
 
+  // Find the root post before deleting
+  const rootPostId = await findRootPost(id)
+
   // Delete comment using query builder (cascade will delete replies)
   await deletePost(id)
+
+  // Broadcast comment deleted event if we have a root post
+  if (rootPostId) {
+    const replyCount = await getPostReplyCount(rootPostId)
+    
+    await broadcastEvent(
+      PUSHER_CHANNELS.post(rootPostId),
+      PUSHER_EVENTS.COMMENT_DELETED,
+      {
+        postId: rootPostId,
+        commentId: id,
+        userId: session.user.id,
+        count: replyCount,
+      }
+    )
+  }
 
   return successResponse({ success: true })
 })

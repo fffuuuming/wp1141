@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { PostCard } from './PostCard'
+import { usePusherChannel } from '@/lib/pusher-client'
+import { PUSHER_CHANNELS, PUSHER_EVENTS } from '@/lib/pusher'
 
 interface Comment {
   id: string
@@ -36,7 +38,7 @@ export function CommentsList({ postId, onCommentClick }: CommentsListProps) {
   useEffect(() => {
     fetchComments()
     
-    // Listen for comment creation events
+    // Listen for comment creation events (legacy window events)
     const handleCommentCreated = () => {
       fetchComments()
     }
@@ -46,6 +48,32 @@ export function CommentsList({ postId, onCommentClick }: CommentsListProps) {
       window.removeEventListener('commentCreated', handleCommentCreated)
     }
   }, [postId])
+
+  // Listen for real-time comment created events via Pusher
+  usePusherChannel(
+    PUSHER_CHANNELS.post(postId),
+    PUSHER_EVENTS.COMMENT_CREATED,
+    (data: { postId: string; commentId: string; userId: string; count: number }) => {
+      // Only refresh if it's not from the current user (to avoid double updates)
+      if (data.userId !== session?.user?.id) {
+        fetchComments()
+      }
+    },
+    !!session?.user?.id
+  )
+
+  // Listen for real-time comment deleted events via Pusher
+  usePusherChannel(
+    PUSHER_CHANNELS.post(postId),
+    PUSHER_EVENTS.COMMENT_DELETED,
+    (data: { postId: string; commentId: string; userId: string; count: number }) => {
+      // Only refresh if it's not from the current user
+      if (data.userId !== session?.user?.id) {
+        fetchComments()
+      }
+    },
+    !!session?.user?.id
+  )
 
   const fetchComments = async () => {
     setLoading(true)

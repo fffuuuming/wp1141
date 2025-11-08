@@ -5,6 +5,7 @@ import { successResponse } from '@/lib/api/helpers/response'
 import { userIdSchema } from '@/lib/validation/schemas/params.schema'
 import { prisma } from '@/lib/prisma'
 import { HttpStatus, ErrorCode } from '@/types/api/errors'
+import { broadcastEvent, PUSHER_CHANNELS, PUSHER_EVENTS } from '@/lib/pusher'
 
 /**
  * POST /api/user/[userID]/follow
@@ -60,7 +61,49 @@ export const POST = withAuth(async (request, { params, session }) => {
     },
   })
 
-  return successResponse({ success: true })
+  // Get updated follower count for target user
+  const followerCount = await prisma.follow.count({
+    where: { followingId: targetUser.id },
+  })
+
+  // Get updated following count for current user
+  const followingCount = await prisma.follow.count({
+    where: { followerId: session.user.id },
+  })
+
+  // Get current user's userID for broadcasting
+  const currentUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { userID: true },
+  })
+
+  // Broadcast follow event to target user's channel (for follower count)
+  await broadcastEvent(
+    PUSHER_CHANNELS.user(userID),
+    PUSHER_EVENTS.FOLLOW,
+    {
+      userID,
+      followerId: session.user.id,
+      followerCount,
+      following: true,
+    }
+  )
+
+  // Broadcast to current user's channel (for following count) if they have a userID
+  if (currentUser?.userID) {
+    await broadcastEvent(
+      PUSHER_CHANNELS.user(currentUser.userID),
+      PUSHER_EVENTS.FOLLOW,
+      {
+        userID: currentUser.userID,
+        followerId: session.user.id,
+        followingCount,
+        following: true,
+      }
+    )
+  }
+
+  return successResponse({ success: true, followerCount, followingCount })
 })
 
 /**
@@ -104,6 +147,48 @@ export const DELETE = withAuth(async (request, { params, session }) => {
     where: { id: follow.id },
   })
 
-  return successResponse({ success: true })
+  // Get updated follower count for target user
+  const followerCount = await prisma.follow.count({
+    where: { followingId: targetUser.id },
+  })
+
+  // Get updated following count for current user
+  const followingCount = await prisma.follow.count({
+    where: { followerId: session.user.id },
+  })
+
+  // Get current user's userID for broadcasting
+  const currentUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { userID: true },
+  })
+
+  // Broadcast unfollow event to target user's channel (for follower count)
+  await broadcastEvent(
+    PUSHER_CHANNELS.user(userID),
+    PUSHER_EVENTS.UNFOLLOW,
+    {
+      userID,
+      followerId: session.user.id,
+      followerCount,
+      following: false,
+    }
+  )
+
+  // Broadcast to current user's channel (for following count) if they have a userID
+  if (currentUser?.userID) {
+    await broadcastEvent(
+      PUSHER_CHANNELS.user(currentUser.userID),
+      PUSHER_EVENTS.UNFOLLOW,
+      {
+        userID: currentUser.userID,
+        followerId: session.user.id,
+        followingCount,
+        following: false,
+      }
+    )
+  }
+
+  return successResponse({ success: true, followerCount, followingCount })
 })
 

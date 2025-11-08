@@ -5,6 +5,7 @@ import { successResponse } from '@/lib/api/helpers/response'
 import { postIdSchema } from '@/lib/validation/schemas/params.schema'
 import { prisma } from '@/lib/prisma'
 import { HttpStatus, ErrorCode } from '@/types/api/errors'
+import { broadcastEvent, PUSHER_CHANNELS, PUSHER_EVENTS } from '@/lib/pusher'
 
 /**
  * POST /api/posts/[id]/like
@@ -50,6 +51,18 @@ export const POST = withAuth(async (request, { params, session }) => {
       where: { postId },
     })
 
+    // Broadcast unlike event
+    await broadcastEvent(
+      PUSHER_CHANNELS.post(postId),
+      PUSHER_EVENTS.UNLIKE,
+      {
+        postId,
+        userId: session.user.id,
+        count,
+        liked: false,
+      }
+    )
+
     return successResponse({ liked: false, count })
   } else {
     // Like: create the like
@@ -64,6 +77,22 @@ export const POST = withAuth(async (request, { params, session }) => {
     const count = await prisma.like.count({
       where: { postId },
     })
+
+    // Broadcast like event
+    const channelName = PUSHER_CHANNELS.post(postId)
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[API] Broadcasting like event to channel: "${channelName}" for postId: "${postId}"`)
+    }
+    await broadcastEvent(
+      channelName,
+      PUSHER_EVENTS.LIKE,
+      {
+        postId,
+        userId: session.user.id,
+        count,
+        liked: true,
+      }
+    )
 
     return successResponse({ liked: true, count })
   }

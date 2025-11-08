@@ -6,6 +6,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { likePost, isPostLiked, repostPost, isPostReposted, deletePost } from '@/lib/api/posts'
+import { usePusherChannel } from '@/lib/pusher-client'
+import { PUSHER_CHANNELS, PUSHER_EVENTS } from '@/lib/pusher'
 
 /**
  * Hook for managing post likes
@@ -18,6 +20,13 @@ export function usePostLike(postId: string, initialCount: number) {
   const hasCheckedRef = useRef(false)
   const userActionRef = useRef(false)
 
+  // Update count when initialCount changes (but not if user just took action)
+  useEffect(() => {
+    if (!userActionRef.current) {
+      setLikeCount(initialCount)
+    }
+  }, [initialCount])
+
   // Check initial like status
   useEffect(() => {
     if (session?.user?.id && !hasCheckedRef.current && !userActionRef.current) {
@@ -25,6 +34,38 @@ export function usePostLike(postId: string, initialCount: number) {
       hasCheckedRef.current = true
     }
   }, [session, postId])
+
+  // Listen for real-time like updates (only if not from current user's action)
+  usePusherChannel(
+    PUSHER_CHANNELS.post(postId),
+    PUSHER_EVENTS.LIKE,
+    (data: { postId: string; userId: string; count: number; liked: boolean }) => {
+      // Only update if it's not from the current user (to avoid double updates)
+      if (data.userId !== session?.user?.id && !userActionRef.current) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[usePostLike] Received like event for post ${postId}, updating count to ${data.count}`)
+        }
+        setLikeCount(data.count)
+      }
+    },
+    !!session?.user?.id
+  )
+
+  // Listen for real-time unlike updates
+  usePusherChannel(
+    PUSHER_CHANNELS.post(postId),
+    PUSHER_EVENTS.UNLIKE,
+    (data: { postId: string; userId: string; count: number; liked: boolean }) => {
+      // Only update if it's not from the current user
+      if (data.userId !== session?.user?.id && !userActionRef.current) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[usePostLike] Received unlike event for post ${postId}, updating count to ${data.count}`)
+        }
+        setLikeCount(data.count)
+      }
+    },
+    !!session?.user?.id
+  )
 
   const checkLikeStatus = async () => {
     if (userActionRef.current) return
@@ -60,6 +101,8 @@ export function usePostLike(postId: string, initialCount: number) {
       const { liked: isLiked, count } = await likePost(postId)
       setLiked(isLiked)
       setLikeCount(count)
+      // Reset user action flag after successful API call
+      userActionRef.current = false
     } catch (error: any) {
       // Revert on error
       setLiked(previousLiked)
@@ -86,6 +129,14 @@ export function usePostRepost(postId: string, initialCount: number) {
   const [repostCount, setRepostCount] = useState(initialCount)
   const [loading, setLoading] = useState(false)
   const hasCheckedRef = useRef(false)
+  const userActionRef = useRef(false)
+
+  // Update count when initialCount changes (but not if user just took action)
+  useEffect(() => {
+    if (!userActionRef.current && !loading) {
+      setRepostCount(initialCount)
+    }
+  }, [initialCount])
 
   // Check initial repost status
   useEffect(() => {
@@ -94,6 +145,38 @@ export function usePostRepost(postId: string, initialCount: number) {
       hasCheckedRef.current = true
     }
   }, [session, postId])
+
+  // Listen for real-time repost updates
+  usePusherChannel(
+    PUSHER_CHANNELS.post(postId),
+    PUSHER_EVENTS.REPOST,
+    (data: { postId: string; userId: string; count: number; reposted: boolean }) => {
+      // Only update if it's not from the current user
+      if (data.userId !== session?.user?.id && !loading && !userActionRef.current) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[usePostRepost] Received repost event for post ${postId}, updating count to ${data.count}`)
+        }
+        setRepostCount(data.count)
+      }
+    },
+    !!session?.user?.id
+  )
+
+  // Listen for real-time unrepost updates
+  usePusherChannel(
+    PUSHER_CHANNELS.post(postId),
+    PUSHER_EVENTS.UNREPOST,
+    (data: { postId: string; userId: string; count: number; reposted: boolean }) => {
+      // Only update if it's not from the current user
+      if (data.userId !== session?.user?.id && !loading && !userActionRef.current) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[usePostRepost] Received unrepost event for post ${postId}, updating count to ${data.count}`)
+        }
+        setRepostCount(data.count)
+      }
+    },
+    !!session?.user?.id
+  )
 
   const checkRepostStatus = async () => {
     try {
@@ -116,6 +199,9 @@ export function usePostRepost(postId: string, initialCount: number) {
     const previousReposted = reposted
     const previousCount = repostCount
 
+    // Mark that user has taken action
+    userActionRef.current = true
+
     // Optimistic update
     setReposted(!reposted)
     setRepostCount(previousReposted ? previousCount - 1 : previousCount + 1)
@@ -124,10 +210,13 @@ export function usePostRepost(postId: string, initialCount: number) {
       const { reposted: isReposted, count } = await repostPost(postId)
       setReposted(isReposted)
       setRepostCount(count)
+      // Reset user action flag after successful API call
+      userActionRef.current = false
     } catch (error: any) {
       // Revert on error
       setReposted(previousReposted)
       setRepostCount(previousCount)
+      userActionRef.current = false
       alert(error?.error || 'Failed to repost')
     } finally {
       setLoading(false)

@@ -24,11 +24,15 @@ GITHUB_CLIENT_SECRET="your-github-client-secret"
 FACEBOOK_CLIENT_ID="your-facebook-client-id"
 FACEBOOK_CLIENT_SECRET="your-facebook-client-secret"
 
-# Pusher
+# Pusher (Server-side)
 PUSHER_APP_ID="your-pusher-app-id"
 PUSHER_KEY="your-pusher-key"
 PUSHER_SECRET="your-pusher-secret"
 PUSHER_CLUSTER="your-pusher-cluster"
+
+# Pusher (Client-side - required for real-time features)
+NEXT_PUBLIC_PUSHER_KEY="your-pusher-key"
+NEXT_PUBLIC_PUSHER_CLUSTER="your-pusher-cluster"
 ```
 
 ## Getting Started

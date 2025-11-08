@@ -5,6 +5,7 @@ import { successResponse } from '@/lib/api/helpers/response'
 import { postIdSchema } from '@/lib/validation/schemas/params.schema'
 import { prisma } from '@/lib/prisma'
 import { HttpStatus, ErrorCode } from '@/types/api/errors'
+import { broadcastEvent, PUSHER_CHANNELS, PUSHER_EVENTS } from '@/lib/pusher'
 
 /**
  * POST /api/posts/[id]/repost
@@ -50,6 +51,18 @@ export const POST = withAuth(async (request, { params, session }) => {
       where: { postId },
     })
 
+    // Broadcast unrepost event
+    await broadcastEvent(
+      PUSHER_CHANNELS.post(postId),
+      PUSHER_EVENTS.UNREPOST,
+      {
+        postId,
+        userId: session.user.id,
+        count,
+        reposted: false,
+      }
+    )
+
     return successResponse({ reposted: false, count })
   } else {
     // Repost: create the repost
@@ -64,6 +77,18 @@ export const POST = withAuth(async (request, { params, session }) => {
     const count = await prisma.repost.count({
       where: { postId },
     })
+
+    // Broadcast repost event
+    await broadcastEvent(
+      PUSHER_CHANNELS.post(postId),
+      PUSHER_EVENTS.REPOST,
+      {
+        postId,
+        userId: session.user.id,
+        count,
+        reposted: true,
+      }
+    )
 
     return successResponse({ reposted: true, count })
   }

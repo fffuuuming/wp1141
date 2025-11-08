@@ -6,6 +6,7 @@ import { createCommentSchema } from '@/lib/validation/schemas/post.schema'
 import { postIdSchema } from '@/lib/validation/schemas/params.schema'
 import { getPostById, createPost, getPostReplyCount, getPostRepliesRecursive } from '@/lib/db/queries/posts'
 import { HttpStatus, ErrorCode } from '@/types/api/errors'
+import { broadcastEvent, PUSHER_CHANNELS, PUSHER_EVENTS } from '@/lib/pusher'
 
 /**
  * POST /api/posts/[id]/comments
@@ -35,6 +36,18 @@ export const POST = withAuth(async (request, { params, session }) => {
 
   // Get updated reply count
   const replyCount = await getPostReplyCount(postId)
+
+  // Broadcast comment created event
+  await broadcastEvent(
+    PUSHER_CHANNELS.post(postId),
+    PUSHER_EVENTS.COMMENT_CREATED,
+    {
+      postId,
+      commentId: reply.id,
+      userId: session.user.id,
+      count: replyCount,
+    }
+  )
 
   return successResponse({ post: reply, count: replyCount })
 })

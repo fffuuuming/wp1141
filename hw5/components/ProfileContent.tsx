@@ -6,6 +6,7 @@ import { EditProfileModal } from './EditProfileModal'
 import { FollowButton } from './FollowButton'
 import { ProfilePosts } from './ProfilePosts'
 import { ProfileLikes } from './ProfileLikes'
+import { useFollowerCount } from '@/hooks'
 
 interface ProfileContentProps {
   user: {
@@ -33,6 +34,13 @@ export function ProfileContent({ user, stats, isFollowing, isOwnProfile }: Profi
   const [showEditModal, setShowEditModal] = useState(false)
   const [activeTab, setActiveTab] = useState<TabType>('posts')
   const [profileData, setProfileData] = useState(user)
+  
+  // Use real-time follower count hook
+  const { followerCount, followingCount } = useFollowerCount(
+    user.userID,
+    stats.followers,
+    stats.following
+  )
 
   const handleProfileUpdate = (updatedUser: {
     id: string
@@ -139,11 +147,11 @@ export function ProfileContent({ user, stats, isFollowing, isOwnProfile }: Profi
         {/* Stats: Following and Followers */}
         <div className="flex gap-6 text-sm mb-4">
           <div>
-            <span className="font-semibold text-gray-900 dark:text-white">{stats.following}</span>
+            <span className="font-semibold text-gray-900 dark:text-white">{followingCount}</span>
             <span className="text-gray-500 dark:text-gray-400 ml-1">Following</span>
           </div>
           <div>
-            <span className="font-semibold text-gray-900 dark:text-white">{stats.followers}</span>
+            <span className="font-semibold text-gray-900 dark:text-white">{followerCount}</span>
             <span className="text-gray-500 dark:text-gray-400 ml-1">Followers</span>
           </div>
         </div>
