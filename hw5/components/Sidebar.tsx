@@ -65,14 +65,15 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-20 lg:w-64 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex flex-col z-10">
-      {/* Logo */}
-      <div className="p-4">
-        <Logo />
-      </div>
+    <aside className="fixed left-0 top-0 h-screen w-20 lg:w-[576px] border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex flex-col z-10">
+      <div className="flex flex-col h-full max-w-[280px] ml-auto">
+        {/* Logo */}
+        <div className="p-4">
+          <Logo />
+        </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 px-2 py-4 space-y-1">
+        {/* Navigation */}
+        <nav className="flex-1 px-2 py-4 space-y-1">
         {navItems.map((item) => (
           <Link
             key={item.path}
@@ -100,9 +101,9 @@ export function Sidebar() {
         </button>
       </nav>
 
-      {/* User Section */}
-      {session?.user ? (
-        <div className="p-4 border-t border-gray-200 dark:border-gray-800">
+        {/* User Section */}
+        {session?.user ? (
+          <div className="p-4 border-t border-gray-200 dark:border-gray-800">
           <div className="relative" ref={logoutRef}>
             <button
               onClick={() => setShowLogout(!showLogout)}
@@ -154,7 +155,8 @@ export function Sidebar() {
             Sign In
           </Link>
         </div>
-      )}
+        )}
+      </div>
 
       {/* Post Modal */}
       <PostModal

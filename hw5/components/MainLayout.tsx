@@ -27,9 +27,9 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen bg-white dark:bg-gray-900">
+    <div className="min-h-screen bg-white dark:bg-gray-900">
       <Sidebar />
-      <main className="flex-1 min-w-0 ml-20 lg:ml-64 bg-white dark:bg-gray-900">
+      <main className="ml-20 lg:ml-[576px] mr-0 xl:mr-[720px] bg-white dark:bg-gray-900 min-h-screen">
         {children}
       </main>
       <RightSidebar />
