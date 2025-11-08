@@ -66,7 +66,7 @@ export function Sidebar() {
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-20 lg:w-[576px] border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex flex-col z-10">
-      <div className="flex flex-col h-full max-w-[280px] ml-auto">
+      <div className="flex flex-col h-full w-[300px] ml-auto">
         {/* Logo */}
         <div className="p-4">
           <Logo />
@@ -78,7 +78,7 @@ export function Sidebar() {
           <Link
             key={item.path}
             href={item.path}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+            className={`flex items-center gap-3 px-6 py-3 rounded-xl transition-all duration-200 w-full ${
               isActive(item.path)
                 ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-semibold shadow-sm'
                 : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
@@ -123,24 +123,23 @@ export function Sidebar() {
                 </div>
               )}
               <div className="flex-1 text-left hidden lg:block">
-                <p className="font-semibold text-sm">{session.user.name || 'User'}</p>
+                <p className="font-bold text-sm text-white">{session.user.name || 'User'}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   @{session.user.userID || 'userid'}
                 </p>
               </div>
               <svg
-                className={`w-5 h-5 transition-transform ${showLogout ? 'rotate-180' : ''}`}
-                fill="none"
-                stroke="currentColor"
+                className="w-5 h-5 text-white"
+                fill="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                <path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
               </svg>
             </button>
 
             {/* Logout Popup */}
             {showLogout && (
-              <div className="absolute bottom-full left-0 mb-2 w-full bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-2">
+              <div className="absolute bottom-full left-0 mb-2 w-[calc(100%-0.5rem)] bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-2">
                 <LogoutButton />
               </div>
             )}
