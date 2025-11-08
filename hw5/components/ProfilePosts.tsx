@@ -48,29 +48,29 @@ export function ProfilePosts({ userID, isOwnProfile }: ProfilePostsProps) {
   const [content, setContent] = useState<PostItem[]>([])
   const [loading, setLoading] = useState(true)
 
-  const fetchPosts = async () => {
-    try {
-      // userID here is actually the database user.id
-      // We need to find the userID string to call the API
-      // For now, we'll use a different approach - pass userID string from parent
-      // But since we're getting the database ID, let's create a helper API
-      
-      // Try to get user by ID to find userID string
-      const response = await fetch(`/api/user/posts-by-id/${userID}`)
-      if (response.ok) {
-        const data = await response.json()
-        setContent(data.content || [])
-      } else {
-        // Fallback: if API doesn't exist, show empty
+    const fetchPosts = async () => {
+      try {
+        // userID here is actually the database user.id
+        // We need to find the userID string to call the API
+        // For now, we'll use a different approach - pass userID string from parent
+        // But since we're getting the database ID, let's create a helper API
+        
+        // Try to get user by ID to find userID string
+        const response = await fetch(`/api/user/posts-by-id/${userID}`)
+        if (response.ok) {
+          const data = await response.json()
+          setContent(data.content || [])
+        } else {
+          // Fallback: if API doesn't exist, show empty
+          setContent([])
+        }
+      } catch (error) {
+        console.error('Error fetching posts:', error)
         setContent([])
+      } finally {
+        setLoading(false)
       }
-    } catch (error) {
-      console.error('Error fetching posts:', error)
-      setContent([])
-    } finally {
-      setLoading(false)
     }
-  }
 
   useEffect(() => {
     fetchPosts()

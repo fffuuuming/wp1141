@@ -28,17 +28,17 @@ interface FeedItem {
     image: string | null
   }
   post?: {
+  id: string
+  content: string
+  createdAt: string
+  author: {
     id: string
-    content: string
-    createdAt: string
-    author: {
-      id: string
-      userID: string
-      name: string | null
-      image: string | null
-    }
-    _count: {
-      likes: number
+    userID: string
+    name: string | null
+    image: string | null
+  }
+  _count: {
+    likes: number
       replies: number
       reposts: number
     }
@@ -195,11 +195,11 @@ export function HomeFeed() {
                     </div>
                   </div>
                 )}
-                <PostCard
-                  post={post}
-                  onUpdate={fetchPosts}
-                  clickable={true}
-                />
+            <PostCard
+              post={post}
+              onUpdate={fetchPosts}
+              clickable={true}
+            />
               </div>
             )
           })}

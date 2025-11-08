@@ -64,7 +64,9 @@ export function EditProfileModal({ user, onClose, onUpdate }: EditProfileModalPr
 
       if (!response.ok) {
         const data = await response.json()
-        setError(data.error || 'Failed to update profile')
+        // Show validation error details if available
+        const errorMessage = data.details?.issues?.[0]?.message || data.error || 'Failed to update profile'
+        setError(errorMessage)
         setLoading(false)
         return
       }
@@ -75,7 +77,9 @@ export function EditProfileModal({ user, onClose, onUpdate }: EditProfileModalPr
       onClose()
     } catch (error) {
       console.error('Error updating profile:', error)
-      setError('An error occurred while updating your profile')
+      // Try to extract error message from the error object
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred while updating your profile'
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }

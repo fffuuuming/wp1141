@@ -75,7 +75,7 @@ export function PostModal({ isOpen, onClose, draftContent = '', draftId: initial
       setLoading(false)
       setError('')
       if (textareaRef.current) {
-        textareaRef.current.focus()
+      textareaRef.current.focus()
       }
     }
   }, [isOpen])

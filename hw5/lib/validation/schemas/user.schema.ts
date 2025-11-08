@@ -27,10 +27,30 @@ export const registerUserIDSchema = z.object({
  * Update user profile schema
  */
 export const updateUserSchema = z.object({
-  bio: z.string().max(USER_PROFILE.BIO_MAX_LENGTH, `Bio is too long (max ${USER_PROFILE.BIO_MAX_LENGTH} characters)`).optional(),
-  backgroundImage: z.string().url('Invalid background image URL').optional().or(z.literal('')),
-  image: z.string().url('Invalid image URL').optional().or(z.literal('')),
-  name: z.string().max(USER_PROFILE.NAME_MAX_LENGTH, `Name is too long (max ${USER_PROFILE.NAME_MAX_LENGTH} characters)`).optional(),
+  bio: z.union([
+    z.string().max(USER_PROFILE.BIO_MAX_LENGTH, `Bio is too long (max ${USER_PROFILE.BIO_MAX_LENGTH} characters)`),
+    z.literal(''),
+    z.null(),
+  ]).optional(),
+  backgroundImage: z
+    .union([z.string(), z.literal(''), z.null()])
+    .optional()
+    .refine((val) => !val || val === '' || z.string().url().safeParse(val).success, {
+      message: 'Invalid background image URL',
+    })
+    .transform((val) => val === '' ? null : val),
+  image: z
+    .union([z.string(), z.literal(''), z.null()])
+    .optional()
+    .refine((val) => !val || val === '' || z.string().url().safeParse(val).success, {
+      message: 'Invalid image URL',
+    })
+    .transform((val) => val === '' ? null : val),
+  name: z.union([
+    z.string().max(USER_PROFILE.NAME_MAX_LENGTH, `Name is too long (max ${USER_PROFILE.NAME_MAX_LENGTH} characters)`),
+    z.literal(''),
+    z.null(),
+  ]).optional(),
 })
 
 /**

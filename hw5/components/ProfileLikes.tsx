@@ -115,10 +115,10 @@ export function ProfileLikes({ userID, isOwnProfile }: ProfileLikesProps) {
           const isComment = like.isComment || like.post.parentId !== null
           
           return (
-            <div
-              key={like.id}
-              className="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-b-0"
-            >
+          <div
+            key={like.id}
+            className="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-b-0"
+          >
               {isComment && (
                 <div className="mb-2 text-sm text-gray-500 dark:text-gray-400">
                   <Link 
@@ -129,32 +129,32 @@ export function ProfileLikes({ userID, isOwnProfile }: ProfileLikesProps) {
                   </Link>
                 </div>
               )}
-              <div className="flex gap-3">
-                {like.post.author.image ? (
-                  <img
-                    src={like.post.author.image}
-                    alt={like.post.author.name || 'User'}
-                    className="w-12 h-12 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-12 h-12 rounded-full bg-gray-300 dark:bg-gray-700 flex items-center justify-center">
-                    <span className="text-lg font-semibold text-gray-600 dark:text-gray-300">
-                      {like.post.author.name?.[0]?.toUpperCase() || like.post.author.userID[0]?.toUpperCase() || 'U'}
-                    </span>
-                  </div>
-                )}
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-semibold text-gray-900 dark:text-white">
-                      {like.post.author.name || 'User'}
-                    </span>
-                    <span className="text-gray-500 dark:text-gray-400">
-                      @{like.post.author.userID}
-                    </span>
-                    <span className="text-gray-500 dark:text-gray-400">·</span>
-                    <span className="text-gray-500 dark:text-gray-400 text-sm">
-                      {new Date(like.post.createdAt).toLocaleDateString()}
-                    </span>
+            <div className="flex gap-3">
+              {like.post.author.image ? (
+                <img
+                  src={like.post.author.image}
+                  alt={like.post.author.name || 'User'}
+                  className="w-12 h-12 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-gray-300 dark:bg-gray-700 flex items-center justify-center">
+                  <span className="text-lg font-semibold text-gray-600 dark:text-gray-300">
+                    {like.post.author.name?.[0]?.toUpperCase() || like.post.author.userID[0]?.toUpperCase() || 'U'}
+                  </span>
+                </div>
+              )}
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-semibold text-gray-900 dark:text-white">
+                    {like.post.author.name || 'User'}
+                  </span>
+                  <span className="text-gray-500 dark:text-gray-400">
+                    @{like.post.author.userID}
+                  </span>
+                  <span className="text-gray-500 dark:text-gray-400">·</span>
+                  <span className="text-gray-500 dark:text-gray-400 text-sm">
+                    {new Date(like.post.createdAt).toLocaleDateString()}
+                  </span>
                     {isComment && (
                       <>
                         <span className="text-gray-500 dark:text-gray-400">·</span>
@@ -163,13 +163,13 @@ export function ProfileLikes({ userID, isOwnProfile }: ProfileLikesProps) {
                         </span>
                       </>
                     )}
-                  </div>
-                  <p className="text-gray-900 dark:text-white whitespace-pre-wrap mb-2">
-                    {like.post.content}
-                  </p>
-                  <div className="flex items-center gap-6 text-sm text-gray-500 dark:text-gray-400">
-                    <span>{like.post._count.likes} likes</span>
-                    <span>{like.post._count.replies} replies</span>
+                </div>
+                <p className="text-gray-900 dark:text-white whitespace-pre-wrap mb-2">
+                  {like.post.content}
+                </p>
+                <div className="flex items-center gap-6 text-sm text-gray-500 dark:text-gray-400">
+                  <span>{like.post._count.likes} likes</span>
+                  <span>{like.post._count.replies} replies</span>
                     {!isComment && <span>{like.post._count.reposts} reposts</span>}
                   </div>
                 </div>
