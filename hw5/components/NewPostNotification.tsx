@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { usePusherChannel } from '@/lib/pusher-client'
 import { PUSHER_CHANNELS, PUSHER_EVENTS } from '@/lib/pusher'
@@ -16,7 +16,6 @@ export function NewPostNotification({ onRefresh }: { onRefresh?: () => void }) {
   const { data: session } = useSession()
   const [users, setUsers] = useState<NotificationUser[]>([])
   const usersRef = useRef<Map<string, NotificationUser>>(new Map())
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Listen for new posts from followed users on user's own channel
   usePusherChannel(
@@ -56,17 +55,6 @@ export function NewPostNotification({ onRefresh }: { onRefresh?: () => void }) {
     // Update state with up to 3 users
     const userArray = Array.from(usersRef.current.values()).slice(0, 3)
     setUsers(userArray)
-
-    // Clear existing timeout
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current)
-    }
-
-    // Auto-hide after 5 seconds
-    timeoutRef.current = setTimeout(() => {
-      setUsers([])
-      usersRef.current.clear()
-    }, 5000)
   }
 
   const handleClick = () => {
@@ -77,19 +65,7 @@ export function NewPostNotification({ onRefresh }: { onRefresh?: () => void }) {
     // Clear notification
     setUsers([])
     usersRef.current.clear()
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current)
-    }
   }
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
-      }
-    }
-  }, [])
 
   if (users.length === 0) {
     return null
