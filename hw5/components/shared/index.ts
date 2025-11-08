@@ -5,5 +5,5 @@
 export * from './PostHeader'
 export * from './PostContent'
 export * from './PostActions'
-export * from './DeleteButton'
+export * from './PostMenu'
 

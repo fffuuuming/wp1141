@@ -70,29 +70,6 @@ export function HomeFeed() {
     }
   }
 
-  const handleDeletePost = async (postId: string) => {
-    if (!confirm('Are you sure you want to delete this post?')) {
-      return
-    }
-
-    try {
-      const response = await fetch(`/api/posts/${postId}`, {
-        method: 'DELETE',
-      })
-
-      if (response.ok) {
-        // Remove post from list
-        setPosts(posts.filter(p => p.id !== postId))
-        router.refresh()
-      } else {
-        const data = await response.json()
-        alert(data.error || 'Failed to delete post')
-      }
-    } catch (error) {
-      console.error('Error deleting post:', error)
-      alert('An error occurred while deleting post')
-    }
-  }
 
   if (!session) {
     return null
@@ -144,7 +121,6 @@ export function HomeFeed() {
             <PostCard
               key={post.id}
               post={post}
-              onDelete={handleDeletePost}
               onUpdate={fetchPosts}
               clickable={true}
             />

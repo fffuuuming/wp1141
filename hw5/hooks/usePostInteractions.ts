@@ -241,16 +241,12 @@ export function usePostDelete(postId: string) {
   const deletePostHandler = async (): Promise<boolean> => {
     if (!session?.user?.id || loading) return false
 
-    if (!confirm('Are you sure you want to delete this post?')) {
-      return false
-    }
-
     setLoading(true)
     try {
       await deletePost(postId)
       return true
     } catch (error: any) {
-      alert(error?.error || 'Failed to delete post')
+      console.error('Failed to delete post:', error?.error || error)
       return false
     } finally {
       setLoading(false)

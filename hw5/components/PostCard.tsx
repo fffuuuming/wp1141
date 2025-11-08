@@ -2,22 +2,25 @@
 
 import { useEffect } from 'react'
 import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import { usePostLike, usePostRepost, usePostDelete } from '@/hooks'
 import { usePostReplyCount } from '@/hooks/usePostReplyCount'
-import { PostHeader, PostContent, PostActions, DeleteButton } from '@/components/shared'
+import { PostHeader, PostContent, PostActions, PostMenu } from '@/components/shared'
 import { Avatar, Timestamp } from '@/components/ui'
 import type { PostCardProps } from '@/types/components/props'
 
-export function PostCard({ post, onDelete, onUpdate, clickable = false, variant = 'home' }: PostCardProps) {
+export function PostCard({ post, onUpdate, clickable = false, variant = 'home' }: PostCardProps) {
   const { data: session } = useSession()
-  const isOwnPost = session?.user?.id === post.author.id
-  
+  const router = useRouter()
   // Use custom hooks for interactions
   // These hooks subscribe to Pusher channels and update counts in real-time
   const { liked, likeCount, toggleLike } = usePostLike(post.id, post._count.likes)
   const { reposted, repostCount, toggleRepost } = usePostRepost(post.id, post._count.reposts)
-  const { deletePost: handleDelete } = usePostDelete(post.id)
   const replyCount = usePostReplyCount(post.id, post._count.replies)
+  const { deletePost, loading: deleting } = usePostDelete(post.id)
+
+  // Check if current user is the author (only show delete for own posts)
+  const isOwnPost = session?.user?.id === post.author.id
 
   // Debug: Log when PostCard mounts/updates (development only)
   useEffect(() => {
@@ -32,13 +35,6 @@ export function PostCard({ post, onDelete, onUpdate, clickable = false, variant 
       })
     }
   }, [post.id, likeCount, repostCount, replyCount, post._count.likes, post._count.reposts, post._count.replies])
-
-  const handleDeleteClick = async () => {
-    const success = await handleDelete()
-    if (success && onDelete) {
-      onDelete(post.id)
-    }
-  }
 
   const handleCardClick = (e: React.MouseEvent) => {
     if (!clickable) return
@@ -55,6 +51,27 @@ export function PostCard({ post, onDelete, onUpdate, clickable = false, variant 
     
     // Navigate to post detail page
     window.location.href = `/post/${post.id}`
+  }
+
+  const handleDelete = async () => {
+    const success = await deletePost()
+    if (success) {
+      // If we have an onUpdate callback, call it to refresh the list
+      if (onUpdate) {
+        onUpdate()
+      } else {
+        // Otherwise, navigate to home or refresh
+        if (variant === 'post') {
+          // If we're on the post detail page, redirect to home
+          router.push('/')
+        } else {
+          // Otherwise, just refresh the current page
+          window.location.reload()
+        }
+      }
+    } else {
+      alert('Failed to delete post')
+    }
   }
 
   return (
@@ -76,22 +93,8 @@ export function PostCard({ post, onDelete, onUpdate, clickable = false, variant 
               postId={post.id}
               showActions={isOwnPost}
               actions={
-                isOwnPost && onDelete ? (
-                  <div className="relative group">
-                    <button
-                      className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-                      title="More options"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                      </svg>
-                    </button>
-                    <div className="absolute right-0 top-full mt-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
-                      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 min-w-[120px]">
-                        <DeleteButton onDelete={handleDeleteClick} />
-                      </div>
-                    </div>
-                  </div>
+                isOwnPost ? (
+                  <PostMenu onDelete={handleDelete} />
                 ) : undefined
               }
             />

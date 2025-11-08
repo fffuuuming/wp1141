@@ -69,10 +69,14 @@ export function PostModal({ isOpen, onClose, draftContent = '', draftId: initial
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [showDraftsDropdown])
 
-  // Focus textarea when modal opens
+  // Reset state when modal opens
   useEffect(() => {
-    if (isOpen && textareaRef.current) {
-      textareaRef.current.focus()
+    if (isOpen) {
+      setLoading(false)
+      setError('')
+      if (textareaRef.current) {
+        textareaRef.current.focus()
+      }
     }
   }, [isOpen])
 
@@ -304,6 +308,7 @@ export function PostModal({ isOpen, onClose, draftContent = '', draftId: initial
       // Close modal and refresh
       setContent('')
       setError('')
+      setLoading(false) // Reset loading state before closing
       onClose()
       router.refresh()
       // Trigger a custom event to refresh the feed
@@ -510,13 +515,6 @@ export function PostModal({ isOpen, onClose, draftContent = '', draftId: initial
 
           {/* Footer */}
           <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-end gap-3">
-            <button
-              onClick={handleClose}
-              disabled={loading}
-              className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Discard
-            </button>
             <button
               onClick={handlePost}
               disabled={loading || isOverLimit || !content.trim()}

@@ -189,28 +189,6 @@ export function PostDetailContent({ postId }: PostDetailContentProps) {
     }
   }
 
-  const handleDeletePost = async (postIdToDelete: string) => {
-    if (!confirm('Are you sure you want to delete this post?')) {
-      return
-    }
-
-    try {
-      const response = await fetch(`/api/posts/${postIdToDelete}`, {
-        method: 'DELETE',
-      })
-
-      if (response.ok) {
-        // Redirect to home after deletion
-        router.push('/')
-      } else {
-        const data = await response.json()
-        alert(data.error || 'Failed to delete post')
-      }
-    } catch (error) {
-      console.error('Error deleting post:', error)
-      alert('An error occurred while deleting post')
-    }
-  }
 
   const handleReplyCreated = () => {
     // Refresh the post to update reply count
@@ -241,6 +219,11 @@ export function PostDetailContent({ postId }: PostDetailContentProps) {
     )
   }
 
+  const handlePostDelete = () => {
+    // Redirect to home after deletion
+    router.push('/')
+  }
+
   return (
     <>
       {/* Main Post Section */}
@@ -253,9 +236,9 @@ export function PostDetailContent({ postId }: PostDetailContentProps) {
             author: post.author,
             _count: post._count,
           }}
-          onDelete={handleDeletePost}
           clickable={false}
           variant="post"
+          onUpdate={handlePostDelete}
         />
       </div>
 

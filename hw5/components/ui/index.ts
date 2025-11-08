@@ -8,4 +8,5 @@ export * from './ErrorMessage'
 export * from './EmptyState'
 export * from './Timestamp'
 export * from './NotificationToast'
+export * from './ConfirmModal'
 

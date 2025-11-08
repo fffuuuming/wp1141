@@ -182,19 +182,19 @@ export function ProfileContent({ user, stats, isFollowing, isOwnProfile }: Profi
               )}
             </button>
             {isOwnProfile && (
-              <button
-                onClick={() => setActiveTab('likes')}
-                className={`px-4 py-4 font-semibold text-sm relative transition-colors ${
-                  activeTab === 'likes'
-                    ? 'text-gray-900 dark:text-white'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                }`}
-              >
-                Likes
-                {activeTab === 'likes' && (
-                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-500 rounded-t-full" />
-                )}
-              </button>
+            <button
+              onClick={() => setActiveTab('likes')}
+              className={`px-4 py-4 font-semibold text-sm relative transition-colors ${
+                activeTab === 'likes'
+                  ? 'text-gray-900 dark:text-white'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+              }`}
+            >
+              Likes
+              {activeTab === 'likes' && (
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-500 rounded-t-full" />
+              )}
+            </button>
             )}
           </div>
         </div>
