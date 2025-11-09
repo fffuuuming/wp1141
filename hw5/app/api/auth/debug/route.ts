@@ -13,19 +13,25 @@ export async function GET() {
   // Allow access in production for debugging purposes
   // This endpoint only shows whether variables are set, not their values
 
+  const authSecret = (process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET)?.trim()
+  const authUrl = (process.env.AUTH_URL || process.env.NEXTAUTH_URL)?.trim()
+  
   const config = {
     // Check secrets
     secrets: {
-      AUTH_SECRET: process.env.AUTH_SECRET ? '✅ Set' : '❌ Missing',
-      NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET ? '✅ Set' : '❌ Missing',
-      hasSecret: !!(process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET),
+      AUTH_SECRET: process.env.AUTH_SECRET ? (process.env.AUTH_SECRET.trim() ? '✅ Set (non-empty)' : '⚠️ Set but EMPTY') : '❌ Missing',
+      NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET ? (process.env.NEXTAUTH_SECRET.trim() ? '✅ Set (non-empty)' : '⚠️ Set but EMPTY') : '❌ Missing',
+      hasSecret: !!authSecret,
+      secretLength: authSecret?.length || 0,
+      secretPreview: authSecret ? `${authSecret.substring(0, 10)}...` : 'N/A',
     },
     
     // Check URLs
     urls: {
-      AUTH_URL: process.env.AUTH_URL || '❌ Missing',
-      NEXTAUTH_URL: process.env.NEXTAUTH_URL || '❌ Missing',
-      hasUrl: !!(process.env.AUTH_URL || process.env.NEXTAUTH_URL),
+      AUTH_URL: process.env.AUTH_URL ? (process.env.AUTH_URL.trim() ? `✅ ${process.env.AUTH_URL.trim()}` : '⚠️ Set but EMPTY') : '❌ Missing',
+      NEXTAUTH_URL: process.env.NEXTAUTH_URL ? (process.env.NEXTAUTH_URL.trim() ? `✅ ${process.env.NEXTAUTH_URL.trim()}` : '⚠️ Set but EMPTY') : '❌ Missing',
+      hasUrl: !!authUrl,
+      resolvedUrl: authUrl || 'N/A',
     },
     
     // Check OAuth providers
@@ -51,22 +57,30 @@ export async function GET() {
     
     // Summary
     summary: {
-      hasSecret: !!(process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET),
-      hasUrl: !!(process.env.AUTH_URL || process.env.NEXTAUTH_URL),
-      hasGoogle: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
-      hasGitHub: !!(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET),
+      hasSecret: !!authSecret,
+      hasValidSecret: !!(authSecret && authSecret.length > 0),
+      hasUrl: !!authUrl,
+      hasGoogle: !!(process.env.GOOGLE_CLIENT_ID?.trim() && process.env.GOOGLE_CLIENT_SECRET?.trim()),
+      hasGitHub: !!(process.env.GITHUB_CLIENT_ID?.trim() && process.env.GITHUB_CLIENT_SECRET?.trim()),
       hasAnyProvider: !!(
-        (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) ||
-        (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET)
+        (process.env.GOOGLE_CLIENT_ID?.trim() && process.env.GOOGLE_CLIENT_SECRET?.trim()) ||
+        (process.env.GITHUB_CLIENT_ID?.trim() && process.env.GITHUB_CLIENT_SECRET?.trim())
       ),
       isConfigured: !!(
-        (process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET) &&
-        (process.env.AUTH_URL || process.env.NEXTAUTH_URL) &&
+        authSecret &&
+        authSecret.length > 0 &&
+        authUrl &&
         (
-          (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) ||
-          (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET)
+          (process.env.GOOGLE_CLIENT_ID?.trim() && process.env.GOOGLE_CLIENT_SECRET?.trim()) ||
+          (process.env.GITHUB_CLIENT_ID?.trim() && process.env.GITHUB_CLIENT_SECRET?.trim())
         )
       ),
+      potentialIssues: [
+        !authSecret && 'Secret is missing',
+        authSecret && authSecret.length === 0 && 'Secret is empty string',
+        !authUrl && 'URL is missing',
+        !process.env.GOOGLE_CLIENT_ID?.trim() && !process.env.GITHUB_CLIENT_ID?.trim() && 'No OAuth providers configured',
+      ].filter(Boolean),
     },
   }
 

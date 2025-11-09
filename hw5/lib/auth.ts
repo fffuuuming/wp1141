@@ -266,23 +266,32 @@ function buildProviders() {
 // Build providers first to log diagnostics
 const configuredProviders = buildProviders()
 
-// Get secret with fallback
-const authSecret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET
-const authUrl = process.env.AUTH_URL || process.env.NEXTAUTH_URL
+// Get secret with fallback - ensure it's not empty
+const authSecret = (process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET)?.trim() || undefined
+const authUrl = (process.env.AUTH_URL || process.env.NEXTAUTH_URL)?.trim() || undefined
+
+// Validate secret is not empty
+const isValidSecret = authSecret && authSecret.length > 0
 
 // Log configuration status
 if (typeof window === 'undefined') {
   console.log('[Auth] Configuration Status:')
-  console.log(`[Auth]   Secret: ${authSecret ? '✅ Set' : '❌ Missing'}`)
+  console.log(`[Auth]   Secret: ${isValidSecret ? '✅ Set (valid)' : '❌ Missing or empty'}`)
+  console.log(`[Auth]   Secret length: ${authSecret?.length || 0} characters`)
   console.log(`[Auth]   URL: ${authUrl ? `✅ ${authUrl}` : '❌ Missing'}`)
   console.log(`[Auth]   Providers: ${configuredProviders.length}`)
   
-  if (!authSecret) {
-    console.error('[Auth] ❌ CRITICAL: AUTH_SECRET or NEXTAUTH_SECRET must be set!')
+  if (!isValidSecret) {
+    console.error('[Auth] ❌ CRITICAL: AUTH_SECRET or NEXTAUTH_SECRET must be set and non-empty!')
+    console.error('[Auth] Current secret value:', authSecret ? `"${authSecret.substring(0, 10)}..." (${authSecret.length} chars)` : 'undefined')
   }
   
   if (!authUrl && process.env.NODE_ENV === 'production') {
     console.error('[Auth] ❌ CRITICAL: AUTH_URL or NEXTAUTH_URL must be set in production!')
+  }
+  
+  if (configuredProviders.length === 0) {
+    console.error('[Auth] ❌ CRITICAL: No OAuth providers configured!')
   }
 }
 
@@ -290,7 +299,8 @@ export const authOptions: NextAuthConfig = {
   adapter: customAdapter as any,
   
   // Explicitly set secret - NextAuth v5 prefers AUTH_SECRET but supports NEXTAUTH_SECRET
-  secret: authSecret,
+  // Must be set even if empty - NextAuth will validate it
+  secret: authSecret || '',
   
   // Explicitly set trustHost for production deployments
   trustHost: true,
