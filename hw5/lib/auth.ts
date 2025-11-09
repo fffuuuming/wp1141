@@ -207,12 +207,12 @@ function buildProviders() {
   
   if (hasGoogleId && hasGoogleSecret) {
     try {
-      providers.push(
-        GoogleProvider({
+    providers.push(
+      GoogleProvider({
           clientId: process.env.GOOGLE_CLIENT_ID!,
           clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-        })
-      )
+      })
+    )
       console.log('[Auth] ✅ Google OAuth provider configured')
     } catch (error) {
       console.error('[Auth] ❌ Error configuring Google provider:', error)
@@ -229,12 +229,12 @@ function buildProviders() {
   
   if (hasGitHubId && hasGitHubSecret) {
     try {
-      providers.push(
-        GitHubProvider({
+    providers.push(
+      GitHubProvider({
           clientId: process.env.GITHUB_CLIENT_ID!,
           clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-        })
-      )
+      })
+    )
       console.log('[Auth] ✅ GitHub OAuth provider configured')
     } catch (error) {
       console.error('[Auth] ❌ Error configuring GitHub provider:', error)

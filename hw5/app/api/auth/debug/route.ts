@@ -6,19 +6,12 @@ import { NextResponse } from 'next/server'
  * 
  * Access: GET /api/auth/debug
  * 
- * ⚠️ Remove or secure this endpoint in production!
+ * ⚠️ This endpoint shows configuration status but does NOT expose secret values
+ * Consider removing or securing this endpoint after debugging
  */
 export async function GET() {
-  // Only allow in development or with special key
-  const isDevelopment = process.env.NODE_ENV === 'development'
-  const debugKey = process.env.DEBUG_KEY
-  
-  if (!isDevelopment && !debugKey) {
-    return NextResponse.json(
-      { error: 'Debug endpoint disabled in production' },
-      { status: 403 }
-    )
-  }
+  // Allow access in production for debugging purposes
+  // This endpoint only shows whether variables are set, not their values
 
   const config = {
     // Check secrets
