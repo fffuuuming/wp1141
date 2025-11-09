@@ -51,13 +51,27 @@ export const POST = withAuth(async (request, { params, session }) => {
       where: { postId },
     })
 
-    // Broadcast unrepost event
+    // Broadcast unrepost event to post channel
     await broadcastEvent(
       PUSHER_CHANNELS.post(postId),
       PUSHER_EVENTS.UNREPOST,
       {
         postId,
         userId: session.user.id,
+        repostId: existingRepost.id,
+        count,
+        reposted: false,
+      }
+    )
+
+    // Broadcast unrepost event to feed channel
+    await broadcastEvent(
+      PUSHER_CHANNELS.feed,
+      PUSHER_EVENTS.UNREPOST,
+      {
+        postId,
+        userId: session.user.id,
+        repostId: existingRepost.id,
         count,
         reposted: false,
       }

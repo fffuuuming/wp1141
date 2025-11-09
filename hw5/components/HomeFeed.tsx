@@ -7,6 +7,8 @@ import { PostCard } from './PostCard'
 import { InlinePost } from './InlinePost'
 import { NewPostNotification } from './NewPostNotification'
 import { useHomeFilter } from './HomeHeader'
+import { usePusherChannel } from '@/lib/pusher-client'
+import { PUSHER_CHANNELS, PUSHER_EVENTS } from '@/lib/pusher'
 import type { PostWithDetails } from '@/types/entities/post'
 
 interface FeedItem {
@@ -74,6 +76,27 @@ export function HomeFeed() {
     return () => window.removeEventListener('postCreated', handlePostCreated)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Listen for unrepost events to remove reposts from feed
+  usePusherChannel(
+    PUSHER_CHANNELS.feed,
+    PUSHER_EVENTS.UNREPOST,
+    (data: { postId: string; userId: string; repostId: string }) => {
+      // Only remove if it's the current user's repost
+      if (data.userId === session?.user?.id) {
+        setFeedItems((prevItems) => 
+          prevItems.filter((item) => {
+            // Remove the repost item if it matches the repostId
+            if (item.type === 'repost' && item.id === data.repostId) {
+              return false
+            }
+            return true
+          })
+        )
+      }
+    },
+    !!session?.user?.id
+  )
 
   const fetchPosts = async () => {
     setLoading(true)
