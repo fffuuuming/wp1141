@@ -201,30 +201,55 @@ const customAdapter = {
 function buildProviders() {
   const providers = []
   
-  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
-    providers.push(
-      GoogleProvider({
-        clientId: process.env.GOOGLE_CLIENT_ID,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      })
-    )
+  // Check Google OAuth credentials
+  const hasGoogleId = !!process.env.GOOGLE_CLIENT_ID
+  const hasGoogleSecret = !!process.env.GOOGLE_CLIENT_SECRET
+  
+  if (hasGoogleId && hasGoogleSecret) {
+    try {
+      providers.push(
+        GoogleProvider({
+          clientId: process.env.GOOGLE_CLIENT_ID!,
+          clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+        })
+      )
+      console.log('[Auth] ✅ Google OAuth provider configured')
+    } catch (error) {
+      console.error('[Auth] ❌ Error configuring Google provider:', error)
+    }
   } else {
-    console.warn('[Auth] ⚠️ Google OAuth credentials not found. Google provider disabled.')
+    console.warn('[Auth] ⚠️ Google OAuth credentials not found.')
+    console.warn(`[Auth]   GOOGLE_CLIENT_ID: ${hasGoogleId ? 'Set' : 'Missing'}`)
+    console.warn(`[Auth]   GOOGLE_CLIENT_SECRET: ${hasGoogleSecret ? 'Set' : 'Missing'}`)
   }
   
-  if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
-    providers.push(
-      GitHubProvider({
-        clientId: process.env.GITHUB_CLIENT_ID,
-        clientSecret: process.env.GITHUB_CLIENT_SECRET,
-      })
-    )
+  // Check GitHub OAuth credentials
+  const hasGitHubId = !!process.env.GITHUB_CLIENT_ID
+  const hasGitHubSecret = !!process.env.GITHUB_CLIENT_SECRET
+  
+  if (hasGitHubId && hasGitHubSecret) {
+    try {
+      providers.push(
+        GitHubProvider({
+          clientId: process.env.GITHUB_CLIENT_ID!,
+          clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+        })
+      )
+      console.log('[Auth] ✅ GitHub OAuth provider configured')
+    } catch (error) {
+      console.error('[Auth] ❌ Error configuring GitHub provider:', error)
+    }
   } else {
-    console.warn('[Auth] ⚠️ GitHub OAuth credentials not found. GitHub provider disabled.')
+    console.warn('[Auth] ⚠️ GitHub OAuth credentials not found.')
+    console.warn(`[Auth]   GITHUB_CLIENT_ID: ${hasGitHubId ? 'Set' : 'Missing'}`)
+    console.warn(`[Auth]   GITHUB_CLIENT_SECRET: ${hasGitHubSecret ? 'Set' : 'Missing'}`)
   }
   
   if (providers.length === 0) {
-    console.error('[Auth] ❌ No OAuth providers configured! Please set at least one provider\'s credentials in .env')
+    console.error('[Auth] ❌ No OAuth providers configured! Please set at least one provider\'s credentials.')
+    console.error('[Auth] This will cause a Configuration error when trying to sign in.')
+  } else {
+    console.log(`[Auth] ✅ ${providers.length} OAuth provider(s) configured`)
   }
   
   return providers
@@ -238,16 +263,39 @@ function buildProviders() {
  * - Provider info synced after user creation
  * - Conditional provider loading (only enabled providers with credentials)
  */
+// Build providers first to log diagnostics
+const configuredProviders = buildProviders()
+
+// Get secret with fallback
+const authSecret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET
+const authUrl = process.env.AUTH_URL || process.env.NEXTAUTH_URL
+
+// Log configuration status
+if (typeof window === 'undefined') {
+  console.log('[Auth] Configuration Status:')
+  console.log(`[Auth]   Secret: ${authSecret ? '✅ Set' : '❌ Missing'}`)
+  console.log(`[Auth]   URL: ${authUrl ? `✅ ${authUrl}` : '❌ Missing'}`)
+  console.log(`[Auth]   Providers: ${configuredProviders.length}`)
+  
+  if (!authSecret) {
+    console.error('[Auth] ❌ CRITICAL: AUTH_SECRET or NEXTAUTH_SECRET must be set!')
+  }
+  
+  if (!authUrl && process.env.NODE_ENV === 'production') {
+    console.error('[Auth] ❌ CRITICAL: AUTH_URL or NEXTAUTH_URL must be set in production!')
+  }
+}
+
 export const authOptions: NextAuthConfig = {
   adapter: customAdapter as any,
   
   // Explicitly set secret - NextAuth v5 prefers AUTH_SECRET but supports NEXTAUTH_SECRET
-  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
+  secret: authSecret,
   
   // Explicitly set trustHost for production deployments
   trustHost: true,
   
-  providers: buildProviders(),
+  providers: configuredProviders,
 
   session: {
     strategy: 'database',
