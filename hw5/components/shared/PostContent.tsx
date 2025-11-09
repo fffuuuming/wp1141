@@ -26,6 +26,7 @@ export function PostContent({ content, className = '' }: PostContentProps) {
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-500 hover:underline"
+              onClick={(e) => e.stopPropagation()}
             >
               {part.content}
             </a>
@@ -43,6 +44,7 @@ export function PostContent({ content, className = '' }: PostContentProps) {
               key={index}
               href={`/profile/${userID}`}
               className="text-blue-500 hover:underline"
+              onClick={(e) => e.stopPropagation()}
             >
               {part.content}
             </Link>

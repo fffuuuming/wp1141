@@ -155,6 +155,7 @@ export function CommentCard({ comment, onDelete, onReply, showReplyButton = fals
                       key={index}
                       href={`/profile/${userID}`}
                       className="text-blue-500 hover:underline"
+                      onClick={(e) => e.stopPropagation()}
                     >
                       {part.content}
                     </Link>
