@@ -151,12 +151,18 @@ export function usePostRepost(postId: string, initialCount: number) {
     PUSHER_CHANNELS.post(postId),
     PUSHER_EVENTS.REPOST,
     (data: { postId: string; userId: string; count: number; reposted: boolean }) => {
-      // Only update if it's not from the current user
-      if (data.userId !== session?.user?.id && !loading && !userActionRef.current) {
+      // Update count if:
+      // 1. It's from another user, OR
+      // 2. It's from the current user but we're not in the middle of a user action (i.e., after API call completes)
+      if ((data.userId !== session?.user?.id || !userActionRef.current) && !loading) {
         if (process.env.NODE_ENV === 'development') {
           console.log(`[usePostRepost] Received repost event for post ${postId}, updating count to ${data.count}`)
         }
         setRepostCount(data.count)
+        // If it's from the current user, also update the reposted state
+        if (data.userId === session?.user?.id) {
+          setReposted(true)
+        }
       }
     },
     !!session?.user?.id
@@ -167,12 +173,18 @@ export function usePostRepost(postId: string, initialCount: number) {
     PUSHER_CHANNELS.post(postId),
     PUSHER_EVENTS.UNREPOST,
     (data: { postId: string; userId: string; count: number; reposted: boolean }) => {
-      // Only update if it's not from the current user
-      if (data.userId !== session?.user?.id && !loading && !userActionRef.current) {
+      // Update count if:
+      // 1. It's from another user, OR
+      // 2. It's from the current user but we're not in the middle of a user action (i.e., after API call completes)
+      if ((data.userId !== session?.user?.id || !userActionRef.current) && !loading) {
         if (process.env.NODE_ENV === 'development') {
           console.log(`[usePostRepost] Received unrepost event for post ${postId}, updating count to ${data.count}`)
         }
         setRepostCount(data.count)
+        // If it's from the current user, also update the reposted state
+        if (data.userId === session?.user?.id) {
+          setReposted(false)
+        }
       }
     },
     !!session?.user?.id

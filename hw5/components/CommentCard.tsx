@@ -43,6 +43,8 @@ export function CommentCard({ comment, onDelete, onReply, showReplyButton = fals
       target.closest('button') ||
       target.closest('[role="button"]')
     ) {
+      e.preventDefault()
+      e.stopPropagation()
       return
     }
     // Navigate to comment detail page
@@ -69,14 +71,22 @@ export function CommentCard({ comment, onDelete, onReply, showReplyButton = fals
             <div className="flex items-center gap-2 mb-1">
               <Link
                 href={`/profile/${comment.author.userID}`}
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  e.preventDefault()
+                  window.location.href = `/profile/${comment.author.userID}`
+                }}
                 className="font-semibold text-gray-900 dark:text-white hover:underline text-sm"
               >
                 {comment.author.name || 'User'}
               </Link>
               <Link
                 href={`/profile/${comment.author.userID}`}
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  e.preventDefault()
+                  window.location.href = `/profile/${comment.author.userID}`
+                }}
                 className="text-gray-500 dark:text-gray-400 hover:underline text-xs"
               >
                 @{comment.author.userID}

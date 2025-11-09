@@ -95,16 +95,15 @@ export function PostDetailContent({ postId }: PostDetailContentProps) {
     PUSHER_CHANNELS.post(postId),
     PUSHER_EVENTS.REPOST,
     (data: { postId: string; userId: string; count: number; reposted: boolean }) => {
-      if (data.userId !== session?.user?.id) {
-        if (post) {
-          setPost((prev: any) => ({
-            ...prev,
-            _count: {
-              ...prev._count,
-              reposts: data.count,
-            },
-          }))
-        }
+      // Update count for all users (including current user) to ensure sync
+      if (post) {
+        setPost((prev: any) => ({
+          ...prev,
+          _count: {
+            ...prev._count,
+            reposts: data.count,
+          },
+        }))
       }
     },
     !!session?.user?.id // Subscribe immediately when session is available
@@ -115,16 +114,15 @@ export function PostDetailContent({ postId }: PostDetailContentProps) {
     PUSHER_CHANNELS.post(postId),
     PUSHER_EVENTS.UNREPOST,
     (data: { postId: string; userId: string; count: number; reposted: boolean }) => {
-      if (data.userId !== session?.user?.id) {
-        if (post) {
-          setPost((prev: any) => ({
-            ...prev,
-            _count: {
-              ...prev._count,
-              reposts: data.count,
-            },
-          }))
-        }
+      // Update count for all users (including current user) to ensure sync
+      if (post) {
+        setPost((prev: any) => ({
+          ...prev,
+          _count: {
+            ...prev._count,
+            reposts: data.count,
+          },
+        }))
       }
     },
     !!session?.user?.id // Subscribe immediately when session is available
