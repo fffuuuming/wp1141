@@ -29,60 +29,88 @@ function subscribeChannel(channelName: string): Promise<ReturnType<typeof Pusher
     const count = channelSubscriptions.get(channelName) || 0
     channelSubscriptions.set(channelName, count + 1)
 
+    // Track if promise has been resolved to prevent double resolution
+    let resolved = false
+    const safeResolve = (channel: ReturnType<typeof PusherClient.prototype.subscribe> | null) => {
+      if (resolved) return
+      resolved = true
+      resolve(channel)
+    }
+
+    // Helper to clean up event listeners
+    const cleanup = (onConnected: () => void, onError: (err: any) => void, timeoutId?: NodeJS.Timeout) => {
+      pusher.connection.unbind('connected', onConnected)
+      pusher.connection.unbind('error', onError)
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
+    }
+
     // Check if already connected
     if (pusher.connection.state === 'connected') {
       const channel = pusher.subscribe(channelName)
       if (process.env.NODE_ENV === 'development' && count === 0) {
         console.log(`[Pusher] First subscription to channel "${channelName}"`)
       }
-      resolve(channel)
+      safeResolve(channel)
       return
     }
 
     // Wait for connection to be ready
     const connectionState = pusher.connection.state
     if (connectionState === 'connecting' || connectionState === 'unavailable') {
+      // Declare timeoutId first so it can be used in handlers
+      let timeoutId: NodeJS.Timeout | undefined
+      
       // Wait for connection
       const onConnected = () => {
-        pusher.connection.unbind('connected', onConnected)
-        pusher.connection.unbind('error', onError)
+        cleanup(onConnected, onError, timeoutId)
         const channel = pusher.subscribe(channelName)
         if (process.env.NODE_ENV === 'development' && count === 0) {
           console.log(`[Pusher] First subscription to channel "${channelName}" (after connection)`)
         }
-        resolve(channel)
+        safeResolve(channel)
       }
 
-      const onError = () => {
-        pusher.connection.unbind('connected', onConnected)
-        pusher.connection.unbind('error', onError)
-        console.error(`[Pusher] Connection error while waiting to subscribe to "${channelName}"`)
-        resolve(null)
+      const onError = (err: any) => {
+        cleanup(onConnected, onError, timeoutId)
+        console.error(`[Pusher] Connection error while waiting to subscribe to "${channelName}":`, err)
+        safeResolve(null)
       }
 
       pusher.connection.bind('connected', onConnected)
       pusher.connection.bind('error', onError)
 
-      // If already connected but state hasn't updated yet, try subscribing immediately
-      // This handles race conditions
-      setTimeout(() => {
+      // Fallback timeout: if connection takes too long, try subscribing anyway
+      // This handles cases where connection state might be stale
+      timeoutId = setTimeout(() => {
+        if (resolved) return
+        
+        // Check current state
         if (pusher.connection.state === 'connected') {
-          pusher.connection.unbind('connected', onConnected)
-          pusher.connection.unbind('error', onError)
+          cleanup(onConnected, onError, timeoutId)
           const channel = pusher.subscribe(channelName)
           if (process.env.NODE_ENV === 'development' && count === 0) {
-            console.log(`[Pusher] First subscription to channel "${channelName}" (timeout check)`)
+            console.log(`[Pusher] First subscription to channel "${channelName}" (timeout check - connected)`)
           }
-          resolve(channel)
+          safeResolve(channel)
+        } else {
+          // Still not connected, but try subscribing anyway (Pusher will queue it)
+          cleanup(onConnected, onError, timeoutId)
+          const channel = pusher.subscribe(channelName)
+          if (process.env.NODE_ENV === 'development' && count === 0) {
+            console.log(`[Pusher] First subscription to channel "${channelName}" (timeout - subscribing anyway, state: ${pusher.connection.state})`)
+          }
+          safeResolve(channel)
         }
-      }, 100)
+      }, 2000) // Increased timeout to 2 seconds for Vercel's potentially slower connections
     } else {
       // Connection failed or disconnected, try subscribing anyway (Pusher will handle it)
       const channel = pusher.subscribe(channelName)
       if (process.env.NODE_ENV === 'development' && count === 0) {
         console.log(`[Pusher] First subscription to channel "${channelName}" (connection state: ${connectionState})`)
       }
-      resolve(channel)
+      safeResolve(channel)
     }
   })
 }
@@ -216,16 +244,12 @@ export function usePusherChannel(
       channel.bind('pusher:subscription_error', errorHandler)
 
       eventHandler = (data: any) => {
-        // Always log received events in development (even before callback)
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`📨 Pusher: Received event "${eventName}" on channel "${channelName}":`, data)
-          console.log(`[Pusher] Calling callback for event "${eventName}" on channel "${channelName}"`)
-        }
+        // Log received events (in both dev and prod for debugging on Vercel)
+        console.log(`📨 Pusher: Received event "${eventName}" on channel "${channelName}":`, data)
+        console.log(`[Pusher] Calling callback for event "${eventName}" on channel "${channelName}"`)
         try {
           callbackRef.current(data)
-          if (process.env.NODE_ENV === 'development') {
-            console.log(`[Pusher] Callback executed successfully for event "${eventName}"`)
-          }
+          console.log(`[Pusher] Callback executed successfully for event "${eventName}"`)
         } catch (error) {
           console.error(`[Pusher] Error in callback for event "${eventName}":`, error)
         }
