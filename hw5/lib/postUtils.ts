@@ -12,8 +12,8 @@ const URL_REGEX = /(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9-]+\.[a-zA-Z]{2,}[^\
 // Hashtag regex: # followed by alphanumeric and underscores
 const HASHTAG_REGEX = /#[\w]+/g
 
-// Mention regex: @ followed by alphanumeric and underscores (3-20 chars, starting with letter/underscore)
-const MENTION_REGEX = /@[a-zA-Z_][a-zA-Z0-9_]{2,19}/g
+// Mention regex: @ followed by alphanumeric and underscores (same as hashtags - matches immediately)
+const MENTION_REGEX = /@[\w]+/g
 
 /**
  * Detect all URLs in text
