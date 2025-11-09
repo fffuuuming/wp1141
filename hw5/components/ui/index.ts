@@ -3,6 +3,7 @@
  */
 
 export * from './Avatar'
+export * from './BioText'
 export * from './LoadingSpinner'
 export * from './ErrorMessage'
 export * from './EmptyState'

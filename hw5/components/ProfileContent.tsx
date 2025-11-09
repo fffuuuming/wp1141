@@ -9,6 +9,7 @@ import { FollowButton } from './FollowButton'
 import { ProfilePosts } from './ProfilePosts'
 import { ProfileLikes } from './ProfileLikes'
 import { useFollowerCount } from '@/hooks'
+import { BioText } from '@/components/ui'
 
 interface ProfileContentProps {
   user: {
@@ -138,9 +139,12 @@ export function ProfileContent({ user, stats, isFollowing, isOwnProfile }: Profi
             
             {/* Bio */}
             {profileData.bio && (
-              <p className="text-gray-700 dark:text-gray-300 mb-4 whitespace-pre-wrap">
-                {profileData.bio}
-              </p>
+              <div className="mb-4">
+                <BioText 
+                  text={profileData.bio}
+                  className="text-gray-700 dark:text-gray-300"
+                />
+              </div>
             )}
           </div>
 

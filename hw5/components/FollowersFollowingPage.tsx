@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
-import { Avatar } from '@/components/ui'
+import { Avatar, BioText } from '@/components/ui'
 import { FollowButton } from '@/components/FollowButton'
 
 interface FollowersFollowingPageProps {
@@ -211,9 +211,12 @@ export function FollowersFollowingPage({ userID, userName, initialTab }: Followe
                           </p>
                         </Link>
                         {user.bio && (
-                          <p className="text-gray-700 dark:text-gray-300 text-sm mt-2 line-clamp-2">
-                            {user.bio}
-                          </p>
+                          <div className="mt-2 line-clamp-2">
+                            <BioText 
+                              text={user.bio}
+                              className="text-gray-700 dark:text-gray-300 text-sm"
+                            />
+                          </div>
                         )}
                       </div>
 
