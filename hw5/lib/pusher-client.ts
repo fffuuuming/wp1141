@@ -16,21 +16,75 @@ const channelSubscriptions = new Map<string, number>()
 
 /**
  * Subscribe to a channel (with reference counting)
+ * Waits for connection to be ready before subscribing
  */
-function subscribeChannel(channelName: string) {
-  const pusher = getPusherClient()
-  if (!pusher) return null
+function subscribeChannel(channelName: string): Promise<ReturnType<typeof PusherClient.prototype.subscribe> | null> {
+  return new Promise((resolve) => {
+    const pusher = getPusherClient()
+    if (!pusher) {
+      resolve(null)
+      return
+    }
 
-  const count = channelSubscriptions.get(channelName) || 0
-  channelSubscriptions.set(channelName, count + 1)
+    const count = channelSubscriptions.get(channelName) || 0
+    channelSubscriptions.set(channelName, count + 1)
 
-  const channel = pusher.subscribe(channelName)
-  
-  if (process.env.NODE_ENV === 'development' && count === 0) {
-    console.log(`[Pusher] First subscription to channel "${channelName}"`)
-  }
+    // Check if already connected
+    if (pusher.connection.state === 'connected') {
+      const channel = pusher.subscribe(channelName)
+      if (process.env.NODE_ENV === 'development' && count === 0) {
+        console.log(`[Pusher] First subscription to channel "${channelName}"`)
+      }
+      resolve(channel)
+      return
+    }
 
-  return channel
+    // Wait for connection to be ready
+    const connectionState = pusher.connection.state
+    if (connectionState === 'connecting' || connectionState === 'unavailable') {
+      // Wait for connection
+      const onConnected = () => {
+        pusher.connection.unbind('connected', onConnected)
+        pusher.connection.unbind('error', onError)
+        const channel = pusher.subscribe(channelName)
+        if (process.env.NODE_ENV === 'development' && count === 0) {
+          console.log(`[Pusher] First subscription to channel "${channelName}" (after connection)`)
+        }
+        resolve(channel)
+      }
+
+      const onError = () => {
+        pusher.connection.unbind('connected', onConnected)
+        pusher.connection.unbind('error', onError)
+        console.error(`[Pusher] Connection error while waiting to subscribe to "${channelName}"`)
+        resolve(null)
+      }
+
+      pusher.connection.bind('connected', onConnected)
+      pusher.connection.bind('error', onError)
+
+      // If already connected but state hasn't updated yet, try subscribing immediately
+      // This handles race conditions
+      setTimeout(() => {
+        if (pusher.connection.state === 'connected') {
+          pusher.connection.unbind('connected', onConnected)
+          pusher.connection.unbind('error', onError)
+          const channel = pusher.subscribe(channelName)
+          if (process.env.NODE_ENV === 'development' && count === 0) {
+            console.log(`[Pusher] First subscription to channel "${channelName}" (timeout check)`)
+          }
+          resolve(channel)
+        }
+      }, 100)
+    } else {
+      // Connection failed or disconnected, try subscribing anyway (Pusher will handle it)
+      const channel = pusher.subscribe(channelName)
+      if (process.env.NODE_ENV === 'development' && count === 0) {
+        console.log(`[Pusher] First subscription to channel "${channelName}" (connection state: ${connectionState})`)
+      }
+      resolve(channel)
+    }
+  })
 }
 
 /**
@@ -130,55 +184,74 @@ export function usePusherChannel(
   }, [callback])
 
   useEffect(() => {
-    if (!enabled) {
+    if (!enabled || !channelName) {
       return
     }
 
-    const channel = subscribeChannel(channelName)
-    if (!channel) {
-      return
-    }
+    let channel: ReturnType<typeof PusherClient.prototype.subscribe> | null = null
+    let isMounted = true
+    let subscriptionHandler: (() => void) | null = null
+    let errorHandler: ((status: number) => void) | null = null
+    let eventHandler: ((data: any) => void) | null = null
 
-    // Log subscription events (only once per channel)
-    const subscriptionHandler = () => {
-      console.log(`✅ Pusher: Subscribed to channel "${channelName}"`)
-      console.log(`[Pusher] Channel "${channelName}" is now ready to receive events`)
-      console.log(`[Pusher] Listening for event "${eventName}" on channel "${channelName}"`)
-    }
-    channel.bind('pusher:subscription_succeeded', subscriptionHandler)
-
-    const errorHandler = (status: number) => {
-      console.error(`❌ Pusher: Subscription error for channel "${channelName}":`, status)
-    }
-    channel.bind('pusher:subscription_error', errorHandler)
-
-    const handler = (data: any) => {
-      // Always log received events in development (even before callback)
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`📨 Pusher: Received event "${eventName}" on channel "${channelName}":`, data)
-        console.log(`[Pusher] Calling callback for event "${eventName}" on channel "${channelName}"`)
+    // Subscribe to channel (async, waits for connection)
+    subscribeChannel(channelName).then((subscribedChannel) => {
+      if (!isMounted || !subscribedChannel) {
+        return
       }
-      try {
-        callbackRef.current(data)
+
+      channel = subscribedChannel
+
+      // Log subscription events (only once per channel)
+      subscriptionHandler = () => {
+        console.log(`✅ Pusher: Subscribed to channel "${channelName}"`)
+        console.log(`[Pusher] Channel "${channelName}" is now ready to receive events`)
+        console.log(`[Pusher] Listening for event "${eventName}" on channel "${channelName}"`)
+      }
+      channel.bind('pusher:subscription_succeeded', subscriptionHandler)
+
+      errorHandler = (status: number) => {
+        console.error(`❌ Pusher: Subscription error for channel "${channelName}":`, status)
+      }
+      channel.bind('pusher:subscription_error', errorHandler)
+
+      eventHandler = (data: any) => {
+        // Always log received events in development (even before callback)
         if (process.env.NODE_ENV === 'development') {
-          console.log(`[Pusher] Callback executed successfully for event "${eventName}"`)
+          console.log(`📨 Pusher: Received event "${eventName}" on channel "${channelName}":`, data)
+          console.log(`[Pusher] Calling callback for event "${eventName}" on channel "${channelName}"`)
         }
-      } catch (error) {
-        console.error(`[Pusher] Error in callback for event "${eventName}":`, error)
+        try {
+          callbackRef.current(data)
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`[Pusher] Callback executed successfully for event "${eventName}"`)
+          }
+        } catch (error) {
+          console.error(`[Pusher] Error in callback for event "${eventName}":`, error)
+        }
       }
-    }
 
-    channel.bind(eventName, handler)
+      channel.bind(eventName, eventHandler)
+    })
 
     return () => {
-      channel.unbind(eventName, handler)
-      // Only unbind subscription handlers if we're the last subscriber
-      const count = channelSubscriptions.get(channelName) || 0
-      if (count <= 1) {
-        channel.unbind('pusher:subscription_succeeded', subscriptionHandler)
-        channel.unbind('pusher:subscription_error', errorHandler)
+      isMounted = false
+      if (channel) {
+        if (eventHandler) {
+          channel.unbind(eventName, eventHandler)
+        }
+        // Only unbind subscription handlers if we're the last subscriber
+        const count = channelSubscriptions.get(channelName) || 0
+        if (count <= 1) {
+          if (subscriptionHandler) {
+            channel.unbind('pusher:subscription_succeeded', subscriptionHandler)
+          }
+          if (errorHandler) {
+            channel.unbind('pusher:subscription_error', errorHandler)
+          }
+        }
+        unsubscribeChannel(channelName)
       }
-      unsubscribeChannel(channelName)
     }
   }, [channelName, eventName, enabled])
 }
@@ -199,32 +272,41 @@ export function usePusherChannelEvents(
   }, [events])
 
   useEffect(() => {
-    if (!enabled) {
+    if (!enabled || !channelName) {
       return
     }
 
-    const channel = subscribeChannel(channelName)
-    if (!channel) {
-      return
-    }
-
+    let channel: ReturnType<typeof PusherClient.prototype.subscribe> | null = null
+    let isMounted = true
     const handlers: Array<{ event: string; handler: (data: any) => void }> = []
 
-    // Bind all events
-    Object.entries(eventsRef.current).forEach(([eventName, callback]) => {
-      const handler = (data: any) => {
-        callback(data)
+    // Subscribe to channel (async, waits for connection)
+    subscribeChannel(channelName).then((subscribedChannel) => {
+      if (!isMounted || !subscribedChannel) {
+        return
       }
-      channel.bind(eventName, handler)
-      handlers.push({ event: eventName, handler })
+
+      channel = subscribedChannel
+
+      // Bind all events
+      Object.entries(eventsRef.current).forEach(([eventName, callback]) => {
+        const handler = (data: any) => {
+          callback(data)
+        }
+        channel!.bind(eventName, handler)
+        handlers.push({ event: eventName, handler })
+      })
     })
 
     return () => {
-      // Unbind all events
-      handlers.forEach(({ event, handler }) => {
-        channel.unbind(event, handler)
-      })
-      unsubscribeChannel(channelName)
+      isMounted = false
+      if (channel) {
+        // Unbind all events
+        handlers.forEach(({ event, handler }) => {
+          channel!.unbind(event, handler)
+        })
+        unsubscribeChannel(channelName)
+      }
     }
   }, [channelName, enabled])
 }
