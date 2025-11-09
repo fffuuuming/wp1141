@@ -77,6 +77,98 @@ export function HomeFeed() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Listen for repost events to add reposts to feed
+  usePusherChannel(
+    PUSHER_CHANNELS.feed,
+    PUSHER_EVENTS.REPOST,
+    async (data: { 
+      postId: string
+      userId: string
+      author: {
+        id: string
+        userID: string
+        name: string | null
+        image: string | null
+      }
+    }) => {
+      // Only add if it's from the current user (for immediate feedback)
+      // or if filter is 'all' (we'll handle 'following' filter by checking if user follows the reposter)
+      if (data.userId === session?.user?.id || filter === 'all') {
+        try {
+          // Fetch the post data
+          const postResponse = await fetch(`/api/posts/${data.postId}`)
+          if (postResponse.ok) {
+            const { post } = await postResponse.json()
+            
+            // Check if filter is 'following' - if so, we need to verify the user follows the reposter
+            if (filter === 'following') {
+              // For following filter, we'll let the server handle it by refreshing
+              // But for immediate feedback when current user reposts, add it anyway
+              if (data.userId !== session?.user?.id) {
+                // Not current user, check if we should add it
+                // We'll refresh the feed to get accurate data
+                fetchPosts()
+                return
+              }
+            }
+            
+            // Create repost feed item
+            const repostItem: FeedItem = {
+              type: 'repost',
+              id: `repost-${data.userId}-${data.postId}-${Date.now()}`, // Temporary ID
+              repostedAt: new Date().toISOString(),
+              repostedBy: data.author,
+              post: {
+                id: post.id,
+                content: post.content,
+                createdAt: typeof post.createdAt === 'string' 
+                  ? post.createdAt 
+                  : new Date(post.createdAt).toISOString(),
+                author: post.author,
+                _count: {
+                  likes: post._count?.likes || 0,
+                  replies: post._count?.replies || 0,
+                  reposts: post._count?.reposts || 0,
+                },
+              },
+            }
+            
+            // Add to feed and sort by date, checking for duplicates
+            setFeedItems((prevItems) => {
+              // Check if repost already exists to prevent duplicates
+              const repostExists = prevItems.some(
+                (item) =>
+                  item.type === 'repost' &&
+                  item.post?.id === post.id &&
+                  item.repostedBy?.id === data.userId
+              )
+              
+              if (repostExists) {
+                // Repost already exists, return current items
+                return prevItems
+              }
+              
+              const newItems = [...prevItems, repostItem]
+              return newItems.sort((a, b) => {
+                const dateA = a.type === 'post' ? a.createdAt : a.repostedAt
+                const dateB = b.type === 'post' ? b.createdAt : b.repostedAt
+                return new Date(dateB || 0).getTime() - new Date(dateA || 0).getTime()
+              })
+            })
+          }
+        } catch (error) {
+          console.error('Error fetching post for repost:', error)
+          // Fallback: refresh the feed
+          fetchPosts()
+        }
+      } else if (filter === 'following') {
+        // For following filter with other users, refresh to get accurate data
+        fetchPosts()
+      }
+    },
+    !!session?.user?.id
+  )
+
   // Listen for unrepost events to remove reposts from feed
   usePusherChannel(
     PUSHER_CHANNELS.feed,
@@ -86,9 +178,15 @@ export function HomeFeed() {
       if (data.userId === session?.user?.id) {
         setFeedItems((prevItems) => 
           prevItems.filter((item) => {
-            // Remove the repost item if it matches the repostId
-            if (item.type === 'repost' && item.id === data.repostId) {
-              return false
+            // Remove the repost item if it matches the repostId or if it's a temporary repost
+            if (item.type === 'repost') {
+              if (item.id === data.repostId) {
+                return false
+              }
+              // Also remove temporary reposts (those with temporary IDs)
+              if (item.id.startsWith(`repost-${data.userId}-${data.postId}-`)) {
+                return false
+              }
             }
             return true
           })
