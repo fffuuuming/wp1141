@@ -25,17 +25,51 @@ function SignInContent() {
   const [registeredUsers, setRegisteredUsers] = useState<RegisteredUser[]>([])
   const [loadingUsers, setLoadingUsers] = useState(true)
 
-  // Load registered users on mount
+  // Load previously logged in users from localStorage and API
   useEffect(() => {
     const loadUsers = async () => {
       try {
+        // Load from localStorage first
+        const storedUsers = localStorage.getItem('previouslyLoggedInUsers')
+        let localUsers: RegisteredUser[] = []
+        if (storedUsers) {
+          try {
+            localUsers = JSON.parse(storedUsers)
+          } catch (e) {
+            console.error('Error parsing stored users:', e)
+          }
+        }
+
+        // Also try to load from API (if user is logged in, this will return their account)
         const response = await fetch('/api/user/list')
         if (response.ok) {
           const data = await response.json()
-          setRegisteredUsers(data.users || [])
+          const apiUsers = data.users || []
+          
+          // Merge API users with localStorage users, avoiding duplicates
+          const allUsers = [...apiUsers]
+          for (const localUser of localUsers) {
+            if (!allUsers.find(u => u.userID === localUser.userID)) {
+              allUsers.push(localUser)
+            }
+          }
+          
+          setRegisteredUsers(allUsers)
+        } else {
+          // If API fails, use localStorage users
+          setRegisteredUsers(localUsers)
         }
       } catch (err) {
         console.error('Error loading users:', err)
+        // Fallback to localStorage
+        try {
+          const storedUsers = localStorage.getItem('previouslyLoggedInUsers')
+          if (storedUsers) {
+            setRegisteredUsers(JSON.parse(storedUsers))
+          }
+        } catch (e) {
+          console.error('Error loading from localStorage:', e)
+        }
       } finally {
         setLoadingUsers(false)
       }
@@ -52,6 +86,43 @@ function SignInContent() {
       if (user.userID && user.userID.startsWith('temp_')) {
         setNeedsUserID(true)
       } else if (user.userID && !user.userID.startsWith('temp_')) {
+        // Save current user to localStorage when they successfully log in
+        // We need to get the provider info from the API
+        fetch('/api/user/list')
+          .then(res => res.json())
+          .then(data => {
+            if (data.users && data.users.length > 0) {
+              const currentUser = data.users[0]
+              const userToSave: RegisteredUser = {
+                userID: currentUser.userID,
+                name: currentUser.name || null,
+                provider: currentUser.provider,
+                image: currentUser.image || null,
+              }
+              
+              // Load existing users from localStorage
+              const storedUsers = localStorage.getItem('previouslyLoggedInUsers')
+              let existingUsers: RegisteredUser[] = []
+              if (storedUsers) {
+                try {
+                  existingUsers = JSON.parse(storedUsers)
+                } catch (e) {
+                  console.error('Error parsing stored users:', e)
+                }
+              }
+              
+              // Add or update this user (avoid duplicates)
+              const updatedUsers = existingUsers.filter(u => u.userID !== userToSave.userID)
+              updatedUsers.push(userToSave)
+              
+              // Save back to localStorage
+              localStorage.setItem('previouslyLoggedInUsers', JSON.stringify(updatedUsers))
+            }
+          })
+          .catch(err => {
+            console.error('Error saving user to localStorage:', err)
+          })
+        
         // User has userID, redirect to home
         router.push('/')
       }
@@ -94,6 +165,32 @@ function SignInContent() {
         setLoading(false)
         return
       }
+
+      // Save this user to localStorage before redirecting
+      const userToSave: RegisteredUser = {
+        userID: data.userID,
+        name: data.name || null,
+        provider: provider,
+        image: data.image || null,
+      }
+      
+      // Load existing users from localStorage
+      const storedUsers = localStorage.getItem('previouslyLoggedInUsers')
+      let existingUsers: RegisteredUser[] = []
+      if (storedUsers) {
+        try {
+          existingUsers = JSON.parse(storedUsers)
+        } catch (e) {
+          console.error('Error parsing stored users:', e)
+        }
+      }
+      
+      // Add or update this user (avoid duplicates)
+      const updatedUsers = existingUsers.filter(u => u.userID !== userToSave.userID)
+      updatedUsers.push(userToSave)
+      
+      // Save back to localStorage
+      localStorage.setItem('previouslyLoggedInUsers', JSON.stringify(updatedUsers))
 
       console.log(`Redirecting to ${provider} OAuth for userID: ${inputUserID}`)
       
