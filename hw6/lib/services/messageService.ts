@@ -1,6 +1,7 @@
 import connectDB from '@/lib/utils/mongodb';
 import { User, Conversation, Message } from '@/lib/models';
 import { getUserProfile, sendTextMessage, type WebhookEvent } from './lineService';
+import { llmService, type LLMError } from './llmService';
 
 /**
  * Process incoming message from Line
@@ -80,8 +81,11 @@ export async function processMessage(event: WebhookEvent): Promise<void> {
     user.messageCount += 1;
     await user.save();
 
-    // Generate reply (basic echo for now, will integrate LLM later)
-    const replyText = await generateReply(messageText, conversation._id.toString());
+    // Get conversation history for context
+    const conversationHistory = await getConversationHistory(conversation._id.toString());
+
+    // Generate reply using LLM with fallback
+    const replyText = await generateReply(messageText, conversationHistory);
 
     // Save bot reply
     await Message.create({
@@ -111,24 +115,102 @@ export async function processMessage(event: WebhookEvent): Promise<void> {
 }
 
 /**
- * Generate reply message (basic implementation, will be enhanced with LLM)
+ * Get conversation history for context
+ */
+async function getConversationHistory(
+  conversationId: string,
+  limit: number = 10
+): Promise<Array<{ role: 'user' | 'assistant'; content: string }>> {
+  try {
+    const messages = await Message.find({
+      conversationId: conversationId,
+    })
+      .sort({ timestamp: -1 })
+      .limit(limit)
+      .select('role content')
+      .lean();
+
+    // Reverse to get chronological order
+    return messages
+      .reverse()
+      .map((msg) => ({
+        role: msg.role === 'user' ? 'user' : 'assistant',
+        content: msg.content,
+      }));
+  } catch (error) {
+    console.error('Error getting conversation history:', error);
+    return [];
+  }
+}
+
+/**
+ * Generate reply message using LLM with fallback
  */
 async function generateReply(
   userMessage: string,
-  conversationId: string
+  conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }>
 ): Promise<string> {
-  // Basic greeting responses
+  // Check for special commands first
   const lowerMessage = userMessage.toLowerCase().trim();
-
-  if (lowerMessage === 'hi' || lowerMessage === 'hello' || lowerMessage === '你好') {
-    return '你好！我是你的 AI 助手，有什麼可以幫你的嗎？';
-  }
 
   if (lowerMessage === 'help' || lowerMessage === '幫助' || lowerMessage === '說明') {
     return '我可以幫助你回答問題、提供資訊，或進行對話。請告訴我你需要什麼協助！';
   }
 
-  // Default echo response (will be replaced with LLM)
-  return `收到你的訊息：「${userMessage}」。我正在學習如何更好地回應，請稍候！`;
+  if (lowerMessage === 'clear' || lowerMessage === '清除' || lowerMessage === '重置') {
+    return '對話歷史已清除。';
+  }
+
+  // Try to generate response using LLM
+  try {
+    const response = await llmService.generateResponse(userMessage, conversationHistory);
+    return response.content;
+  } catch (error: any) {
+    console.error('LLM error:', error);
+
+    // Handle different error types
+    const llmError = error as LLMError;
+
+    // For retryable errors, use fallback
+    if (llmError.retryable) {
+      return getFallbackResponse(userMessage, llmError.message);
+    }
+
+    // For non-retryable errors (quota, auth), return error message
+    if (llmError.code === 'QUOTA_EXCEEDED' || llmError.code === 'AUTH_ERROR') {
+      return `抱歉，${llmError.message} 請稍後再試或聯繫管理員。`;
+    }
+
+    // For other errors, use fallback
+    return getFallbackResponse(userMessage, llmError.message);
+  }
+}
+
+/**
+ * Get fallback response when LLM fails
+ */
+function getFallbackResponse(
+  userMessage: string,
+  errorMessage?: string
+): string {
+  const lowerMessage = userMessage.toLowerCase().trim();
+
+  // Greeting responses
+  if (
+    lowerMessage.includes('hi') ||
+    lowerMessage.includes('hello') ||
+    lowerMessage.includes('你好') ||
+    lowerMessage.includes('嗨')
+  ) {
+    return '你好！我是你的 AI 助手。目前服務暫時無法使用，但我可以處理基本的問候。有什麼我可以幫你的嗎？';
+  }
+
+  // Question responses
+  if (lowerMessage.includes('?') || lowerMessage.includes('？')) {
+    return `我理解你的問題：「${userMessage}」。目前 AI 服務暫時無法使用，請稍後再試。`;
+  }
+
+  // Default fallback
+  return `收到你的訊息：「${userMessage}」。目前 AI 服務暫時無法使用（${errorMessage || '服務錯誤'}），請稍後再試。`;
 }
 
