@@ -67,19 +67,40 @@
 - ✅ Created test API endpoint (`/api/test-db`) for verification
 - ✅ Verified: All models compile without errors
 
+### Phase 4: Line Bot Foundation ✅
+
+#### Step 4.1: Line Webhook Endpoint ✅
+- ✅ Created `/api/webhook` route (`app/api/webhook/route.ts`)
+- ✅ Implemented signature verification using HMAC SHA256
+- ✅ Handle POST requests from Line
+- ✅ Handle GET requests for webhook verification
+- ✅ Return 200 OK for successful requests
+- ✅ Verified: Webhook endpoint structure is correct
+
+#### Step 4.2: Line Message Parsing ✅
+- ✅ Created Line service (`lib/services/lineService.ts`)
+- ✅ Parse text messages from webhook events
+- ✅ Extract user ID and message content
+- ✅ Handle different event types (message, follow, unfollow)
+- ✅ Created message processing service (`lib/services/messageService.ts`)
+- ✅ Verified: Can parse incoming Line messages
+
+#### Step 4.3: Line Reply Function ✅
+- ✅ Implemented basic text reply functionality
+- ✅ Created helper functions for sending messages
+- ✅ Integrated with database to save messages
+- ✅ Basic greeting and help responses
+- ✅ Error handling for failed replies
+- ✅ Verified: Bot can send messages back
+
 ---
 
 ## 📋 Next Steps
 
-### Phase 4: Line Bot Foundation
-- [ ] Step 4.1: Line Webhook Endpoint
-- [ ] Step 4.2: Line Message Parsing
-- [ ] Step 4.3: Line Reply Function
-
-### Phase 4: Line Bot Foundation
-- [ ] Step 4.1: Line Webhook Endpoint
-- [ ] Step 4.2: Line Message Parsing
-- [ ] Step 4.3: Line Reply Function
+### Phase 5: LLM Integration
+- [ ] Step 5.1: LLM Service Setup
+- [ ] Step 5.2: Prompt Template System
+- [ ] Step 5.3: Error Handling & Fallback
 
 ---
 

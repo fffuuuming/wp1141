@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { type WebhookEvent } from '@/lib/services/lineService';
 import { config } from '@/lib/config';
 import { processMessage } from '@/lib/services/messageService';
+import {
+  handleFollowEvent,
+  handleUnfollowEvent,
+} from '@/lib/services/botLogicService';
 import crypto from 'crypto';
 
 /**
@@ -45,24 +49,39 @@ export async function POST(request: NextRequest) {
     // Parse webhook events
     const events: WebhookEvent[] = JSON.parse(body).events || [];
 
-    // Process each event
+    // Process each event asynchronously (don't await to respond quickly)
+    // This prevents LINE from sending auto-reply messages
     for (const event of events) {
       // Handle different event types
       if (event.type === 'message' && event.message.type === 'text') {
-        // Process message and generate reply
-        await processMessage(event);
+        // Process message and generate reply asynchronously
+        // Don't await - process in background to respond quickly
+        processMessage(event).catch((error) => {
+          console.error('Error processing message asynchronously:', error);
+        });
       } else if (event.type === 'follow') {
-        // User followed the bot
-        console.log('User followed:', event.source.userId);
-        // TODO: Send welcome message
+        // User followed the bot - send welcome message
+        const userId = event.source.userId;
+        if (userId && event.replyToken) {
+          // Process asynchronously
+          handleFollowEvent(userId, event.replyToken).catch((error) => {
+            console.error('Error handling follow event asynchronously:', error);
+          });
+        }
       } else if (event.type === 'unfollow') {
-        // User unfollowed the bot
-        console.log('User unfollowed:', event.source.userId);
-        // TODO: Mark conversation as inactive
+        // User unfollowed the bot - mark conversations as inactive
+        const userId = event.source.userId;
+        if (userId) {
+          // Process asynchronously
+          handleUnfollowEvent(userId).catch((error) => {
+            console.error('Error handling unfollow event asynchronously:', error);
+          });
+        }
       }
     }
 
-    // Return 200 OK to acknowledge receipt
+    // Return 200 OK immediately to acknowledge receipt
+    // This prevents LINE from sending auto-reply messages
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
     console.error('Webhook error:', error);

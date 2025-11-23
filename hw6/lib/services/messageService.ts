@@ -2,6 +2,7 @@ import connectDB from '@/lib/utils/mongodb';
 import { User, Conversation, Message } from '@/lib/models';
 import { getUserProfile, sendTextMessage, type WebhookEvent } from './lineService';
 import { llmService, type LLMError } from './llmService';
+import { isCommand, handleCommand } from './botLogicService';
 
 /**
  * Process incoming message from Line
@@ -81,6 +82,26 @@ export async function processMessage(event: WebhookEvent): Promise<void> {
     user.messageCount += 1;
     await user.save();
 
+    // Check if message is a command
+    if (isCommand(messageText)) {
+      const commandReply = await handleCommand(messageText, userId, replyToken);
+      if (commandReply) {
+        // Save command response
+        await Message.create({
+          conversationId: conversation._id,
+          role: 'bot',
+          type: 'text',
+          content: commandReply,
+          timestamp: new Date(),
+        });
+
+        // Send command response
+        await sendTextMessage(replyToken, commandReply);
+        console.log(`Command processed: ${messageText} from ${userId}`);
+        return;
+      }
+    }
+
     // Get conversation history for context
     const conversationHistory = await getConversationHistory(conversation._id.toString());
 
@@ -150,16 +171,7 @@ async function generateReply(
   userMessage: string,
   conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }>
 ): Promise<string> {
-  // Check for special commands first
-  const lowerMessage = userMessage.toLowerCase().trim();
-
-  if (lowerMessage === 'help' || lowerMessage === '幫助' || lowerMessage === '說明') {
-    return '我可以幫助你回答問題、提供資訊，或進行對話。請告訴我你需要什麼協助！';
-  }
-
-  if (lowerMessage === 'clear' || lowerMessage === '清除' || lowerMessage === '重置') {
-    return '對話歷史已清除。';
-  }
+  // Commands are already handled before this function is called
 
   // Try to generate response using LLM
   try {
