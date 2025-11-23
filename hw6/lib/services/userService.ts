@@ -1,5 +1,5 @@
 import { withDatabase } from '@/lib/utils/withDatabase';
-import { User } from '@/lib/models';
+import { userRepository } from '@/lib/repositories/mongoose';
 import { getUserProfile } from './lineService';
 import type { IUser } from '@/lib/models/User';
 
@@ -17,14 +17,14 @@ export const getOrCreateUser = withDatabase(async (
   const { updateLastActive = true } = options || {};
 
   // Try to find existing user
-  let user = await User.findOne({ lineUserId });
+  let user = await userRepository.findByLineId(lineUserId);
 
   if (!user) {
     // User doesn't exist, fetch profile from Line
     const profile = await getUserProfile(lineUserId);
 
     // Create new user
-    user = await User.create({
+    user = await userRepository.create({
       lineUserId,
       displayName: profile?.displayName,
       pictureUrl: profile?.pictureUrl,
@@ -36,8 +36,12 @@ export const getOrCreateUser = withDatabase(async (
     console.log(`Created new user: ${lineUserId}`);
   } else if (updateLastActive) {
     // User exists, update last active time
-    user.lastActiveAt = new Date();
-    await user.save();
+    await userRepository.updateLastActive(lineUserId);
+    // Refresh user object
+    const refreshedUser = await userRepository.findByLineId(lineUserId);
+    if (refreshedUser) {
+      user = refreshedUser;
+    }
   }
 
   return user;
@@ -49,10 +53,7 @@ export const getOrCreateUser = withDatabase(async (
 export const updateUserLastActive = withDatabase(async (
   lineUserId: string
 ): Promise<void> => {
-  await User.updateOne(
-    { lineUserId },
-    { $set: { lastActiveAt: new Date() } }
-  );
+  await userRepository.updateLastActive(lineUserId);
 });
 
 /**
@@ -61,10 +62,7 @@ export const updateUserLastActive = withDatabase(async (
 export const incrementUserMessageCount = withDatabase(async (
   lineUserId: string
 ): Promise<void> => {
-  await User.updateOne(
-    { lineUserId },
-    { $inc: { messageCount: 1 } }
-  );
+  await userRepository.incrementMessageCount(lineUserId);
 });
 
 /**
@@ -73,6 +71,6 @@ export const incrementUserMessageCount = withDatabase(async (
 export const getUserByLineId = withDatabase(async (
   lineUserId: string
 ): Promise<IUser | null> => {
-  return await User.findOne({ lineUserId });
+  return await userRepository.findByLineId(lineUserId);
 });
 

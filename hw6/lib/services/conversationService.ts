@@ -1,5 +1,8 @@
 import { withDatabase } from '@/lib/utils/withDatabase';
-import { Conversation, Message } from '@/lib/models';
+import {
+  conversationRepository,
+  messageRepository,
+} from '@/lib/repositories/mongoose';
 import type { IConversation, IMessage } from '@/lib/models';
 import type mongoose from 'mongoose';
 
@@ -11,14 +14,11 @@ export const getOrCreateActiveConversation = withDatabase(async (
   lineUserId: string
 ): Promise<IConversation> => {
   // Try to find existing active conversation
-  let conversation = await Conversation.findOne({
-    lineUserId,
-    isActive: true,
-  });
+  let conversation = await conversationRepository.findActiveByLineUserId(lineUserId);
 
   if (!conversation) {
     // Create new active conversation
-    conversation = await Conversation.create({
+    conversation = await conversationRepository.create({
       userId,
       lineUserId,
       messageCount: 0,
@@ -46,34 +46,7 @@ export const updateConversation = withDatabase(async (
     title: string;
   }>
 ): Promise<IConversation | null> => {
-  const updateData: any = {};
-
-  if (updates.messageCount !== undefined) {
-    updateData.messageCount = updates.messageCount;
-  }
-  if (updates.lastMessageAt !== undefined) {
-    updateData.lastMessageAt = updates.lastMessageAt;
-  }
-  if (updates.isActive !== undefined) {
-    updateData.isActive = updates.isActive;
-    if (!updates.isActive && !updates.endedAt) {
-      updateData.endedAt = new Date();
-    }
-  }
-  if (updates.endedAt !== undefined) {
-    updateData.endedAt = updates.endedAt;
-  }
-  if (updates.title !== undefined) {
-    updateData.title = updates.title;
-  }
-
-  const conversation = await Conversation.findByIdAndUpdate(
-    conversationId,
-    { $set: updateData },
-    { new: true }
-  );
-
-  return conversation;
+  return await conversationRepository.update(conversationId, updates);
 });
 
 /**
@@ -82,10 +55,7 @@ export const updateConversation = withDatabase(async (
 export const incrementConversationMessageCount = withDatabase(async (
   conversationId: string | mongoose.Types.ObjectId
 ): Promise<void> => {
-  await Conversation.findByIdAndUpdate(conversationId, {
-    $inc: { messageCount: 1 },
-    $set: { lastMessageAt: new Date() },
-  });
+  await conversationRepository.incrementMessageCount(conversationId);
 });
 
 /**
@@ -98,16 +68,13 @@ export const saveMessage = withDatabase(async (
   type: 'text' | 'image' | 'video' | 'audio' | 'file' | 'location' | 'sticker' = 'text',
   metadata?: Record<string, unknown>
 ): Promise<IMessage> => {
-  const message = await Message.create({
-    conversationId,
+  return await messageRepository.create({
+    conversationId: conversationId as mongoose.Types.ObjectId,
     role,
     type,
     content,
-    metadata: metadata || {},
-    timestamp: new Date(),
+    metadata,
   });
-
-  return message;
 });
 
 /**
@@ -117,26 +84,7 @@ export const getConversationHistory = withDatabase(async (
   conversationId: string | mongoose.Types.ObjectId,
   limit: number = 10
 ): Promise<Array<{ role: 'user' | 'assistant'; content: string }>> => {
-  try {
-    const messages = await Message.find({
-      conversationId,
-    })
-      .sort({ timestamp: -1 })
-      .limit(limit)
-      .select('role content')
-      .lean();
-
-    // Reverse to get chronological order
-    return messages
-      .reverse()
-      .map((msg) => ({
-        role: msg.role === 'user' ? 'user' : 'assistant',
-        content: msg.content,
-      }));
-  } catch (error) {
-    console.error('Error getting conversation history:', error);
-    return [];
-  }
+  return await messageRepository.getConversationHistory(conversationId, limit);
 });
 
 /**
@@ -145,7 +93,7 @@ export const getConversationHistory = withDatabase(async (
 export const getConversationById = withDatabase(async (
   conversationId: string | mongoose.Types.ObjectId
 ): Promise<IConversation | null> => {
-  return await Conversation.findById(conversationId);
+  return await conversationRepository.findById(conversationId);
 });
 
 /**
@@ -154,12 +102,7 @@ export const getConversationById = withDatabase(async (
 export const markConversationInactive = withDatabase(async (
   conversationId: string | mongoose.Types.ObjectId
 ): Promise<void> => {
-  await Conversation.findByIdAndUpdate(conversationId, {
-    $set: {
-      isActive: false,
-      endedAt: new Date(),
-    },
-  });
+  await conversationRepository.markInactive(conversationId);
 });
 
 /**
@@ -168,16 +111,6 @@ export const markConversationInactive = withDatabase(async (
 export const markAllUserConversationsInactive = withDatabase(async (
   lineUserId: string
 ): Promise<number> => {
-  const result = await Conversation.updateMany(
-    { lineUserId, isActive: true },
-    {
-      $set: {
-        isActive: false,
-        endedAt: new Date(),
-      },
-    }
-  );
-
-  return result.modifiedCount;
+  return await conversationRepository.markAllInactiveByLineUserId(lineUserId);
 });
 
