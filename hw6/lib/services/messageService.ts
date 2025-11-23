@@ -14,6 +14,7 @@ import {
 } from './conversationService';
 import { LLMError } from '@/lib/errors';
 import { logger } from '@/lib/utils/logger';
+import { FALLBACK_RESPONSES, ERROR_MESSAGES } from '@/lib/constants';
 
 /**
  * Process incoming message from Line
@@ -81,10 +82,7 @@ export async function processMessage(event: WebhookEvent): Promise<void> {
       logger.error('Error processing message', error, { userId });
       // Send error message to user
       try {
-        await sendTextMessage(
-          replyToken,
-          '抱歉，處理您的訊息時發生錯誤，請稍後再試。'
-        );
+        await sendTextMessage(replyToken, ERROR_MESSAGES.PROCESSING_ERROR);
       } catch (sendError) {
         logger.error('Error sending error message', sendError, { userId });
       }
@@ -117,7 +115,7 @@ async function generateReply(
 
       // For non-retryable errors (quota, auth), return error message
       if (error.code === 'QUOTA_EXCEEDED' || error.code === 'AUTH_ERROR') {
-        return `抱歉，${error.message} 請稍後再試或聯繫管理員。`;
+        return `${ERROR_MESSAGES.LLM_ERROR} ${error.message}`;
       }
 
       // For other errors, use fallback
@@ -146,15 +144,15 @@ function getFallbackResponse(
     lowerMessage.includes('你好') ||
     lowerMessage.includes('嗨')
   ) {
-    return '你好！我是你的 AI 助手。目前服務暫時無法使用，但我可以處理基本的問候。有什麼我可以幫你的嗎？';
+    return FALLBACK_RESPONSES.GREETING;
   }
 
   // Question responses
   if (lowerMessage.includes('?') || lowerMessage.includes('？')) {
-    return `我理解你的問題：「${userMessage}」。目前 AI 服務暫時無法使用，請稍後再試。`;
+    return FALLBACK_RESPONSES.QUESTION(userMessage);
   }
 
   // Default fallback
-  return `收到你的訊息：「${userMessage}」。目前 AI 服務暫時無法使用（${errorMessage || '服務錯誤'}），請稍後再試。`;
+  return FALLBACK_RESPONSES.DEFAULT(userMessage, errorMessage);
 }
 

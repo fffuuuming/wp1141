@@ -6,6 +6,7 @@ import {
 import type { IConversation, IMessage } from '@/lib/models';
 import type mongoose from 'mongoose';
 import { logger } from '@/lib/utils/logger';
+import { CONVERSATION_HISTORY_LIMIT } from '@/lib/constants/llm';
 
 /**
  * Get or create active conversation for a user
@@ -83,7 +84,7 @@ export const saveMessage = withDatabase(async (
  */
 export const getConversationHistory = withDatabase(async (
   conversationId: string | mongoose.Types.ObjectId,
-  limit: number = 10
+  limit: number = CONVERSATION_HISTORY_LIMIT
 ): Promise<Array<{ role: 'user' | 'assistant'; content: string }>> => {
   return await messageRepository.getConversationHistory(conversationId, limit);
 });

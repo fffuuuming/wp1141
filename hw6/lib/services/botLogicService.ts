@@ -4,6 +4,13 @@ import { sendTextMessage } from './lineService';
 import { getOrCreateUser, getUserByLineId } from './userService';
 import { markAllUserConversationsInactive } from './conversationService';
 import { logger } from '@/lib/utils/logger';
+import {
+  getWelcomeMessage,
+  HELP_MESSAGE,
+  INFO_MESSAGE,
+  ERROR_MESSAGES,
+} from '@/lib/constants/bot';
+import { getCommandType } from '@/lib/constants/commands';
 
 /**
  * Handle user follow event (when user adds bot as friend)
@@ -25,10 +32,7 @@ export const handleFollowEvent = withDatabase(async (
     logger.error('Error handling follow event', error, { userId });
     // Try to send error message
     try {
-      await sendTextMessage(
-        replyToken,
-        '歡迎使用！我是你的 AI 助手，很高興認識你！'
-      );
+      await sendTextMessage(replyToken, ERROR_MESSAGES.WELCOME_FALLBACK);
     } catch (sendError) {
       logger.error('Error sending welcome message', sendError, { userId });
     }
@@ -50,41 +54,10 @@ export const handleUnfollowEvent = withDatabase(async (userId: string): Promise<
 });
 
 /**
- * Get welcome message
- */
-function getWelcomeMessage(userName: string): string {
-  return `你好 ${userName}！👋
-
-歡迎使用 AI 聊天助手！我是你的智能助手，可以幫助你：
-
-✨ 回答問題
-📚 提供資訊
-💬 進行對話
-🎯 協助解決問題
-
-你可以直接問我任何問題，我會盡力幫助你！
-
-輸入 "help" 或 "幫助" 可以查看使用說明。`;
-}
-
-/**
  * Check if message is a command
  */
 export function isCommand(message: string): boolean {
-  const commands = [
-    'help',
-    '幫助',
-    '說明',
-    'clear',
-    '清除',
-    '重置',
-    'stats',
-    '統計',
-    'info',
-    '資訊',
-  ];
-  const lowerMessage = message.toLowerCase().trim();
-  return commands.some((cmd) => lowerMessage === cmd || lowerMessage.startsWith(cmd + ' '));
+  return getCommandType(message) !== null;
 }
 
 /**
@@ -95,15 +68,15 @@ export const handleCommand = withDatabase(async (
   userId: string,
   replyToken: string
 ): Promise<string | null> => {
-  const lowerCommand = command.toLowerCase().trim();
+  const commandType = getCommandType(command);
 
   // Help command
-  if (lowerCommand === 'help' || lowerCommand === '幫助' || lowerCommand === '說明') {
-    return getHelpMessage();
+  if (commandType === 'help') {
+    return HELP_MESSAGE;
   }
 
   // Stats command (for user's own stats)
-  if (lowerCommand === 'stats' || lowerCommand === '統計') {
+  if (commandType === 'stats') {
     try {
       const user = await getUserByLineId(userId);
       if (user) {
@@ -119,45 +92,15 @@ export const handleCommand = withDatabase(async (
     } catch (error) {
       logger.error('Error getting user stats', error, { userId });
     }
-    return '無法取得統計資訊，請稍後再試。';
+    return ERROR_MESSAGES.STATS_ERROR;
   }
 
   // Info command
-  if (lowerCommand === 'info' || lowerCommand === '資訊') {
-    return `ℹ️ 關於我：
-
-我是 AI 聊天助手，使用先進的語言模型來提供智能對話服務。
-
-功能：
-• 回答問題
-• 提供資訊
-• 進行對話
-• 協助解決問題
-
-輸入 "help" 查看完整說明。`;
+  if (commandType === 'info') {
+    return INFO_MESSAGE;
   }
 
   // Unknown command
   return null;
 });
-
-/**
- * Get help message
- */
-function getHelpMessage(): string {
-  return `📖 使用說明
-
-我可以幫助你：
-• 回答各種問題
-• 提供資訊和建議
-• 進行自然對話
-• 協助解決問題
-
-可用指令：
-• help / 幫助 - 顯示此說明
-• stats / 統計 - 查看你的統計資訊
-• info / 資訊 - 關於此助手
-
-直接輸入問題或訊息，我會盡力回答你！`;
-}
 

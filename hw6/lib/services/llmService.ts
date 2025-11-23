@@ -8,6 +8,11 @@ import {
   LLMNetworkError,
 } from '@/lib/errors';
 import { logger } from '@/lib/utils/logger';
+import {
+  OPENAI_CONFIG,
+  ANTHROPIC_CONFIG,
+  SYSTEM_PROMPT,
+} from '@/lib/constants/llm';
 
 export interface LLMResponse {
   content: string;
@@ -68,8 +73,7 @@ class LLMService {
     const messages: Array<{ role: string; content: string }> = [
       {
         role: 'system',
-        content:
-          '你是一個友善、有幫助的 AI 助手。請用繁體中文回答問題，回答要簡潔、清晰、有幫助。',
+        content: SYSTEM_PROMPT,
       },
     ];
 
@@ -96,17 +100,17 @@ class LLMService {
         const response = await axios.post(
           'https://api.openai.com/v1/chat/completions',
           {
-            model: 'gpt-3.5-turbo',
+            model: OPENAI_CONFIG.MODEL,
             messages: messages,
-            temperature: 0.7,
-            max_tokens: 500,
+            temperature: OPENAI_CONFIG.TEMPERATURE,
+            max_tokens: OPENAI_CONFIG.MAX_TOKENS,
           },
           {
             headers: {
               Authorization: `Bearer ${this.apiKey}`,
               'Content-Type': 'application/json',
             },
-            timeout: 30000, // 30 seconds
+            timeout: OPENAI_CONFIG.TIMEOUT,
           }
         );
 
@@ -172,19 +176,18 @@ class LLMService {
         const response = await axios.post(
           'https://api.anthropic.com/v1/messages',
           {
-            model: 'claude-3-haiku-20240307',
-            max_tokens: 500,
+            model: ANTHROPIC_CONFIG.MODEL,
+            max_tokens: ANTHROPIC_CONFIG.MAX_TOKENS,
             messages: messages,
-            system:
-              '你是一個友善、有幫助的 AI 助手。請用繁體中文回答問題，回答要簡潔、清晰、有幫助。',
+            system: SYSTEM_PROMPT,
           },
           {
             headers: {
               'x-api-key': this.apiKey,
-              'anthropic-version': '2023-06-01',
+              'anthropic-version': ANTHROPIC_CONFIG.API_VERSION,
               'Content-Type': 'application/json',
             },
-            timeout: 30000, // 30 seconds
+            timeout: ANTHROPIC_CONFIG.TIMEOUT,
           }
         );
 
