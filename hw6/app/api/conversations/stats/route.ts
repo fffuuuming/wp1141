@@ -7,19 +7,32 @@ import {
   getDateRangeStats,
 } from '@/lib/services/statisticsService';
 import { successResponse, errorResponse } from '@/lib/utils/apiResponse';
+import { validateString, validateInt, validateDate, withValidation } from '@/lib/utils/requestValidator';
 
 /**
  * GET /api/conversations/stats
  * Get conversation statistics
  */
-export async function GET(request: NextRequest) {
+export const GET = withValidation(async (request: NextRequest) => {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const type = searchParams.get('type') || 'overview';
-    const userId = searchParams.get('userId');
-    const startDate = searchParams.get('startDate');
-    const endDate = searchParams.get('endDate');
-    const limit = parseInt(searchParams.get('limit') || '50');
+    const type = validateString(searchParams.get('type'), 'type', {
+      defaultValue: 'overview',
+    });
+    const userId = validateString(searchParams.get('userId'), 'userId', {
+      required: false,
+    });
+    const startDate = validateDate(searchParams.get('startDate'), 'startDate', {
+      required: false,
+    });
+    const endDate = validateDate(searchParams.get('endDate'), 'endDate', {
+      required: false,
+    });
+    const limit = validateInt(searchParams.get('limit'), 'limit', {
+      min: 1,
+      max: 100,
+      defaultValue: 50,
+    });
 
     switch (type) {
       case 'overview': {
@@ -39,7 +52,7 @@ export async function GET(request: NextRequest) {
 
       case 'user': {
         if (!userId) {
-          return errorResponse(new Error('userId parameter is required'), 400);
+          throw new Error('userId parameter is required');
         }
         const stats = await getUserDetailStats(userId);
         return successResponse(stats);
@@ -47,23 +60,17 @@ export async function GET(request: NextRequest) {
 
       case 'daterange': {
         if (!startDate || !endDate) {
-          return errorResponse(
-            new Error('startDate and endDate parameters are required'),
-            400
-          );
+          throw new Error('startDate and endDate parameters are required');
         }
-        const stats = await getDateRangeStats(
-          new Date(startDate),
-          new Date(endDate)
-        );
+        const stats = await getDateRangeStats(startDate, endDate);
         return successResponse(stats);
       }
 
       default:
-        return errorResponse(new Error('Invalid type parameter'), 400);
+        throw new Error('Invalid type parameter');
     }
   } catch (error) {
     return errorResponse(error);
   }
-}
+});
 

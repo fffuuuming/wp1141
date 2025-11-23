@@ -6,6 +6,7 @@ import {
   handleFollowEvent,
   handleUnfollowEvent,
 } from '@/lib/services/botLogicService';
+import { logger } from '@/lib/utils/logger';
 import crypto from 'crypto';
 
 /**
@@ -39,9 +40,9 @@ export async function POST(request: NextRequest) {
 
     // Verify signature
     if (!verifySignature(body, signature)) {
-      console.error('Invalid signature');
+      logger.warn('Invalid webhook signature', { signature: signature?.substring(0, 10) });
       return NextResponse.json(
-        { error: 'Invalid signature' },
+        { success: false, error: { code: 'INVALID_SIGNATURE', message: 'Invalid signature' } },
         { status: 401 }
       );
     }
@@ -57,7 +58,10 @@ export async function POST(request: NextRequest) {
         // Process message and generate reply asynchronously
         // Don't await - process in background to respond quickly
         processMessage(event).catch((error) => {
-          console.error('Error processing message asynchronously:', error);
+          logger.error('Error processing message asynchronously', error, {
+            eventType: event.type,
+            userId: event.source.userId,
+          });
         });
       } else if (event.type === 'follow') {
         // User followed the bot - send welcome message
@@ -65,7 +69,7 @@ export async function POST(request: NextRequest) {
         if (userId && event.replyToken) {
           // Process asynchronously
           handleFollowEvent(userId, event.replyToken).catch((error) => {
-            console.error('Error handling follow event asynchronously:', error);
+            logger.error('Error handling follow event asynchronously', error, { userId });
           });
         }
       } else if (event.type === 'unfollow') {
@@ -74,7 +78,7 @@ export async function POST(request: NextRequest) {
         if (userId) {
           // Process asynchronously
           handleUnfollowEvent(userId).catch((error) => {
-            console.error('Error handling unfollow event asynchronously:', error);
+            logger.error('Error handling unfollow event asynchronously', error, { userId });
           });
         }
       }
@@ -84,9 +88,15 @@ export async function POST(request: NextRequest) {
     // This prevents LINE from sending auto-reply messages
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
-    console.error('Webhook error:', error);
+    logger.error('Webhook handler error', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      {
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Internal server error',
+        },
+      },
       { status: 500 }
     );
   }
@@ -98,7 +108,12 @@ export async function POST(request: NextRequest) {
  */
 export async function GET() {
   return NextResponse.json(
-    { message: 'Line webhook endpoint is active' },
+    {
+      success: true,
+      data: {
+        message: 'Line webhook endpoint is active',
+      },
+    },
     { status: 200 }
   );
 }
