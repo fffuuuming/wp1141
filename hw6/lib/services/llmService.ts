@@ -122,7 +122,7 @@ class LLMService {
             totalTokens: response.data.usage?.total_tokens,
           },
         };
-      } catch (error: any) {
+      } catch (error: unknown) {
         lastError = error;
 
         // Check if error is retryable
@@ -133,6 +133,7 @@ class LLMService {
 
         // Wait before retry with exponential backoff
         const delay = this.retryDelay * Math.pow(2, attempt);
+        logger.debug('LLM retry', { attempt, delay, error: String(error) });
         await this.sleep(delay);
       }
     }
@@ -223,21 +224,39 @@ class LLMService {
    * Check if error is retryable
    */
   private isRetryableError(error: unknown): boolean {
-    const errorAny = error as any;
+    // Type guard for axios errors
+    if (
+      error &&
+      typeof error === 'object' &&
+      'response' in error &&
+      'code' in error
+    ) {
+      const axiosError = error as {
+        response?: { status?: number };
+        code?: string;
+      };
 
-    // Rate limit errors (429)
-    if (errorAny.response?.status === 429) {
-      return true;
-    }
+      // Rate limit errors (429)
+      if (axiosError.response?.status === 429) {
+        return true;
+      }
 
-    // Network errors
-    if (errorAny.code === 'ECONNRESET' || errorAny.code === 'ETIMEDOUT') {
-      return true;
-    }
+      // Network errors
+      if (
+        axiosError.code === 'ECONNRESET' ||
+        axiosError.code === 'ETIMEDOUT'
+      ) {
+        return true;
+      }
 
-    // Server errors (5xx)
-    if (errorAny.response?.status >= 500 && errorAny.response?.status < 600) {
-      return true;
+      // Server errors (5xx)
+      if (
+        axiosError.response?.status &&
+        axiosError.response.status >= 500 &&
+        axiosError.response.status < 600
+      ) {
+        return true;
+      }
     }
 
     return false;
@@ -247,48 +266,74 @@ class LLMService {
    * Handle and format errors
    */
   private handleError(error: unknown): LLMError {
-    const errorAny = error as any;
+    // Type guard for axios errors
+    if (
+      error &&
+      typeof error === 'object' &&
+      ('response' in error || 'code' in error || 'message' in error)
+    ) {
+      const axiosError = error as {
+        response?: { status?: number; data?: { error?: { message?: string } } };
+        code?: string;
+        message?: string;
+      };
 
-    // Rate limit error
-    if (errorAny.response?.status === 429) {
-      return new LLMRateLimitError(
-        'API 請求過於頻繁，請稍後再試。',
-        { originalError: errorAny.message }
+      // Rate limit error
+      if (axiosError.response?.status === 429) {
+        return new LLMRateLimitError(
+          'API 請求過於頻繁，請稍後再試。',
+          { originalError: axiosError.message }
+        );
+      }
+
+      // Quota exceeded
+      if (
+        axiosError.response?.status === 402 ||
+        axiosError.response?.status === 403
+      ) {
+        return new LLMQuotaExceededError(
+          'API 配額已用完，請檢查您的帳戶設定。',
+          { originalError: axiosError.message }
+        );
+      }
+
+      // Authentication error
+      if (axiosError.response?.status === 401) {
+        return new LLMAuthError(
+          'API 金鑰無效，請檢查環境變數設定。',
+          { originalError: axiosError.message }
+        );
+      }
+
+      // Network error
+      if (
+        axiosError.code === 'ECONNRESET' ||
+        axiosError.code === 'ETIMEDOUT'
+      ) {
+        return new LLMNetworkError(
+          '網路連線錯誤，請稍後再試。',
+          { originalError: axiosError.message }
+        );
+      }
+
+      // Unknown error with response
+      return new LLMError(
+        axiosError.response?.data?.error?.message ||
+          axiosError.message ||
+          '發生未知錯誤',
+        'UNKNOWN_ERROR',
+        500,
+        false,
+        { originalError: axiosError }
       );
     }
 
-    // Quota exceeded
-    if (errorAny.response?.status === 402 || errorAny.response?.status === 403) {
-      return new LLMQuotaExceededError(
-        'API 配額已用完，請檢查您的帳戶設定。',
-        { originalError: errorAny.message }
-      );
-    }
-
-    // Authentication error
-    if (errorAny.response?.status === 401) {
-      return new LLMAuthError(
-        'API 金鑰無效，請檢查環境變數設定。',
-        { originalError: errorAny.message }
-      );
-    }
-
-    // Network error
-    if (errorAny.code === 'ECONNRESET' || errorAny.code === 'ETIMEDOUT') {
-      return new LLMNetworkError(
-        '網路連線錯誤，請稍後再試。',
-        { originalError: errorAny.message }
-      );
-    }
-
-    // Unknown error
-    return new LLMError(
-      errorAny.response?.data?.error?.message || errorAny.message || '發生未知錯誤',
-      'UNKNOWN_ERROR',
-      500,
-      false,
-      { originalError: errorAny }
-    );
+    // Unknown error without axios structure
+    const errorMessage =
+      error instanceof Error ? error.message : '發生未知錯誤';
+    return new LLMError(errorMessage, 'UNKNOWN_ERROR', 500, false, {
+      originalError: error,
+    });
   }
 
   /**

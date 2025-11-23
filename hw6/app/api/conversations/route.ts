@@ -2,6 +2,13 @@ import { NextRequest } from 'next/server';
 import { withDatabase } from '@/lib/utils/withDatabase';
 import { Conversation, Message } from '@/lib/models';
 import { successResponse, errorResponse } from '@/lib/utils/apiResponse';
+import type {
+  ConversationListResponse,
+  ConversationQueryParams,
+  ConversationListItem,
+  MessageListItem,
+} from '@/types/api/conversations';
+import type mongoose from 'mongoose';
 
 /**
  * GET /api/conversations
@@ -18,7 +25,7 @@ export async function GET(request: NextRequest) {
     const userId = searchParams.get('userId');
 
     // Build query
-    const query: any = {};
+    const query: Record<string, unknown> = {};
     if (isActive !== null) {
       query.isActive = isActive === 'true';
     }
@@ -38,7 +45,9 @@ export async function GET(request: NextRequest) {
     const total = await Conversation.countDocuments(query);
 
     // Get messages for each conversation
-    const conversationIds = conversations.map((c: any) => c._id);
+    const conversationIds = conversations.map(
+      (c) => c._id as mongoose.Types.ObjectId
+    );
     const messages = await Message.find({
       conversationId: { $in: conversationIds },
     })
@@ -46,14 +55,14 @@ export async function GET(request: NextRequest) {
       .lean();
 
     // Group messages by conversation
-    const messagesByConversation = new Map();
-    messages.forEach((msg: any) => {
-      const convId = msg.conversationId.toString();
+    const messagesByConversation = new Map<string, MessageListItem[]>();
+    messages.forEach((msg) => {
+      const convId = String(msg.conversationId);
       if (!messagesByConversation.has(convId)) {
         messagesByConversation.set(convId, []);
       }
-      messagesByConversation.get(convId).push({
-        id: msg._id.toString(),
+      messagesByConversation.get(convId)!.push({
+        id: String(msg._id),
         role: msg.role,
         type: msg.type,
         content: msg.content,
@@ -62,19 +71,22 @@ export async function GET(request: NextRequest) {
     });
 
     // Format response
-    const formattedConversations = conversations.map((conv: any) => ({
-      id: conv._id.toString(),
-      userId: conv.userId?.lineUserId || '',
-      displayName: conv.userId?.displayName || 'Unknown',
-      pictureUrl: conv.userId?.pictureUrl,
-      messageCount: conv.messageCount,
-      startedAt: conv.startedAt,
-      lastMessageAt: conv.lastMessageAt,
-      isActive: conv.isActive,
-      messages: messagesByConversation.get(conv._id.toString()) || [],
-    }));
+    const formattedConversations: ConversationListItem[] = conversations.map(
+      (conv) => ({
+        id: String(conv._id),
+        userId: (conv.userId as { lineUserId?: string })?.lineUserId || '',
+        displayName:
+          (conv.userId as { displayName?: string })?.displayName || 'Unknown',
+        pictureUrl: (conv.userId as { pictureUrl?: string })?.pictureUrl,
+        messageCount: conv.messageCount,
+        startedAt: conv.startedAt,
+        lastMessageAt: conv.lastMessageAt,
+        isActive: conv.isActive,
+        messages: messagesByConversation.get(String(conv._id)) || [],
+      })
+    );
 
-    return successResponse({
+    const response: ConversationListResponse = {
       conversations: formattedConversations,
       pagination: {
         total,
@@ -82,7 +94,8 @@ export async function GET(request: NextRequest) {
         offset,
         hasMore: offset + limit < total,
       },
-    });
+    };
+    return successResponse(response);
     } catch (error) {
       return errorResponse(error);
     }

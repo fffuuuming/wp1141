@@ -74,9 +74,9 @@ export const getUserStats = withDatabase(async (limit: number = 50): Promise<Use
     .lean();
 
   // Get conversation count for each user
-  const userIds = users.map((u) => u._id.toString());
+  const userIds = users.map((u) => u._id);
   const conversationCounts = await Conversation.aggregate([
-    { $match: { userId: { $in: userIds.map((id) => id as any) } } },
+    { $match: { userId: { $in: userIds } } },
     { $group: { _id: '$userId', count: { $sum: 1 } } },
   ]);
 
@@ -107,16 +107,21 @@ export const getConversationDetailStats = withDatabase(async (
     .populate('userId', 'lineUserId displayName')
     .lean();
 
-  return conversations.map((conv: any) => {
+  return conversations.map((conv) => {
+    const populatedUserId = conv.userId as {
+      lineUserId?: string;
+      displayName?: string;
+    } | null;
+
     const duration =
       (new Date(conv.lastMessageAt).getTime() -
         new Date(conv.startedAt).getTime()) /
       (1000 * 60); // Convert to minutes
 
     return {
-      conversationId: conv._id.toString(),
-      userId: conv.userId?.lineUserId || '',
-      displayName: conv.userId?.displayName,
+      conversationId: String(conv._id),
+      userId: populatedUserId?.lineUserId || '',
+      displayName: populatedUserId?.displayName,
       messageCount: conv.messageCount,
       startedAt: conv.startedAt,
       lastMessageAt: conv.lastMessageAt,
@@ -147,7 +152,7 @@ export const getUserDetailStats = withDatabase(async (
     .lean();
 
   const conversationDetails: ConversationDetailStats[] = conversations.map(
-    (conv: any) => {
+    (conv) => {
       const duration =
         (new Date(conv.lastMessageAt).getTime() -
           new Date(conv.startedAt).getTime()) /

@@ -1,7 +1,8 @@
-import { Client, middleware, MiddlewareConfig, WebhookEvent } from '@line/bot-sdk';
+import { Client, middleware, MiddlewareConfig, WebhookEvent, Message } from '@line/bot-sdk';
 import { config } from '@/lib/config';
 import { logger } from '@/lib/utils/logger';
 import { LineAPIError } from '@/lib/errors';
+import type { ReplyMessageFunction } from '@/types/line';
 
 // Line Bot Client configuration
 const clientConfig = {
@@ -23,11 +24,16 @@ export const lineMiddleware = middleware(middlewareConfig);
 // Helper function to reply to user
 export async function replyMessage(
   replyToken: string,
-  messages: Array<{ type: string; text?: string }>
+  messages: Message[]
 ): Promise<void> {
   try {
     // Line SDK replyMessage expects (replyToken, messages)
-    await (lineClient.replyMessage as any)(replyToken, messages);
+    // Type assertion needed due to SDK type definition issues
+    // We ignore the return value (MessageAPIResponseBase)
+    await (lineClient.replyMessage as unknown as ReplyMessageFunction)(
+      replyToken,
+      messages
+    );
   } catch (error) {
     logger.error('Error replying message', error, { replyToken: replyToken.substring(0, 10) });
     throw new LineAPIError('Failed to reply message', 500, { originalError: error });

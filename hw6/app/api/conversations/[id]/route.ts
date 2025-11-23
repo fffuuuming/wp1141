@@ -1,6 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { withDatabase } from '@/lib/utils/withDatabase';
 import { Conversation, Message } from '@/lib/models';
+import { successResponse, errorResponse } from '@/lib/utils/apiResponse';
+import type { ConversationDetail, MessageListItem } from '@/types/api/conversations';
+import type mongoose from 'mongoose';
 
 /**
  * GET /api/conversations/[id]
@@ -21,13 +24,7 @@ export async function GET(
       .lean();
 
     if (!conversation) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Conversation not found',
-        },
-        { status: 404 }
-      );
+      return errorResponse(new Error('Conversation not found'), 404);
     }
 
     // Get all messages for this conversation
@@ -38,41 +35,37 @@ export async function GET(
       .lean();
 
     // Format response
-    const formattedMessages = messages.map((msg: any) => ({
-      id: msg._id.toString(),
+    const formattedMessages: MessageListItem[] = messages.map((msg) => ({
+      id: String(msg._id),
       role: msg.role,
       type: msg.type,
       content: msg.content,
-      metadata: msg.metadata || {},
       timestamp: msg.timestamp,
-      createdAt: msg.createdAt,
     }));
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        id: conversation._id.toString(),
-        userId: (conversation as any).userId?.lineUserId || '',
-        displayName: (conversation as any).userId?.displayName || 'Unknown',
-        pictureUrl: (conversation as any).userId?.pictureUrl,
-        title: conversation.title,
-        messageCount: conversation.messageCount,
-        startedAt: conversation.startedAt,
-        lastMessageAt: conversation.lastMessageAt,
-        endedAt: conversation.endedAt,
-        isActive: conversation.isActive,
-        messages: formattedMessages,
-      },
-    });
+    const populatedUserId = conversation.userId as {
+      lineUserId?: string;
+      displayName?: string;
+      pictureUrl?: string;
+    } | null;
+
+    const conversationDetail: ConversationDetail = {
+      id: String(conversation._id),
+      userId: populatedUserId?.lineUserId || '',
+      displayName: populatedUserId?.displayName || 'Unknown',
+      pictureUrl: populatedUserId?.pictureUrl,
+      title: conversation.title,
+      messageCount: conversation.messageCount,
+      startedAt: conversation.startedAt,
+      lastMessageAt: conversation.lastMessageAt,
+      endedAt: conversation.endedAt,
+      isActive: conversation.isActive,
+      messages: formattedMessages,
+    };
+
+    return successResponse(conversationDetail);
     } catch (error) {
-      console.error('Error fetching conversation:', error);
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Failed to fetch conversation',
-        },
-        { status: 500 }
-      );
+      return errorResponse(error);
     }
   })();
 }
@@ -89,10 +82,13 @@ export async function PATCH(
     try {
 
     const conversationId = params.id;
-    const body = await request.json();
+    const body = await request.json() as {
+      isActive?: boolean;
+      title?: string;
+    };
 
     // Allowed fields to update
-    const allowedFields: any = {};
+    const allowedFields: Record<string, unknown> = {};
     if (body.isActive !== undefined) {
       allowedFields.isActive = body.isActive;
       if (!body.isActive) {
@@ -112,35 +108,24 @@ export async function PATCH(
       .lean();
 
     if (!conversation) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Conversation not found',
-        },
-        { status: 404 }
-      );
+      return errorResponse(new Error('Conversation not found'), 404);
     }
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        id: conversation._id.toString(),
-        userId: (conversation as any).userId?.lineUserId || '',
-        displayName: (conversation as any).userId?.displayName || 'Unknown',
-        messageCount: conversation.messageCount,
-        isActive: conversation.isActive,
-        title: conversation.title,
-      },
+    const populatedUserId = conversation.userId as {
+      lineUserId?: string;
+      displayName?: string;
+    } | null;
+
+    return successResponse({
+      id: String(conversation._id),
+      userId: populatedUserId?.lineUserId || '',
+      displayName: populatedUserId?.displayName || 'Unknown',
+      messageCount: conversation.messageCount,
+      isActive: conversation.isActive,
+      title: conversation.title,
     });
     } catch (error) {
-      console.error('Error updating conversation:', error);
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Failed to update conversation',
-        },
-        { status: 500 }
-      );
+      return errorResponse(error);
     }
   })();
 }
