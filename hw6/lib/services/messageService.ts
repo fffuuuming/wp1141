@@ -109,32 +109,33 @@ async function generateReply(
     // Handle different error types
     if (error instanceof LLMError) {
       // For retryable errors, use fallback
+      // Error details are already logged above, don't expose to users
       if (error.retryable) {
-        return getFallbackResponse(userMessage, error.message);
+        return getFallbackResponse(userMessage);
       }
 
-      // For non-retryable errors (quota, auth), return error message
+      // For non-retryable errors (quota, auth), return user-facing message only
+      // Developer error details are already logged above
       if (error.code === 'QUOTA_EXCEEDED' || error.code === 'AUTH_ERROR') {
-        return `${ERROR_MESSAGES.LLM_ERROR} ${error.message}`;
+        return ERROR_MESSAGES.LLM_ERROR;
       }
 
       // For other errors, use fallback
-      return getFallbackResponse(userMessage, error.message);
+      // Error details are already logged above, don't expose to users
+      return getFallbackResponse(userMessage);
     }
 
     // Unknown error, use fallback
-    const errorMessage = error instanceof Error ? error.message : '未知錯誤';
-    return getFallbackResponse(userMessage, errorMessage);
+    // Error details are already logged above, don't expose to users
+    return getFallbackResponse(userMessage);
   }
 }
 
 /**
  * Get fallback response when LLM fails
+ * Note: Error details are logged but not exposed to users
  */
-function getFallbackResponse(
-  userMessage: string,
-  errorMessage?: string
-): string {
+function getFallbackResponse(userMessage: string): string {
   const lowerMessage = userMessage.toLowerCase().trim();
 
   // Greeting responses
@@ -153,6 +154,6 @@ function getFallbackResponse(
   }
 
   // Default fallback
-  return FALLBACK_RESPONSES.DEFAULT(userMessage, errorMessage);
+  return FALLBACK_RESPONSES.DEFAULT(userMessage);
 }
 

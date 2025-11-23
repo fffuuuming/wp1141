@@ -41,7 +41,7 @@ export const FALLBACK_RESPONSES = {
   GREETING: '你好！我是你的 AI 助手。目前服務暫時無法使用，但我可以處理基本的問候。有什麼我可以幫你的嗎？',
   QUESTION: (question: string) =>
     `我理解你的問題：「${question}」。目前 AI 服務暫時無法使用，請稍後再試。`,
-  DEFAULT: (message: string, error?: string) =>
-    `收到你的訊息：「${message}」。目前 AI 服務暫時無法使用（${error || '服務錯誤'}），請稍後再試。`,
+  DEFAULT: (message: string) =>
+    `收到你的訊息：「${message}」。目前 AI 服務暫時無法使用，請稍後再試。`,
 } as const;
 
