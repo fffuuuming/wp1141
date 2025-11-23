@@ -1,5 +1,4 @@
 import { withDatabase } from '@/lib/utils/withDatabase';
-import { User, Conversation, Message } from '@/lib/models';
 import { sendTextMessage, type WebhookEvent } from './lineService';
 import { llmService, type LLMError } from './llmService';
 import { isCommand, handleCommand } from './botLogicService';
@@ -7,6 +6,12 @@ import {
   getOrCreateUser,
   incrementUserMessageCount,
 } from './userService';
+import {
+  getOrCreateActiveConversation,
+  saveMessage,
+  incrementConversationMessageCount,
+  getConversationHistory,
+} from './conversationService';
 
 /**
  * Process incoming message from Line
@@ -31,77 +36,43 @@ export async function processMessage(event: WebhookEvent): Promise<void> {
       // Get or create user (automatically updates last active time)
       const user = await getOrCreateUser(userId);
 
-    // Get or create active conversation
-    let conversation = await Conversation.findOne({
-      lineUserId: userId,
-      isActive: true,
-    });
+      // Get or create active conversation
+      const conversation = await getOrCreateActiveConversation(user._id, userId);
 
-    if (!conversation) {
-      conversation = await Conversation.create({
-        userId: user._id,
-        lineUserId: userId,
-        messageCount: 0,
-        isActive: true,
-        startedAt: new Date(),
-        lastMessageAt: new Date(),
-      });
-    }
+      // Save incoming message
+      await saveMessage(conversation._id, messageText, 'user', 'text');
 
-    // Save incoming message
-    const message = await Message.create({
-      conversationId: conversation._id,
-      role: 'user',
-      type: 'text',
-      content: messageText,
-      timestamp: new Date(),
-    });
+      // Update conversation message count and last message time
+      await incrementConversationMessageCount(conversation._id);
 
-    // Update conversation
-    conversation.messageCount += 1;
-    conversation.lastMessageAt = new Date();
-    await conversation.save();
+      // Update user message count
+      await incrementUserMessageCount(userId);
 
-    // Update user message count
-    await incrementUserMessageCount(userId);
+      // Check if message is a command
+      if (isCommand(messageText)) {
+        const commandReply = await handleCommand(messageText, userId, replyToken);
+        if (commandReply) {
+          // Save command response
+          await saveMessage(conversation._id, commandReply, 'bot', 'text');
 
-    // Check if message is a command
-    if (isCommand(messageText)) {
-      const commandReply = await handleCommand(messageText, userId, replyToken);
-      if (commandReply) {
-        // Save command response
-        await Message.create({
-          conversationId: conversation._id,
-          role: 'bot',
-          type: 'text',
-          content: commandReply,
-          timestamp: new Date(),
-        });
-
-        // Send command response
-        await sendTextMessage(replyToken, commandReply);
-        console.log(`Command processed: ${messageText} from ${userId}`);
-        return;
+          // Send command response
+          await sendTextMessage(replyToken, commandReply);
+          console.log(`Command processed: ${messageText} from ${userId}`);
+          return;
+        }
       }
-    }
 
-    // Get conversation history for context
-    const conversationHistory = await getConversationHistory(conversation._id.toString());
+      // Get conversation history for context
+      const conversationHistory = await getConversationHistory(conversation._id);
 
-    // Generate reply using LLM with fallback
-    const replyText = await generateReply(messageText, conversationHistory);
+      // Generate reply using LLM with fallback
+      const replyText = await generateReply(messageText, conversationHistory);
 
-    // Save bot reply
-    await Message.create({
-      conversationId: conversation._id,
-      role: 'bot',
-      type: 'text',
-      content: replyText,
-      timestamp: new Date(),
-    });
+      // Save bot reply
+      await saveMessage(conversation._id, replyText, 'bot', 'text');
 
-    // Send reply to user
-    await sendTextMessage(replyToken, replyText);
+      // Send reply to user
+      await sendTextMessage(replyToken, replyText);
 
       console.log(`Processed message from ${userId}: ${messageText}`);
     } catch (error) {
@@ -117,35 +88,6 @@ export async function processMessage(event: WebhookEvent): Promise<void> {
       }
     }
   })();
-}
-
-/**
- * Get conversation history for context
- */
-async function getConversationHistory(
-  conversationId: string,
-  limit: number = 10
-): Promise<Array<{ role: 'user' | 'assistant'; content: string }>> {
-  try {
-    const messages = await Message.find({
-      conversationId: conversationId,
-    })
-      .sort({ timestamp: -1 })
-      .limit(limit)
-      .select('role content')
-      .lean();
-
-    // Reverse to get chronological order
-    return messages
-      .reverse()
-      .map((msg) => ({
-        role: msg.role === 'user' ? 'user' : 'assistant',
-        content: msg.content,
-      }));
-  } catch (error) {
-    console.error('Error getting conversation history:', error);
-    return [];
-  }
 }
 
 /**

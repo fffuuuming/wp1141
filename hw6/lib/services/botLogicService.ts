@@ -2,6 +2,7 @@ import { withDatabase } from '@/lib/utils/withDatabase';
 import { Conversation } from '@/lib/models';
 import { sendTextMessage } from './lineService';
 import { getOrCreateUser, getUserByLineId } from './userService';
+import { markAllUserConversationsInactive } from './conversationService';
 
 /**
  * Handle user follow event (when user adds bot as friend)
@@ -39,17 +40,9 @@ export const handleFollowEvent = withDatabase(async (
 export const handleUnfollowEvent = withDatabase(async (userId: string): Promise<void> => {
   try {
     // Mark all active conversations as inactive
-    await Conversation.updateMany(
-      { lineUserId: userId, isActive: true },
-      {
-        $set: {
-          isActive: false,
-          endedAt: new Date(),
-        },
-      }
-    );
+    const count = await markAllUserConversationsInactive(userId);
 
-    console.log(`Marked conversations as inactive for ${userId}`);
+    console.log(`Marked ${count} conversation(s) as inactive for ${userId}`);
   } catch (error) {
     console.error('Error handling unfollow event:', error);
   }
