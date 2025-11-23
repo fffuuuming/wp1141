@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import {
   getConversationStats,
   getUserStats,
@@ -6,6 +6,7 @@ import {
   getUserDetailStats,
   getDateRangeStats,
 } from '@/lib/services/statisticsService';
+import { successResponse, errorResponse } from '@/lib/utils/apiResponse';
 
 /**
  * GET /api/conversations/stats
@@ -23,83 +24,46 @@ export async function GET(request: NextRequest) {
     switch (type) {
       case 'overview': {
         const stats = await getConversationStats();
-        return NextResponse.json({
-          success: true,
-          data: stats,
-        });
+        return successResponse(stats);
       }
 
       case 'users': {
         const stats = await getUserStats(limit);
-        return NextResponse.json({
-          success: true,
-          data: stats,
-        });
+        return successResponse(stats);
       }
 
       case 'conversations': {
         const stats = await getConversationDetailStats(limit);
-        return NextResponse.json({
-          success: true,
-          data: stats,
-        });
+        return successResponse(stats);
       }
 
       case 'user': {
         if (!userId) {
-          return NextResponse.json(
-            {
-              success: false,
-              error: 'userId parameter is required',
-            },
-            { status: 400 }
-          );
+          return errorResponse(new Error('userId parameter is required'), 400);
         }
         const stats = await getUserDetailStats(userId);
-        return NextResponse.json({
-          success: true,
-          data: stats,
-        });
+        return successResponse(stats);
       }
 
       case 'daterange': {
         if (!startDate || !endDate) {
-          return NextResponse.json(
-            {
-              success: false,
-              error: 'startDate and endDate parameters are required',
-            },
-            { status: 400 }
+          return errorResponse(
+            new Error('startDate and endDate parameters are required'),
+            400
           );
         }
         const stats = await getDateRangeStats(
           new Date(startDate),
           new Date(endDate)
         );
-        return NextResponse.json({
-          success: true,
-          data: stats,
-        });
+        return successResponse(stats);
       }
 
       default:
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'Invalid type parameter',
-          },
-          { status: 400 }
-        );
+        return errorResponse(new Error('Invalid type parameter'), 400);
     }
   } catch (error) {
-    console.error('Error fetching statistics:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to fetch statistics',
-      },
-      { status: 500 }
-    );
+    return errorResponse(error);
   }
 }
 

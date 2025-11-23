@@ -3,6 +3,7 @@ import { Conversation } from '@/lib/models';
 import { sendTextMessage } from './lineService';
 import { getOrCreateUser, getUserByLineId } from './userService';
 import { markAllUserConversationsInactive } from './conversationService';
+import { logger } from '@/lib/utils/logger';
 
 /**
  * Handle user follow event (when user adds bot as friend)
@@ -19,9 +20,9 @@ export const handleFollowEvent = withDatabase(async (
     const welcomeMessage = getWelcomeMessage(user.displayName || '朋友');
     await sendTextMessage(replyToken, welcomeMessage);
 
-    console.log(`Welcome message sent to ${userId}`);
+    logger.info('Welcome message sent', { userId });
   } catch (error) {
-    console.error('Error handling follow event:', error);
+    logger.error('Error handling follow event', error, { userId });
     // Try to send error message
     try {
       await sendTextMessage(
@@ -29,7 +30,7 @@ export const handleFollowEvent = withDatabase(async (
         '歡迎使用！我是你的 AI 助手，很高興認識你！'
       );
     } catch (sendError) {
-      console.error('Error sending welcome message:', sendError);
+      logger.error('Error sending welcome message', sendError, { userId });
     }
   }
 });
@@ -42,9 +43,9 @@ export const handleUnfollowEvent = withDatabase(async (userId: string): Promise<
     // Mark all active conversations as inactive
     const count = await markAllUserConversationsInactive(userId);
 
-    console.log(`Marked ${count} conversation(s) as inactive for ${userId}`);
+    logger.info('Marked conversations as inactive', { userId, count });
   } catch (error) {
-    console.error('Error handling unfollow event:', error);
+    logger.error('Error handling unfollow event', error, { userId });
   }
 });
 
@@ -116,7 +117,7 @@ export const handleCommand = withDatabase(async (
 🕐 最後活躍：${new Date(user.lastActiveAt).toLocaleString('zh-TW')}`;
       }
     } catch (error) {
-      console.error('Error getting user stats:', error);
+      logger.error('Error getting user stats', error, { userId });
     }
     return '無法取得統計資訊，請稍後再試。';
   }

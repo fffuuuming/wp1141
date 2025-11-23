@@ -5,6 +5,7 @@ import {
 } from '@/lib/repositories/mongoose';
 import type { IConversation, IMessage } from '@/lib/models';
 import type mongoose from 'mongoose';
+import { logger } from '@/lib/utils/logger';
 
 /**
  * Get or create active conversation for a user
@@ -27,7 +28,7 @@ export const getOrCreateActiveConversation = withDatabase(async (
       lastMessageAt: new Date(),
     });
 
-    console.log(`Created new conversation for user: ${lineUserId}`);
+    logger.info('Created new conversation', { lineUserId });
   }
 
   return conversation;

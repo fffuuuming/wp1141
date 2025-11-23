@@ -1,5 +1,7 @@
 import { Client, middleware, MiddlewareConfig, WebhookEvent } from '@line/bot-sdk';
 import { config } from '@/lib/config';
+import { logger } from '@/lib/utils/logger';
+import { LineAPIError } from '@/lib/errors';
 
 // Line Bot Client configuration
 const clientConfig = {
@@ -27,8 +29,8 @@ export async function replyMessage(
     // Line SDK replyMessage expects (replyToken, messages)
     await (lineClient.replyMessage as any)(replyToken, messages);
   } catch (error) {
-    console.error('Error replying message:', error);
-    throw error;
+    logger.error('Error replying message', error, { replyToken: replyToken.substring(0, 10) });
+    throw new LineAPIError('Failed to reply message', 500, { originalError: error });
   }
 }
 
@@ -51,7 +53,7 @@ export async function getUserProfile(userId: string) {
     const profile = await lineClient.getProfile(userId);
     return profile;
   } catch (error) {
-    console.error('Error getting user profile:', error);
+    logger.error('Error getting user profile', error, { userId });
     return null;
   }
 }

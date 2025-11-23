@@ -2,6 +2,7 @@ import { withDatabase } from '@/lib/utils/withDatabase';
 import { userRepository } from '@/lib/repositories/mongoose';
 import { getUserProfile } from './lineService';
 import type { IUser } from '@/lib/models/User';
+import { logger } from '@/lib/utils/logger';
 
 /**
  * Get or create user by Line user ID
@@ -33,7 +34,7 @@ export const getOrCreateUser = withDatabase(async (
       messageCount: 0,
     });
 
-    console.log(`Created new user: ${lineUserId}`);
+    logger.info('Created new user', { lineUserId });
   } else if (updateLastActive) {
     // User exists, update last active time
     await userRepository.updateLastActive(lineUserId);

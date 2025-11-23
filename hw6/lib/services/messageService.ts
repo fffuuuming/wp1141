@@ -1,6 +1,6 @@
 import { withDatabase } from '@/lib/utils/withDatabase';
 import { sendTextMessage, type WebhookEvent } from './lineService';
-import { llmService, type LLMError } from './llmService';
+import { llmService } from './llmService';
 import { isCommand, handleCommand } from './botLogicService';
 import {
   getOrCreateUser,
@@ -12,6 +12,8 @@ import {
   incrementConversationMessageCount,
   getConversationHistory,
 } from './conversationService';
+import { LLMError } from '@/lib/errors';
+import { logger } from '@/lib/utils/logger';
 
 /**
  * Process incoming message from Line
@@ -57,7 +59,7 @@ export async function processMessage(event: WebhookEvent): Promise<void> {
 
           // Send command response
           await sendTextMessage(replyToken, commandReply);
-          console.log(`Command processed: ${messageText} from ${userId}`);
+          logger.info('Command processed', { userId, command: messageText });
           return;
         }
       }
@@ -74,9 +76,9 @@ export async function processMessage(event: WebhookEvent): Promise<void> {
       // Send reply to user
       await sendTextMessage(replyToken, replyText);
 
-      console.log(`Processed message from ${userId}: ${messageText}`);
+      logger.info('Message processed', { userId, messageLength: messageText.length });
     } catch (error) {
-      console.error('Error processing message:', error);
+      logger.error('Error processing message', error, { userId });
       // Send error message to user
       try {
         await sendTextMessage(
@@ -84,7 +86,7 @@ export async function processMessage(event: WebhookEvent): Promise<void> {
           '抱歉，處理您的訊息時發生錯誤，請稍後再試。'
         );
       } catch (sendError) {
-        console.error('Error sending error message:', sendError);
+        logger.error('Error sending error message', sendError, { userId });
       }
     }
   })();
@@ -103,24 +105,28 @@ async function generateReply(
   try {
     const response = await llmService.generateResponse(userMessage, conversationHistory);
     return response.content;
-  } catch (error: any) {
-    console.error('LLM error:', error);
+  } catch (error) {
+    logger.error('LLM error', error, { userMessage: userMessage.substring(0, 50) });
 
     // Handle different error types
-    const llmError = error as LLMError;
+    if (error instanceof LLMError) {
+      // For retryable errors, use fallback
+      if (error.retryable) {
+        return getFallbackResponse(userMessage, error.message);
+      }
 
-    // For retryable errors, use fallback
-    if (llmError.retryable) {
-      return getFallbackResponse(userMessage, llmError.message);
+      // For non-retryable errors (quota, auth), return error message
+      if (error.code === 'QUOTA_EXCEEDED' || error.code === 'AUTH_ERROR') {
+        return `抱歉，${error.message} 請稍後再試或聯繫管理員。`;
+      }
+
+      // For other errors, use fallback
+      return getFallbackResponse(userMessage, error.message);
     }
 
-    // For non-retryable errors (quota, auth), return error message
-    if (llmError.code === 'QUOTA_EXCEEDED' || llmError.code === 'AUTH_ERROR') {
-      return `抱歉，${llmError.message} 請稍後再試或聯繫管理員。`;
-    }
-
-    // For other errors, use fallback
-    return getFallbackResponse(userMessage, llmError.message);
+    // Unknown error, use fallback
+    const errorMessage = error instanceof Error ? error.message : '未知錯誤';
+    return getFallbackResponse(userMessage, errorMessage);
   }
 }
 

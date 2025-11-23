@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { withDatabase } from '@/lib/utils/withDatabase';
 import { Conversation, Message } from '@/lib/models';
+import { successResponse, errorResponse } from '@/lib/utils/apiResponse';
 
 /**
  * GET /api/conversations
@@ -73,27 +74,17 @@ export async function GET(request: NextRequest) {
       messages: messagesByConversation.get(conv._id.toString()) || [],
     }));
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        conversations: formattedConversations,
-        pagination: {
-          total,
-          limit,
-          offset,
-          hasMore: offset + limit < total,
-        },
+    return successResponse({
+      conversations: formattedConversations,
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + limit < total,
       },
     });
     } catch (error) {
-      console.error('Error fetching conversations:', error);
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Failed to fetch conversations',
-        },
-        { status: 500 }
-      );
+      return errorResponse(error);
     }
   })();
 }
