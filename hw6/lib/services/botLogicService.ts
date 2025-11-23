@@ -1,6 +1,7 @@
 import { withDatabase } from '@/lib/utils/withDatabase';
-import { User, Conversation } from '@/lib/models';
-import { sendTextMessage, getUserProfile } from './lineService';
+import { Conversation } from '@/lib/models';
+import { sendTextMessage } from './lineService';
+import { getOrCreateUser, getUserByLineId } from './userService';
 
 /**
  * Handle user follow event (when user adds bot as friend)
@@ -10,23 +11,8 @@ export const handleFollowEvent = withDatabase(async (
   replyToken: string
 ): Promise<void> => {
   try {
-    // Get or create user
-    let user = await User.findOne({ lineUserId: userId });
-
-    if (!user) {
-      // Get user profile from Line
-      const profile = await getUserProfile(userId);
-
-      // Create new user
-      user = await User.create({
-        lineUserId: userId,
-        displayName: profile?.displayName,
-        pictureUrl: profile?.pictureUrl,
-        statusMessage: profile?.statusMessage,
-        lastActiveAt: new Date(),
-        messageCount: 0,
-      });
-    }
+    // Get or create user (don't update last active for follow event)
+    const user = await getOrCreateUser(userId, { updateLastActive: false });
 
     // Send welcome message
     const welcomeMessage = getWelcomeMessage(user.displayName || '朋友');
@@ -125,7 +111,7 @@ export const handleCommand = withDatabase(async (
   // Stats command (for user's own stats)
   if (lowerCommand === 'stats' || lowerCommand === '統計') {
     try {
-      const user = await User.findOne({ lineUserId: userId }).lean();
+      const user = await getUserByLineId(userId);
       if (user) {
         const conversationCount = await Conversation.countDocuments({
           userId: user._id,

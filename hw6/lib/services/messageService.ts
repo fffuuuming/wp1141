@@ -1,8 +1,12 @@
 import { withDatabase } from '@/lib/utils/withDatabase';
 import { User, Conversation, Message } from '@/lib/models';
-import { getUserProfile, sendTextMessage, type WebhookEvent } from './lineService';
+import { sendTextMessage, type WebhookEvent } from './lineService';
 import { llmService, type LLMError } from './llmService';
 import { isCommand, handleCommand } from './botLogicService';
+import {
+  getOrCreateUser,
+  incrementUserMessageCount,
+} from './userService';
 
 /**
  * Process incoming message from Line
@@ -24,27 +28,8 @@ export async function processMessage(event: WebhookEvent): Promise<void> {
   // Use withDatabase wrapper for the entire processing
   await withDatabase(async () => {
     try {
-      // Get or create user
-    let user = await User.findOne({ lineUserId: userId });
-    
-    if (!user) {
-      // Get user profile from Line
-      const profile = await getUserProfile(userId);
-      
-      // Create new user
-      user = await User.create({
-        lineUserId: userId,
-        displayName: profile?.displayName,
-        pictureUrl: profile?.pictureUrl,
-        statusMessage: profile?.statusMessage,
-        lastActiveAt: new Date(),
-        messageCount: 0,
-      });
-    } else {
-      // Update last active time
-      user.lastActiveAt = new Date();
-      await user.save();
-    }
+      // Get or create user (automatically updates last active time)
+      const user = await getOrCreateUser(userId);
 
     // Get or create active conversation
     let conversation = await Conversation.findOne({
@@ -78,8 +63,7 @@ export async function processMessage(event: WebhookEvent): Promise<void> {
     await conversation.save();
 
     // Update user message count
-    user.messageCount += 1;
-    await user.save();
+    await incrementUserMessageCount(userId);
 
     // Check if message is a command
     if (isCommand(messageText)) {
