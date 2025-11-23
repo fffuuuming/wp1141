@@ -1,17 +1,15 @@
-import connectDB from '@/lib/utils/mongodb';
+import { withDatabase } from '@/lib/utils/withDatabase';
 import { User, Conversation } from '@/lib/models';
 import { sendTextMessage, getUserProfile } from './lineService';
 
 /**
  * Handle user follow event (when user adds bot as friend)
  */
-export async function handleFollowEvent(
+export const handleFollowEvent = withDatabase(async (
   userId: string,
   replyToken: string
-): Promise<void> {
+): Promise<void> => {
   try {
-    await connectDB();
-
     // Get or create user
     let user = await User.findOne({ lineUserId: userId });
 
@@ -47,15 +45,13 @@ export async function handleFollowEvent(
       console.error('Error sending welcome message:', sendError);
     }
   }
-}
+});
 
 /**
  * Handle user unfollow event (when user blocks bot)
  */
-export async function handleUnfollowEvent(userId: string): Promise<void> {
+export const handleUnfollowEvent = withDatabase(async (userId: string): Promise<void> => {
   try {
-    await connectDB();
-
     // Mark all active conversations as inactive
     await Conversation.updateMany(
       { lineUserId: userId, isActive: true },
@@ -71,7 +67,7 @@ export async function handleUnfollowEvent(userId: string): Promise<void> {
   } catch (error) {
     console.error('Error handling unfollow event:', error);
   }
-}
+});
 
 /**
  * Get welcome message
@@ -114,11 +110,11 @@ export function isCommand(message: string): boolean {
 /**
  * Handle special commands
  */
-export async function handleCommand(
+export const handleCommand = withDatabase(async (
   command: string,
   userId: string,
   replyToken: string
-): Promise<string | null> {
+): Promise<string | null> => {
   const lowerCommand = command.toLowerCase().trim();
 
   // Help command
@@ -129,7 +125,6 @@ export async function handleCommand(
   // Stats command (for user's own stats)
   if (lowerCommand === 'stats' || lowerCommand === '統計') {
     try {
-      await connectDB();
       const user = await User.findOne({ lineUserId: userId }).lean();
       if (user) {
         const conversationCount = await Conversation.countDocuments({
@@ -164,7 +159,7 @@ export async function handleCommand(
 
   // Unknown command
   return null;
-}
+});
 
 /**
  * Get help message

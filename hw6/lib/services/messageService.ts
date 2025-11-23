@@ -1,4 +1,4 @@
-import connectDB from '@/lib/utils/mongodb';
+import { withDatabase } from '@/lib/utils/withDatabase';
 import { User, Conversation, Message } from '@/lib/models';
 import { getUserProfile, sendTextMessage, type WebhookEvent } from './lineService';
 import { llmService, type LLMError } from './llmService';
@@ -21,11 +21,10 @@ export async function processMessage(event: WebhookEvent): Promise<void> {
   const messageText = event.message.text;
   const replyToken = event.replyToken;
 
-  try {
-    // Connect to database
-    await connectDB();
-
-    // Get or create user
+  // Use withDatabase wrapper for the entire processing
+  await withDatabase(async () => {
+    try {
+      // Get or create user
     let user = await User.findOne({ lineUserId: userId });
     
     if (!user) {
@@ -120,19 +119,20 @@ export async function processMessage(event: WebhookEvent): Promise<void> {
     // Send reply to user
     await sendTextMessage(replyToken, replyText);
 
-    console.log(`Processed message from ${userId}: ${messageText}`);
-  } catch (error) {
-    console.error('Error processing message:', error);
-    // Send error message to user
-    try {
-      await sendTextMessage(
-        replyToken,
-        '抱歉，處理您的訊息時發生錯誤，請稍後再試。'
-      );
-    } catch (sendError) {
-      console.error('Error sending error message:', sendError);
+      console.log(`Processed message from ${userId}: ${messageText}`);
+    } catch (error) {
+      console.error('Error processing message:', error);
+      // Send error message to user
+      try {
+        await sendTextMessage(
+          replyToken,
+          '抱歉，處理您的訊息時發生錯誤，請稍後再試。'
+        );
+      } catch (sendError) {
+        console.error('Error sending error message:', sendError);
+      }
     }
-  }
+  })();
 }
 
 /**

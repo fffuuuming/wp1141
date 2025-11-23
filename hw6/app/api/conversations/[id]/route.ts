@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/utils/mongodb';
+import { withDatabase } from '@/lib/utils/withDatabase';
 import { Conversation, Message } from '@/lib/models';
 
 /**
@@ -10,8 +10,8 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  try {
-    await connectDB();
+  return await withDatabase(async () => {
+    try {
 
     const conversationId = params.id;
 
@@ -64,16 +64,17 @@ export async function GET(
         messages: formattedMessages,
       },
     });
-  } catch (error) {
-    console.error('Error fetching conversation:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to fetch conversation',
-      },
-      { status: 500 }
-    );
-  }
+    } catch (error) {
+      console.error('Error fetching conversation:', error);
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Failed to fetch conversation',
+        },
+        { status: 500 }
+      );
+    }
+  })();
 }
 
 /**
@@ -84,8 +85,8 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  try {
-    await connectDB();
+  return await withDatabase(async () => {
+    try {
 
     const conversationId = params.id;
     const body = await request.json();
@@ -131,15 +132,16 @@ export async function PATCH(
         title: conversation.title,
       },
     });
-  } catch (error) {
-    console.error('Error updating conversation:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to update conversation',
-      },
-      { status: 500 }
-    );
-  }
+    } catch (error) {
+      console.error('Error updating conversation:', error);
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Failed to update conversation',
+        },
+        { status: 500 }
+      );
+    }
+  })();
 }
 

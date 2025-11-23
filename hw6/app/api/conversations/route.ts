@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/utils/mongodb';
+import { withDatabase } from '@/lib/utils/withDatabase';
 import { Conversation, Message } from '@/lib/models';
-import { getConversationStats } from '@/lib/services/statisticsService';
 
 /**
  * GET /api/conversations
  * Get list of conversations with optional filters
  */
 export async function GET(request: NextRequest) {
-  try {
-    await connectDB();
+  return await withDatabase(async () => {
+    try {
 
     const searchParams = request.nextUrl.searchParams;
     const limit = parseInt(searchParams.get('limit') || '50');
@@ -86,15 +85,16 @@ export async function GET(request: NextRequest) {
         },
       },
     });
-  } catch (error) {
-    console.error('Error fetching conversations:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to fetch conversations',
-      },
-      { status: 500 }
-    );
-  }
+    } catch (error) {
+      console.error('Error fetching conversations:', error);
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Failed to fetch conversations',
+        },
+        { status: 500 }
+      );
+    }
+  })();
 }
 

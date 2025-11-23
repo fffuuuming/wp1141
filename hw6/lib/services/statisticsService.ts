@@ -1,4 +1,4 @@
-import connectDB from '@/lib/utils/mongodb';
+import { withDatabase } from '@/lib/utils/withDatabase';
 import { User, Conversation, Message } from '@/lib/models';
 
 export interface ConversationStats {
@@ -33,8 +33,7 @@ export interface ConversationDetailStats {
 /**
  * Get overall conversation statistics
  */
-export async function getConversationStats(): Promise<ConversationStats> {
-  await connectDB();
+export const getConversationStats = withDatabase(async (): Promise<ConversationStats> => {
 
   const [
     totalUsers,
@@ -61,13 +60,12 @@ export async function getConversationStats(): Promise<ConversationStats> {
     averageMessagesPerConversation: Math.round(averageMessagesPerConversation * 100) / 100,
     averageMessagesPerUser: Math.round(averageMessagesPerUser * 100) / 100,
   };
-}
+});
 
 /**
  * Get user statistics
  */
-export async function getUserStats(limit: number = 50): Promise<UserStats[]> {
-  await connectDB();
+export const getUserStats = withDatabase(async (limit: number = 50): Promise<UserStats[]> => {
 
   const users = await User.find({})
     .sort({ messageCount: -1, lastActiveAt: -1 })
@@ -94,15 +92,14 @@ export async function getUserStats(limit: number = 50): Promise<UserStats[]> {
     lastActiveAt: user.lastActiveAt,
     createdAt: user.createdAt,
   }));
-}
+});
 
 /**
  * Get conversation detail statistics
  */
-export async function getConversationDetailStats(
+export const getConversationDetailStats = withDatabase(async (
   limit: number = 50
-): Promise<ConversationDetailStats[]> {
-  await connectDB();
+): Promise<ConversationDetailStats[]> => {
 
   const conversations = await Conversation.find({})
     .sort({ lastMessageAt: -1 })
@@ -127,19 +124,18 @@ export async function getConversationDetailStats(
       duration: Math.round(duration * 100) / 100,
     };
   });
-}
+});
 
 /**
  * Get statistics for a specific user
  */
-export async function getUserDetailStats(
+export const getUserDetailStats = withDatabase(async (
   lineUserId: string
 ): Promise<{
   user: UserStats | null;
   conversations: ConversationDetailStats[];
   totalMessages: number;
-}> {
-  await connectDB();
+}> => {
 
   const user = await User.findOne({ lineUserId }).lean();
   if (!user) {
@@ -186,12 +182,12 @@ export async function getUserDetailStats(
     conversations: conversationDetails,
     totalMessages,
   };
-}
+});
 
 /**
  * Get statistics for date range
  */
-export async function getDateRangeStats(
+export const getDateRangeStats = withDatabase(async (
   startDate: Date,
   endDate: Date
 ): Promise<{
@@ -199,8 +195,7 @@ export async function getDateRangeStats(
   conversations: number;
   users: number;
   newUsers: number;
-}> {
-  await connectDB();
+}> => {
 
   const [messages, conversations, users, newUsers] = await Promise.all([
     Message.countDocuments({
@@ -223,5 +218,5 @@ export async function getDateRangeStats(
     users,
     newUsers,
   };
-}
+});
 
