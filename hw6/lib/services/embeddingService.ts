@@ -14,12 +14,26 @@ import { logger } from '@/lib/utils/logger';
  * Generates high-dimensional vectors from text for semantic search
  */
 class EmbeddingService {
-  private client: OpenAI;
-  private model: string;
-  private maxRetries: number;
-  private retryDelay: number;
+  private client!: OpenAI; // Definite assignment - initialized in initialize()
+  private model!: string; // Definite assignment - initialized in initialize()
+  private maxRetries!: number; // Definite assignment - initialized in initialize()
+  private retryDelay!: number; // Definite assignment - initialized in initialize()
+
+  private initialized = false;
 
   constructor() {
+    // Don't initialize in constructor - do it lazily when first used
+  }
+
+  /**
+   * Initialize the service (lazy initialization)
+   * This allows the module to be imported during build without failing
+   */
+  private initialize() {
+    if (this.initialized) {
+      return;
+    }
+
     if (!config.OPENAI_API_KEY) {
       throw new Error('OPENAI_API_KEY is required for embedding service');
     }
@@ -30,6 +44,7 @@ class EmbeddingService {
     this.model = config.OPENAI_EMBEDDING_MODEL;
     this.maxRetries = config.LLM_MAX_RETRIES;
     this.retryDelay = config.LLM_RETRY_DELAY;
+    this.initialized = true;
   }
 
   /**
@@ -38,6 +53,8 @@ class EmbeddingService {
    * @returns Embedding vector (array of numbers)
    */
   async generateEmbedding(text: string): Promise<number[]> {
+    this.initialize(); // Lazy initialization
+
     if (!text || text.trim().length === 0) {
       throw new Error('Text cannot be empty');
     }
@@ -95,6 +112,8 @@ class EmbeddingService {
    * @returns Array of embedding vectors
    */
   async generateEmbeddingsBatch(texts: string[]): Promise<number[][]> {
+    this.initialize(); // Lazy initialization
+
     if (texts.length === 0) {
       return [];
     }
