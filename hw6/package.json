@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "seed:knowledge-base": "tsx scripts/seed-knowledge-base.ts"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.9",
@@ -28,6 +29,7 @@
     "eslint-config-next": "^14.2.0",
     "postcss": "^8.4.0",
     "tailwindcss": "^3.4.0",
+    "tsx": "^4.7.0",
     "typescript": "^5.5.0"
   }
 }
