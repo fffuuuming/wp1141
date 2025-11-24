@@ -10,7 +10,6 @@ import {
 import { logger } from '@/lib/utils/logger';
 import {
   OPENAI_CONFIG,
-  ANTHROPIC_CONFIG,
   SYSTEM_PROMPT,
 } from '@/lib/constants/llm';
 
@@ -31,36 +30,30 @@ export interface LLMErrorInterface {
 }
 
 /**
- * LLM Service for OpenAI and Anthropic
+ * LLM Service for OpenAI
  */
 class LLMService {
-  private provider: 'openai' | 'anthropic';
   private apiKey: string;
   private maxRetries: number;
   private retryDelay: number;
 
   constructor() {
-    this.provider = config.LLM_PROVIDER;
-    this.apiKey =
-      this.provider === 'openai'
-        ? config.OPENAI_API_KEY || ''
-        : config.ANTHROPIC_API_KEY || '';
+    if (!config.OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY is required');
+    }
+    this.apiKey = config.OPENAI_API_KEY;
     this.maxRetries = config.LLM_MAX_RETRIES;
     this.retryDelay = config.LLM_RETRY_DELAY;
   }
 
   /**
-   * Generate response using LLM
+   * Generate response using OpenAI
    */
   async generateResponse(
     prompt: string,
     conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>
   ): Promise<LLMResponse> {
-    if (this.provider === 'openai') {
-      return this.callOpenAI(prompt, conversationHistory);
-    } else {
-      return this.callAnthropic(prompt, conversationHistory);
-    }
+    return this.callOpenAI(prompt, conversationHistory);
   }
 
   /**
@@ -135,86 +128,39 @@ class LLMService {
           throw this.handleError(error);
         }
 
-        // Wait before retry with exponential backoff
-        const delay = this.retryDelay * Math.pow(2, attempt);
-        logger.debug('LLM retry', { attempt, delay, error: String(error) });
-        await this.sleep(delay);
-      }
-    }
-
-    throw this.handleError(lastError || new Error('Unknown error'));
-  }
-
-  /**
-   * Call Anthropic API
-   */
-  private async callAnthropic(
-    prompt: string,
-    conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>
-  ): Promise<LLMResponse> {
-    // Build messages array for Anthropic
-    const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [];
-
-    if (conversationHistory) {
-      conversationHistory.forEach((msg) => {
-        messages.push({
-          role: msg.role,
-          content: msg.content,
-        });
-      });
-    }
-
-    messages.push({
-      role: 'user',
-      content: prompt,
-    });
-
-    let lastError: unknown = null;
-
-    for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
-      try {
-        const response = await axios.post(
-          'https://api.anthropic.com/v1/messages',
-          {
-            model: ANTHROPIC_CONFIG.MODEL,
-            max_tokens: ANTHROPIC_CONFIG.MAX_TOKENS,
-            messages: messages,
-            system: SYSTEM_PROMPT,
-          },
-          {
-            headers: {
-              'x-api-key': this.apiKey,
-              'anthropic-version': ANTHROPIC_CONFIG.API_VERSION,
-              'Content-Type': 'application/json',
-            },
-            timeout: ANTHROPIC_CONFIG.TIMEOUT,
+        // Calculate delay: check for retry-after header in 429 errors, otherwise use exponential backoff
+        let delay = this.retryDelay * Math.pow(2, attempt);
+        
+        // For 429 errors, check retry-after header
+        if (
+          error &&
+          typeof error === 'object' &&
+          'response' in error
+        ) {
+          const axiosError = error as {
+            response?: {
+              status?: number;
+              headers?: { 'retry-after'?: string };
+            };
+          };
+          
+          if (axiosError.response?.status === 429) {
+            const retryAfter = axiosError.response.headers?.['retry-after'];
+            if (retryAfter) {
+              const retryAfterSeconds = parseInt(retryAfter, 10);
+              if (!isNaN(retryAfterSeconds) && retryAfterSeconds > 0) {
+                // Use retry-after value, but add some buffer (convert to milliseconds)
+                delay = (retryAfterSeconds + 1) * 1000;
+                logger.debug('LLM rate limit - using retry-after', {
+                  attempt,
+                  retryAfterSeconds,
+                  delay,
+                });
+              }
+            }
           }
-        );
-
-        const content =
-          response.data.content[0]?.text || '抱歉，我無法生成回應。';
-
-        return {
-          content: content.trim(),
-          usage: {
-            promptTokens: response.data.usage?.input_tokens,
-            completionTokens: response.data.usage?.output_tokens,
-            totalTokens:
-              (response.data.usage?.input_tokens || 0) +
-              (response.data.usage?.output_tokens || 0),
-          },
-        };
-      } catch (error: unknown) {
-        lastError = error;
-
-        // Check if error is retryable
-        const isRetryable = this.isRetryableError(error);
-        if (!isRetryable || attempt === this.maxRetries) {
-          throw this.handleError(error);
         }
 
-        // Wait before retry with exponential backoff
-        const delay = this.retryDelay * Math.pow(2, attempt);
         logger.debug('LLM retry', { attempt, delay, error: String(error) });
         await this.sleep(delay);
       }

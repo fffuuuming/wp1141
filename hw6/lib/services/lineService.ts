@@ -19,7 +19,7 @@ function getClientConfig() {
   return {
     channelAccessToken: config.LINE_CHANNEL_ACCESS_TOKEN!,
     channelSecret: config.LINE_CHANNEL_SECRET!,
-  };
+};
 }
 
 // Create Line Bot client (lazy initialization)
@@ -43,7 +43,7 @@ function getMiddlewareConfig(): MiddlewareConfig {
   validateLineCredentials();
   return {
     channelSecret: config.LINE_CHANNEL_SECRET!,
-  };
+};
 }
 
 // Export middlewareConfig with lazy initialization

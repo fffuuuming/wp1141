@@ -5,22 +5,20 @@
 
 /**
  * OpenAI model configuration
+ * 
+ * Available models (as of 2024):
+ * - gpt-5-nano: Fastest and cheapest, good for simple tasks
+ * - gpt-4o-mini: Fast and cost-effective, good balance
+ * - gpt-3.5-turbo: Legacy model, still supported
+ * - gpt-4o: More capable but more expensive
+ * 
+ * Pricing reference: https://openai.com/zh-Hant/api/pricing/
  */
 export const OPENAI_CONFIG = {
-  MODEL: 'gpt-3.5-turbo',
+  MODEL: 'gpt-4o-mini', // Using GPT-5 Nano for cost efficiency
   TEMPERATURE: 0.7,
   MAX_TOKENS: 500,
   TIMEOUT: 30000, // 30 seconds
-} as const;
-
-/**
- * Anthropic model configuration
- */
-export const ANTHROPIC_CONFIG = {
-  MODEL: 'claude-3-haiku-20240307',
-  MAX_TOKENS: 500,
-  TIMEOUT: 30000, // 30 seconds
-  API_VERSION: '2023-06-01',
 } as const;
 
 /**

@@ -38,7 +38,7 @@ const KnowledgeBaseSchema: Schema = new Schema(
       type: String,
       enum: ['defi-basics', 'dex', 'liquidity-mining', 'lending', 'risks', 'smart-contracts'],
       required: true,
-      index: true,
+      // Index is defined below using schema.index()
     },
     embedding: {
       type: [Number],
