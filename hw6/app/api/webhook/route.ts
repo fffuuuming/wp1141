@@ -117,18 +117,54 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * GET endpoint for webhook verification (Line requires this)
+ * GET endpoint for webhook verification and health check
  * GET /api/webhook
+ * 
+ * This endpoint serves two purposes:
+ * 1. Line webhook verification (Line requires this endpoint)
+ * 2. Health check for webhook service
  */
 export async function GET() {
-  return NextResponse.json(
-    {
+  try {
+    // Check if Line credentials are configured
+    const lineConfigured =
+      !!config.LINE_CHANNEL_SECRET && !!config.LINE_CHANNEL_ACCESS_TOKEN;
+
+    // Basic health check response
+    const healthData = {
       success: true,
+      service: 'line-webhook',
+      status: lineConfigured ? 'ready' : 'not_configured',
+      timestamp: new Date().toISOString(),
       data: {
         message: 'Line webhook endpoint is active',
+        lineConfigured,
+        ...(lineConfigured
+          ? {
+              channelSecretConfigured: !!config.LINE_CHANNEL_SECRET,
+              accessTokenConfigured: !!config.LINE_CHANNEL_ACCESS_TOKEN,
+            }
+          : {
+              warning: 'Line credentials not configured. Webhook will not process events.',
+            }),
       },
-    },
-    { status: 200 }
-  );
+    };
+
+    // Return 200 OK even if not configured (for Line verification)
+    // But include status information for monitoring
+    return NextResponse.json(healthData, { status: 200 });
+  } catch (error) {
+    logger.error('Webhook health check error', error);
+    return NextResponse.json(
+      {
+        success: false,
+        service: 'line-webhook',
+        status: 'error',
+        timestamp: new Date().toISOString(),
+        error: 'Health check failed',
+      },
+      { status: 500 }
+    );
+  }
 }
 
