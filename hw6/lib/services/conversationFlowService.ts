@@ -1,7 +1,8 @@
 import { conversationGraphService, type ConversationNode } from './conversationGraphService';
-import { sendButtonsTemplate, sendCarouselTemplate, sendTextMessage } from './lineService';
+import { sendButtonsTemplate, sendCarouselTemplate, sendTextMessage, replyMessage } from './lineService';
 import { Conversation } from '@/lib/models';
 import { logger } from '@/lib/utils/logger';
+import type { Message } from '@line/bot-sdk';
 
 /**
  * Conversation Flow Service
@@ -10,40 +11,37 @@ import { logger } from '@/lib/utils/logger';
 class ConversationFlowService {
   /**
    * Render a node and send appropriate message to user
+   * Note: replyToken can only be used once, so we don't catch errors here
+   * to avoid trying to use the token again
    */
   async renderNode(
     node: ConversationNode,
     replyToken: string,
     conversationId?: string
   ): Promise<void> {
-    try {
-      // Update conversation current node if conversationId is provided
-      if (conversationId) {
-        await Conversation.findByIdAndUpdate(conversationId, {
-          currentNodeId: node.id,
-        });
-      }
+    // Update conversation current node if conversationId is provided
+    if (conversationId) {
+      await Conversation.findByIdAndUpdate(conversationId, {
+        currentNodeId: node.id,
+      });
+    }
 
-      switch (node.type) {
-        case 'root':
-          await this.renderRootNode(node, replyToken);
-          break;
-        case 'category':
-          await this.renderCategoryNode(node, replyToken);
-          break;
-        case 'question':
-          await this.renderQuestionNode(node, replyToken);
-          break;
-        case 'answer':
-          await this.renderAnswerNode(node, replyToken);
-          break;
-        default:
-          logger.warn('Unknown node type', { nodeType: node.type, nodeId: node.id });
-          await sendTextMessage(replyToken, '發生錯誤，請重新開始。');
-      }
-    } catch (error) {
-      logger.error('Error rendering node', error, { nodeId: node.id });
-      await sendTextMessage(replyToken, '發生錯誤，請稍後再試。');
+    switch (node.type) {
+      case 'root':
+        await this.renderRootNode(node, replyToken);
+        break;
+      case 'category':
+        await this.renderCategoryNode(node, replyToken);
+        break;
+      case 'question':
+        await this.renderQuestionNode(node, replyToken);
+        break;
+      case 'answer':
+        await this.renderAnswerNode(node, replyToken);
+        break;
+      default:
+        logger.warn('Unknown node type', { nodeType: node.type, nodeId: node.id });
+        await sendTextMessage(replyToken, '發生錯誤，請重新開始。');
     }
   }
 
@@ -79,14 +77,15 @@ class ConversationFlowService {
 
     // If there are many questions, use carousel
     // Otherwise, use buttons
-    if (node.children.length <= 4) {
+    // Note: LINE supports max 4 buttons, so we can only show 3 questions + 1 back button
+    if (node.children.length <= 3) {
       // Use buttons template for small number of questions
       const buttons = node.children.map((child) => ({
         label: child.title.length > 20 ? child.title.substring(0, 17) + '...' : child.title,
         data: child.id,
       }));
 
-      // Add back button
+      // Add back button (max 4 buttons total)
       buttons.push({
         label: '返回主選單',
         data: 'back-to-root',
@@ -99,6 +98,8 @@ class ConversationFlowService {
       );
     } else {
       // Use carousel for many questions
+      // Note: LINE reply token can only be used once, so we can't send a second message
+      // Users can type "主選單" or "返回" to go back
       const carouselItems = node.children.map((child) => ({
         title: child.title.length > 40 ? child.title.substring(0, 37) + '...' : child.title,
         text: '點擊查看答案',
@@ -106,22 +107,12 @@ class ConversationFlowService {
           {
             label: '查看答案',
             data: child.children?.[0]?.id || child.id, // Get answer node ID
+            displayText: child.title, // Show question text when clicked
           },
         ],
       }));
 
-      // Add back button as a separate message
       await sendCarouselTemplate(replyToken, carouselItems);
-      await sendButtonsTemplate(
-        replyToken,
-        '或返回主選單：',
-        [
-          {
-            label: '返回主選單',
-            data: 'back-to-root',
-          },
-        ]
-      );
     }
   }
 
@@ -139,6 +130,7 @@ class ConversationFlowService {
       .map((child) => ({
         label: child.title,
         data: child.id,
+        displayText: node.title, // Show question text when clicked
       }));
 
     // Add navigation buttons
@@ -156,51 +148,80 @@ class ConversationFlowService {
 
   /**
    * Render answer node (show answer text)
+   * Send full answer text first, then navigation buttons (both in one reply)
    */
   private async renderAnswerNode(node: ConversationNode, replyToken: string): Promise<void> {
-    // Send answer text
-    await sendTextMessage(replyToken, `答案：\n\n${node.content || '沒有答案'}`);
+    const answerText = `答案：\n\n${node.content || '沒有答案'}`;
 
-    // Send navigation buttons if available
+    // Build messages array - can send multiple messages in one reply
+    const messages: Message[] = [
+      {
+        type: 'text',
+        text: answerText,
+      },
+    ];
+
+    // Add navigation buttons if available
     if (node.children && node.children.length > 0) {
       const buttons = node.children.map((child) => ({
         label: child.title,
         data: child.id,
       }));
 
-      await sendButtonsTemplate(replyToken, '接下來要做什麼？', buttons);
+      // Create buttons template message
+      const buttonsToSend = buttons.slice(0, 4);
+      const buttonsMessage: Message = {
+        type: 'template',
+        altText: '接下來要做什麼？',
+        template: {
+          type: 'buttons',
+          text: '接下來要做什麼？',
+          actions: buttonsToSend.map((button) => {
+            const label = button.label.length > 20 ? button.label.substring(0, 17) + '...' : button.label;
+            const data = button.data.length > 300 ? button.data.substring(0, 297) + '...' : button.data;
+            return {
+              type: 'postback',
+              label: label,
+              data: data,
+              displayText: button.label,
+            };
+          }),
+        },
+      };
+
+      messages.push(buttonsMessage);
     }
+
+    // Send all messages in one reply (reply token used only once)
+    await replyMessage(replyToken, messages);
   }
 
   /**
    * Handle postback event (button click)
+   * Note: replyToken can only be used once, so errors are logged but not handled
+   * with additional messages to avoid reusing the token
    */
   async handlePostback(
     postbackData: string,
     replyToken: string,
     conversationId?: string
   ): Promise<void> {
-    try {
-      logger.debug('Handling postback', { postbackData, conversationId });
+    logger.debug('Handling postback', { postbackData, conversationId });
 
-      // Navigate to the node
-      const node = await conversationGraphService.navigateToNode(postbackData);
+    // Navigate to the node
+    const node = await conversationGraphService.navigateToNode(postbackData);
 
-      if (!node) {
-        logger.warn('Node not found', { postbackData });
-        await sendTextMessage(replyToken, '找不到該選項，請重新選擇。');
-        // Return to root
-        const rootNode = conversationGraphService.getRootNode();
-        await this.renderNode(rootNode, replyToken, conversationId);
-        return;
-      }
-
-      // Render the node
-      await this.renderNode(node, replyToken, conversationId);
-    } catch (error) {
-      logger.error('Error handling postback', error, { postbackData });
-      await sendTextMessage(replyToken, '發生錯誤，請稍後再試。');
+    if (!node) {
+      logger.warn('Node not found', { postbackData });
+      await sendTextMessage(replyToken, '找不到該選項，請重新選擇。');
+      // Return to root
+      const rootNode = conversationGraphService.getRootNode();
+      await this.renderNode(rootNode, replyToken, conversationId);
+      return;
     }
+
+    // Render the node
+    await this.renderNode(node, replyToken, conversationId);
   }
 
   /**

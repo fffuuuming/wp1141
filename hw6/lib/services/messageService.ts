@@ -219,13 +219,52 @@ export async function processPostback(event: WebhookEvent): Promise<void> {
       // Get or create active conversation
       const conversation = await getOrCreateActiveConversation(user._id, userId);
 
-      // Save postback as user message
-      await saveMessage(conversation._id, `[按鈕點擊] ${postbackData}`, 'user', 'text');
+      // Get question text from the node before navigating
+      // This will be used to save as user message
+      let questionText: string | null = null;
+      try {
+        // If postback data is an answer node, find the question
+        if (postbackData.startsWith('answer-')) {
+          const { conversationGraphService } = await import('./conversationGraphService');
+          // Navigate to the node to get the question text
+          const node = await conversationGraphService.navigateToNode(postbackData);
+          if (node && node.type === 'answer') {
+            // Answer node's title contains the question
+            questionText = node.title;
+          } else {
+            // Fallback: parse answer node ID to get question
+            const parts = postbackData.split('-');
+            if (parts.length >= 3) {
+              const category = parts.slice(1, -1).join('-');
+              const questionIndex = parseInt(parts[parts.length - 1]);
+              if (!isNaN(questionIndex)) {
+                const questions = await conversationGraphService.getCategoryQuestions(
+                  category as any
+                );
+                if (questions[questionIndex]) {
+                  questionText = questions[questionIndex].title;
+                }
+              }
+            }
+          }
+        }
+      } catch (error) {
+        logger.warn('Error extracting question text from postback', error, { postbackData });
+      }
+
+      // Save postback as user message - use question text if available
+      // LINE's postback.displayText will show in chat, but we save the question text to DB
+      const userMessageText = questionText || 
+        (event.postback.displayText) || 
+        `[按鈕點擊] ${postbackData}`;
+      await saveMessage(conversation._id, userMessageText, 'user', 'text');
 
       // Update conversation message count
       await incrementConversationMessageCount(conversation._id);
 
       // Handle postback using conversation flow service
+      // Note: replyToken can only be used once, so we don't catch errors here
+      // to avoid trying to use the token again after it's been used
       await conversationFlowService.handlePostback(
         postbackData,
         replyToken,
@@ -235,12 +274,8 @@ export async function processPostback(event: WebhookEvent): Promise<void> {
       logger.info('Postback processed', { userId, postbackData });
     } catch (error) {
       logger.error('Error processing postback', error, { userId, postbackData });
-      // Send error message to user
-      try {
-        await sendTextMessage(replyToken, ERROR_MESSAGES.PROCESSING_ERROR);
-      } catch (sendError) {
-        logger.error('Error sending error message', sendError, { userId });
-      }
+      // Don't try to send error message with reply token as it may have already been used
+      // The error is logged for debugging purposes
     }
   })();
 }

@@ -19,7 +19,7 @@ function getClientConfig() {
   return {
     channelAccessToken: config.LINE_CHANNEL_ACCESS_TOKEN!,
     channelSecret: config.LINE_CHANNEL_SECRET!,
-};
+  };
 }
 
 // Create Line Bot client (lazy initialization)
@@ -43,7 +43,7 @@ function getMiddlewareConfig(): MiddlewareConfig {
   validateLineCredentials();
   return {
     channelSecret: config.LINE_CHANNEL_SECRET!,
-};
+  };
 }
 
 // Export middlewareConfig with lazy initialization
@@ -115,29 +115,41 @@ export async function getUserProfile(userId: string) {
 /**
  * Send a buttons template message
  * @param replyToken - LINE reply token
- * @param text - Main text to display
+ * @param text - Main text to display (max 160 characters)
  * @param buttons - Array of button labels (max 4 buttons)
  */
 export async function sendButtonsTemplate(
   replyToken: string,
   text: string,
-  buttons: Array<{ label: string; data: string }>
+  buttons: Array<{ label: string; data: string; displayText?: string }>
 ): Promise<void> {
   // LINE buttons template supports max 4 buttons
   const buttonsToSend = buttons.slice(0, 4);
 
+  // LINE limits: text max 160 chars, label max 20 chars, displayText max 300 chars, data max 300 chars
+  const truncatedText = text.length > 160 ? text.substring(0, 157) + '...' : text;
+
   const template: Message = {
     type: 'template',
-    altText: text,
+    altText: truncatedText,
     template: {
       type: 'buttons',
-      text: text,
-      actions: buttonsToSend.map((button) => ({
-        type: 'postback',
-        label: button.label,
-        data: button.data,
-        displayText: button.label,
-      })),
+      text: truncatedText,
+      actions: buttonsToSend.map((button) => {
+        // Truncate to LINE limits
+        const label = button.label.length > 20 ? button.label.substring(0, 17) + '...' : button.label;
+        const data = button.data.length > 300 ? button.data.substring(0, 297) + '...' : button.data;
+        const displayText = (button.displayText || button.label).length > 300 
+          ? (button.displayText || button.label).substring(0, 297) + '...' 
+          : (button.displayText || button.label);
+
+        return {
+          type: 'postback',
+          label: label,
+          data: data,
+          displayText: displayText,
+        };
+      }),
     },
   };
 
@@ -154,7 +166,7 @@ export async function sendCarouselTemplate(
   items: Array<{
     title: string;
     text: string;
-    actions: Array<{ label: string; data: string }>;
+    actions: Array<{ label: string; data: string; displayText?: string }>;
   }>
 ): Promise<void> {
   // LINE carousel supports max 10 items
@@ -165,16 +177,31 @@ export async function sendCarouselTemplate(
     altText: '請選擇一個問題',
     template: {
       type: 'carousel',
-      columns: itemsToSend.map((item) => ({
-        title: item.title.length > 40 ? item.title.substring(0, 37) + '...' : item.title,
-        text: item.text.length > 120 ? item.text.substring(0, 117) + '...' : item.text,
-        actions: item.actions.map((action) => ({
-          type: 'postback',
-          label: action.label,
-          data: action.data,
-          displayText: action.label,
-        })),
-      })),
+      columns: itemsToSend.map((item) => {
+        // LINE limits: title max 40 chars, text max 120 chars
+        const title = item.title.length > 40 ? item.title.substring(0, 37) + '...' : item.title;
+        const text = item.text.length > 120 ? item.text.substring(0, 117) + '...' : item.text;
+
+        return {
+          title: title,
+          text: text,
+          actions: item.actions.map((action) => {
+            // Truncate to LINE limits
+            const label = action.label.length > 20 ? action.label.substring(0, 17) + '...' : action.label;
+            const data = action.data.length > 300 ? action.data.substring(0, 297) + '...' : action.data;
+            const displayText = (action.displayText || action.label).length > 300
+              ? (action.displayText || action.label).substring(0, 297) + '...'
+              : (action.displayText || action.label);
+
+            return {
+              type: 'postback',
+              label: label,
+              data: data,
+              displayText: displayText,
+            };
+          }),
+        };
+      }),
     },
   };
 
@@ -183,4 +210,3 @@ export async function sendCarouselTemplate(
 
 // Type exports
 export type { WebhookEvent };
-

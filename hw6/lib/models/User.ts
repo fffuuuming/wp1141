@@ -17,7 +17,7 @@ const UserSchema: Schema = new Schema(
       type: String,
       required: true,
       unique: true,
-      // Index is defined below using schema.index()
+      // unique: true automatically creates an index, so we don't need schema.index() below
     },
     displayName: {
       type: String,
@@ -42,8 +42,8 @@ const UserSchema: Schema = new Schema(
   }
 );
 
-// Ensure index on lineUserId for fast lookups
-UserSchema.index({ lineUserId: 1 });
+// Note: lineUserId already has an index from unique: true above
+// No need to add another index to avoid duplicate index warning
 
 const User: Model<IUser> =
   mongoose.models.User || mongoose.model<IUser>('User', UserSchema);

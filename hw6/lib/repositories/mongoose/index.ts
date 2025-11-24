@@ -5,8 +5,5 @@
 export { userRepository, default as UserRepository } from './UserRepository';
 export { conversationRepository, default as ConversationRepository } from './ConversationRepository';
 export { messageRepository, default as MessageRepository } from './MessageRepository';
-export {
-  knowledgeBaseRepository,
-  default as KnowledgeBaseRepository,
-} from './KnowledgeBaseRepository';
+export { knowledgeBaseRepository } from './KnowledgeBaseRepository';
 
