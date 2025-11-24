@@ -106,6 +106,11 @@ class ConversationGraphService {
     try {
       const items = await knowledgeBaseService.getByCategory(category);
       
+      logger.debug('Getting category questions', { 
+        category, 
+        itemCount: items.length 
+      });
+      
       return items.map((item, index) => ({
         id: `question-${category}-${index}`,
         type: 'question',
@@ -116,6 +121,7 @@ class ConversationGraphService {
             id: `answer-${category}-${index}`,
             type: 'answer',
             title: '查看答案',
+            questionId: item._id.toString(), // Store questionId for easier lookup
             // Content will be loaded when navigating to this node
           },
           {
@@ -241,17 +247,63 @@ class ConversationGraphService {
     // Check if it's an answer node
     if (nodeId.startsWith('answer-')) {
       // Format: answer-{category}-{index} (from question node children)
-      // or answer-{questionId} (direct answer node)
+      // Example: answer-defi-basics-0
+      // We need to find where the category ends and index begins
+      // Categories can have hyphens, so we need to parse from the end
       const parts = nodeId.split('-');
       if (parts.length >= 3) {
-        // Try to get from category questions first (answer-{category}-{index})
-        const category = parts.slice(1, -1).join('-') as KnowledgeBaseCategory;
-        const questionIndex = parseInt(parts[parts.length - 1]);
+        // Try to parse: answer-{category}-{index}
+        // The last part should be the index (a number)
+        const lastPart = parts[parts.length - 1];
+        const questionIndex = parseInt(lastPart);
         
         if (!isNaN(questionIndex)) {
-          const questions = await this.getCategoryQuestions(category);
-          if (questions[questionIndex] && questions[questionIndex].questionId) {
-            return await this.getAnswerNode(questions[questionIndex].questionId!);
+          // Everything between 'answer' and the last part is the category
+          const category = parts.slice(1, -1).join('-') as KnowledgeBaseCategory;
+          
+          logger.debug('Parsing answer node', { 
+            nodeId, 
+            category, 
+            questionIndex, 
+            parts 
+          });
+          
+          try {
+            const questions = await this.getCategoryQuestions(category);
+            logger.debug('Got questions for category', { 
+              category, 
+              questionCount: questions.length,
+              questionIndex 
+            });
+            
+            if (questions[questionIndex]) {
+              const questionNode = questions[questionIndex];
+              if (questionNode.questionId) {
+                logger.debug('Getting answer node', { 
+                  questionId: questionNode.questionId 
+                });
+                const answerNode = await this.getAnswerNode(questionNode.questionId);
+                if (answerNode) {
+                  return answerNode;
+                }
+              } else {
+                logger.warn('Question node missing questionId', { 
+                  questionIndex, 
+                  questionNodeId: questionNode.id 
+                });
+              }
+            } else {
+              logger.warn('Question index out of range', { 
+                category, 
+                questionIndex, 
+                totalQuestions: questions.length 
+              });
+            }
+          } catch (error) {
+            logger.error('Error getting answer node from category', error, { 
+              category, 
+              questionIndex 
+            });
           }
         }
       }
@@ -260,7 +312,12 @@ class ConversationGraphService {
       // This would be a MongoDB ObjectId format
       const questionId = nodeId.replace('answer-', '');
       if (questionId.length === 24) { // MongoDB ObjectId length
-        return await this.getAnswerNode(questionId);
+        try {
+          logger.debug('Trying to get answer node by questionId', { questionId });
+          return await this.getAnswerNode(questionId);
+        } catch (error) {
+          logger.error('Error getting answer node by questionId', error, { questionId });
+        }
       }
     }
 
