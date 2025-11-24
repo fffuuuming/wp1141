@@ -11,10 +11,15 @@ interface MongooseCache {
   promise: Promise<typeof mongoose> | null;
 }
 
-let cached: MongooseCache = global.mongoose as MongooseCache;
+// Use type assertion with proper handling
+const globalForMongoose = global as unknown as {
+  mongoose: MongooseCache | undefined;
+};
 
-if (!cached) {
-  cached = global.mongoose = { conn: null, promise: null };
+let cached: MongooseCache = globalForMongoose.mongoose || { conn: null, promise: null };
+
+if (!globalForMongoose.mongoose) {
+  globalForMongoose.mongoose = cached;
 }
 
 async function connectDB() {
