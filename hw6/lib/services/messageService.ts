@@ -3,6 +3,7 @@ import { sendTextMessage, type WebhookEvent } from './lineService';
 import { llmService } from './llmService';
 import { ragService } from './ragService';
 import { isCommand, handleCommand } from './botLogicService';
+import { conversationFlowService } from './conversationFlowService';
 import {
   getOrCreateUser,
   incrementUserMessageCount,
@@ -64,6 +65,19 @@ export async function processMessage(event: WebhookEvent): Promise<void> {
           logger.info('Command processed', { userId, command: messageText });
           return;
         }
+      }
+
+      // Try conversation flow service first (for navigation commands)
+      const handledByFlow = await conversationFlowService.handleTextMessage(
+        messageText,
+        replyToken,
+        conversation._id.toString()
+      );
+
+      if (handledByFlow) {
+        // Message was handled by conversation flow (navigation)
+        logger.info('Message handled by conversation flow', { userId, message: messageText });
+        return;
       }
 
       // Get conversation history for context
@@ -177,5 +191,57 @@ function getFallbackResponse(userMessage: string): string {
 
   // Default fallback
   return FALLBACK_RESPONSES.DEFAULT(userMessage);
+}
+
+/**
+ * Process postback event (button click)
+ */
+export async function processPostback(event: WebhookEvent): Promise<void> {
+  if (event.type !== 'postback') {
+    return;
+  }
+
+  const userId = event.source.userId;
+  if (!userId) {
+    logger.error('No user ID in postback event');
+    return;
+  }
+
+  const postbackData = event.postback.data;
+  const replyToken = event.replyToken;
+
+  // Use withDatabase wrapper for the entire processing
+  await withDatabase(async () => {
+    try {
+      // Get or create user
+      const user = await getOrCreateUser(userId);
+
+      // Get or create active conversation
+      const conversation = await getOrCreateActiveConversation(user._id, userId);
+
+      // Save postback as user message
+      await saveMessage(conversation._id, `[按鈕點擊] ${postbackData}`, 'user', 'text');
+
+      // Update conversation message count
+      await incrementConversationMessageCount(conversation._id);
+
+      // Handle postback using conversation flow service
+      await conversationFlowService.handlePostback(
+        postbackData,
+        replyToken,
+        conversation._id.toString()
+      );
+
+      logger.info('Postback processed', { userId, postbackData });
+    } catch (error) {
+      logger.error('Error processing postback', error, { userId, postbackData });
+      // Send error message to user
+      try {
+        await sendTextMessage(replyToken, ERROR_MESSAGES.PROCESSING_ERROR);
+      } catch (sendError) {
+        logger.error('Error sending error message', sendError, { userId });
+      }
+    }
+  })();
 }
 

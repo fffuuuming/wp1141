@@ -112,6 +112,75 @@ export async function getUserProfile(userId: string) {
   }
 }
 
+/**
+ * Send a buttons template message
+ * @param replyToken - LINE reply token
+ * @param text - Main text to display
+ * @param buttons - Array of button labels (max 4 buttons)
+ */
+export async function sendButtonsTemplate(
+  replyToken: string,
+  text: string,
+  buttons: Array<{ label: string; data: string }>
+): Promise<void> {
+  // LINE buttons template supports max 4 buttons
+  const buttonsToSend = buttons.slice(0, 4);
+
+  const template: Message = {
+    type: 'template',
+    altText: text,
+    template: {
+      type: 'buttons',
+      text: text,
+      actions: buttonsToSend.map((button) => ({
+        type: 'postback',
+        label: button.label,
+        data: button.data,
+        displayText: button.label,
+      })),
+    },
+  };
+
+  await replyMessage(replyToken, [template]);
+}
+
+/**
+ * Send a carousel template message (for questions list)
+ * @param replyToken - LINE reply token
+ * @param items - Array of carousel items (max 10 items)
+ */
+export async function sendCarouselTemplate(
+  replyToken: string,
+  items: Array<{
+    title: string;
+    text: string;
+    actions: Array<{ label: string; data: string }>;
+  }>
+): Promise<void> {
+  // LINE carousel supports max 10 items
+  const itemsToSend = items.slice(0, 10);
+
+  const template: Message = {
+    type: 'template',
+    altText: '請選擇一個問題',
+    template: {
+      type: 'carousel',
+      columns: itemsToSend.map((item) => ({
+        title: item.title.length > 40 ? item.title.substring(0, 37) + '...' : item.title,
+        text: item.text.length > 120 ? item.text.substring(0, 117) + '...' : item.text,
+        actions: item.actions.map((action) => ({
+          type: 'postback',
+          label: action.label,
+          data: action.data,
+          displayText: action.label,
+        })),
+      })),
+    },
+  };
+
+  await replyMessage(replyToken, [template]);
+}
+
 // Type exports
 export type { WebhookEvent };
 

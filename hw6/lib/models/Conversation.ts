@@ -12,6 +12,7 @@ export interface IConversation extends Document {
   metadata?: {
     [key: string]: unknown;
   };
+  currentNodeId?: string; // Current node in conversation graph
   createdAt: Date;
   updatedAt: Date;
 }
@@ -56,6 +57,10 @@ const ConversationSchema: Schema = new Schema(
     metadata: {
       type: Schema.Types.Mixed,
       default: {},
+    },
+    currentNodeId: {
+      type: String,
+      default: 'root',
     },
   },
   {

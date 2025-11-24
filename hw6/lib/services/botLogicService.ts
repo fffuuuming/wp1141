@@ -1,8 +1,10 @@
 import { withDatabase } from '@/lib/utils/withDatabase';
 import { Conversation } from '@/lib/models';
 import { sendTextMessage } from './lineService';
+import { conversationFlowService } from './conversationFlowService';
+import { conversationGraphService } from './conversationGraphService';
 import { getOrCreateUser, getUserByLineId } from './userService';
-import { markAllUserConversationsInactive } from './conversationService';
+import { markAllUserConversationsInactive, getOrCreateActiveConversation } from './conversationService';
 import { logger } from '@/lib/utils/logger';
 import {
   getWelcomeMessage,
@@ -23,11 +25,18 @@ export const handleFollowEvent = withDatabase(async (
     // Get or create user (don't update last active for follow event)
     const user = await getOrCreateUser(userId, { updateLastActive: false });
 
-    // Send welcome message
-    const welcomeMessage = getWelcomeMessage(user.displayName || '朋友');
-    await sendTextMessage(replyToken, welcomeMessage);
+    // Get or create active conversation
+    const conversation = await getOrCreateActiveConversation(user._id, userId);
 
-    logger.info('Welcome message sent', { userId });
+    // Get root node and render it (shows category buttons)
+    const rootNode = conversationGraphService.getRootNode();
+    await conversationFlowService.renderNode(
+      rootNode,
+      replyToken,
+      conversation._id.toString()
+    );
+
+    logger.info('Welcome message with buttons sent', { userId });
   } catch (error) {
     logger.error('Error handling follow event', error, { userId });
     // Try to send error message
