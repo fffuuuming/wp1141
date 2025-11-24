@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "seed:knowledge-base": "tsx scripts/seed-knowledge-base.ts"
+    "seed:knowledge-base": "tsx scripts/seed-knowledge-base.ts",
+    "test:rag": "tsx scripts/test-rag.ts"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.9",
