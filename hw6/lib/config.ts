@@ -2,11 +2,9 @@ import { z } from 'zod';
 
 // Environment variables schema
 const envSchema = z.object({
-  // Line Configuration
-  LINE_CHANNEL_SECRET: z.string().min(1, 'LINE_CHANNEL_SECRET is required'),
-  LINE_CHANNEL_ACCESS_TOKEN: z
-    .string()
-    .min(1, 'LINE_CHANNEL_ACCESS_TOKEN is required'),
+  // Line Configuration (optional - only needed for webhook/line service)
+  LINE_CHANNEL_SECRET: z.string().optional(),
+  LINE_CHANNEL_ACCESS_TOKEN: z.string().optional(),
 
   // MongoDB Configuration
   MONGODB_URI: z

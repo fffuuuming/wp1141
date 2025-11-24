@@ -20,6 +20,11 @@ function verifySignature(
     return false;
   }
 
+  if (!config.LINE_CHANNEL_SECRET) {
+    logger.error('LINE_CHANNEL_SECRET is not configured');
+    return false;
+  }
+
   const hash = crypto
     .createHmac('SHA256', config.LINE_CHANNEL_SECRET)
     .update(body)
