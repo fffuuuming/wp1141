@@ -32,6 +32,10 @@ const envSchema = z.object({
   // Optional Configuration
   LLM_MAX_RETRIES: z.coerce.number().int().positive().default(3),
   LLM_RETRY_DELAY: z.coerce.number().int().positive().default(1000),
+
+  // Embedding Configuration
+  OPENAI_EMBEDDING_MODEL: z.string().default('text-embedding-3-small'),
+  EMBEDDING_DIMENSIONS: z.coerce.number().int().positive().default(1536),
 });
 
 // Validate environment variables
@@ -47,6 +51,8 @@ function validateEnv() {
     NODE_ENV: process.env.NODE_ENV,
     LLM_MAX_RETRIES: process.env.LLM_MAX_RETRIES,
     LLM_RETRY_DELAY: process.env.LLM_RETRY_DELAY,
+    OPENAI_EMBEDDING_MODEL: process.env.OPENAI_EMBEDDING_MODEL,
+    EMBEDDING_DIMENSIONS: process.env.EMBEDDING_DIMENSIONS,
   };
 
   // Validate required fields based on LLM provider

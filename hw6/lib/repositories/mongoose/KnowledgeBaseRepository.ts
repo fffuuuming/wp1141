@@ -4,39 +4,9 @@ import KnowledgeBase, {
   type KnowledgeBaseCategory,
 } from '@/lib/models/KnowledgeBase';
 import type { IKnowledgeBaseRepository } from '../IKnowledgeBaseRepository';
+import { cosineSimilarity } from '@/lib/utils/vectorUtils';
+import { logger } from '@/lib/utils/logger';
 import type mongoose from 'mongoose';
-
-/**
- * Calculate cosine similarity between two vectors
- * This is a simple implementation. For production with large datasets,
- * consider using MongoDB Atlas Vector Search
- */
-function cosineSimilarity(vecA: number[], vecB: number[]): number {
-  if (vecA.length !== vecB.length) {
-    throw new Error('Vectors must have the same length');
-  }
-
-  if (vecA.length === 0) {
-    return 0;
-  }
-
-  let dotProduct = 0;
-  let normA = 0;
-  let normB = 0;
-
-  for (let i = 0; i < vecA.length; i++) {
-    dotProduct += vecA[i] * vecB[i];
-    normA += vecA[i] * vecA[i];
-    normB += vecB[i] * vecB[i];
-  }
-
-  const denominator = Math.sqrt(normA) * Math.sqrt(normB);
-  if (denominator === 0) {
-    return 0;
-  }
-
-  return dotProduct / denominator;
-}
 
 /**
  * Mongoose implementation of Knowledge Base Repository
@@ -113,11 +83,20 @@ class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
             return null;
           }
 
-          const similarity = cosineSimilarity(queryEmbedding, item.embedding);
-          return {
-            item,
-            similarity,
-          };
+          try {
+            const similarity = cosineSimilarity(queryEmbedding, item.embedding);
+            return {
+              item,
+              similarity,
+            };
+          } catch (error) {
+            // Skip items with incompatible embedding dimensions
+            logger.warn('Error calculating similarity', {
+              itemId: item._id,
+              error: error instanceof Error ? error.message : String(error),
+            });
+            return null;
+          }
         })
         .filter(
           (result): result is { item: IKnowledgeBase; similarity: number } =>
