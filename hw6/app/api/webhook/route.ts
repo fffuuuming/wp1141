@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { type WebhookEvent } from '@/lib/services/lineService';
 import { config } from '@/lib/config';
-import { processMessage } from '@/lib/services/messageService';
+import { processMessage, processPostback } from '@/lib/services/messageService';
 import {
   handleFollowEvent,
   handleUnfollowEvent,
@@ -64,6 +64,15 @@ export async function POST(request: NextRequest) {
         // Don't await - process in background to respond quickly
         processMessage(event).catch((error) => {
           logger.error('Error processing message asynchronously', error, {
+            eventType: event.type,
+            userId: event.source.userId,
+          });
+        });
+      } else if (event.type === 'postback') {
+        // Handle postback event (button click)
+        // Don't await - process in background to respond quickly
+        processPostback(event).catch((error) => {
+          logger.error('Error processing postback asynchronously', error, {
             eventType: event.type,
             userId: event.source.userId,
           });

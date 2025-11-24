@@ -1,6 +1,6 @@
 import { withDatabase } from '@/lib/utils/withDatabase';
 import { Conversation } from '@/lib/models';
-import { sendTextMessage } from './lineService';
+import { sendTextMessage, getUserProfile, replyMessage } from './lineService';
 import { conversationFlowService } from './conversationFlowService';
 import { conversationGraphService } from './conversationGraphService';
 import { getOrCreateUser, getUserByLineId } from './userService';
@@ -13,6 +13,7 @@ import {
   ERROR_MESSAGES,
 } from '@/lib/constants/bot';
 import { getCommandType } from '@/lib/constants/commands';
+import type { Message } from '@line/bot-sdk';
 
 /**
  * Handle user follow event (when user adds bot as friend)
@@ -28,15 +29,63 @@ export const handleFollowEvent = withDatabase(async (
     // Get or create active conversation
     const conversation = await getOrCreateActiveConversation(user._id, userId);
 
-    // Get root node and render it (shows category buttons)
-    const rootNode = conversationGraphService.getRootNode();
-    await conversationFlowService.renderNode(
-      rootNode,
-      replyToken,
-      conversation._id.toString()
-    );
+    // Get user profile to personalize welcome message
+    const profile = await getUserProfile(userId);
+    const userName = profile?.displayName || '朋友';
 
-    logger.info('Welcome message with buttons sent', { userId });
+    // Get welcome message
+    const welcomeText = getWelcomeMessage(userName);
+
+    // Get root node to build category buttons/carousel
+    const rootNode = conversationGraphService.getRootNode();
+
+    // Build messages array - send welcome message + category buttons in one reply
+    const messages: Message[] = [
+      {
+        type: 'text',
+        text: welcomeText,
+      },
+    ];
+
+    // Add category buttons (always use buttons template, max 4 buttons)
+    if (rootNode.children && rootNode.children.length > 0) {
+      // LINE buttons template supports max 4 buttons
+      const buttons = rootNode.children.slice(0, 4).map((child) => ({
+        label: child.title,
+        data: child.id,
+      }));
+
+      const buttonsMessage: Message = {
+        type: 'template',
+        altText: '請選擇您想了解的類別',
+        template: {
+          type: 'buttons',
+          text: '請選擇您想了解的類別：',
+          actions: buttons.map((button) => {
+            const label = button.label.length > 20 ? button.label.substring(0, 17) + '...' : button.label;
+            const data = button.data.length > 300 ? button.data.substring(0, 297) + '...' : button.data;
+            return {
+              type: 'postback',
+              label: label,
+              data: data,
+              displayText: button.label,
+            };
+          }),
+        },
+      };
+
+      messages.push(buttonsMessage);
+    }
+
+    // Send all messages in one reply (reply token used only once)
+    await replyMessage(replyToken, messages);
+
+    // Update conversation current node
+    await Conversation.findByIdAndUpdate(conversation._id, {
+      currentNodeId: rootNode.id,
+    });
+
+    logger.info('Welcome message with buttons sent', { userId, userName });
   } catch (error) {
     logger.error('Error handling follow event', error, { userId });
     // Try to send error message

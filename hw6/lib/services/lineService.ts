@@ -112,6 +112,102 @@ export async function getUserProfile(userId: string) {
   }
 }
 
+/**
+ * Send a buttons template message
+ * @param replyToken - LINE reply token
+ * @param text - Main text to display (max 160 characters)
+ * @param buttons - Array of button labels (max 4 buttons)
+ */
+export async function sendButtonsTemplate(
+  replyToken: string,
+  text: string,
+  buttons: Array<{ label: string; data: string; displayText?: string }>
+): Promise<void> {
+  // LINE buttons template supports max 4 buttons
+  const buttonsToSend = buttons.slice(0, 4);
+
+  // LINE limits: text max 160 chars, label max 20 chars, displayText max 300 chars, data max 300 chars
+  const truncatedText = text.length > 160 ? text.substring(0, 157) + '...' : text;
+
+  const template: Message = {
+    type: 'template',
+    altText: truncatedText,
+    template: {
+      type: 'buttons',
+      text: truncatedText,
+      actions: buttonsToSend.map((button) => {
+        // Truncate to LINE limits
+        const label = button.label.length > 20 ? button.label.substring(0, 17) + '...' : button.label;
+        const data = button.data.length > 300 ? button.data.substring(0, 297) + '...' : button.data;
+        const displayText = (button.displayText || button.label).length > 300 
+          ? (button.displayText || button.label).substring(0, 297) + '...' 
+          : (button.displayText || button.label);
+
+        return {
+          type: 'postback',
+          label: label,
+          data: data,
+          displayText: displayText,
+        };
+      }),
+    },
+  };
+
+  await replyMessage(replyToken, [template]);
+}
+
+/**
+ * Send a carousel template message (for questions list)
+ * @param replyToken - LINE reply token
+ * @param items - Array of carousel items (max 10 items)
+ */
+export async function sendCarouselTemplate(
+  replyToken: string,
+  items: Array<{
+    title: string;
+    text: string;
+    actions: Array<{ label: string; data: string; displayText?: string }>;
+  }>
+): Promise<void> {
+  // LINE carousel supports max 10 items
+  const itemsToSend = items.slice(0, 10);
+
+  const template: Message = {
+    type: 'template',
+    altText: '請選擇一個問題',
+    template: {
+      type: 'carousel',
+      columns: itemsToSend.map((item) => {
+        // LINE limits: title max 40 chars, text max 120 chars
+        const title = item.title.length > 40 ? item.title.substring(0, 37) + '...' : item.title;
+        const text = item.text.length > 120 ? item.text.substring(0, 117) + '...' : item.text;
+
+        return {
+          title: title,
+          text: text,
+          actions: item.actions.map((action) => {
+            // Truncate to LINE limits
+            const label = action.label.length > 20 ? action.label.substring(0, 17) + '...' : action.label;
+            const data = action.data.length > 300 ? action.data.substring(0, 297) + '...' : action.data;
+            const displayText = (action.displayText || action.label).length > 300
+              ? (action.displayText || action.label).substring(0, 297) + '...'
+              : (action.displayText || action.label);
+
+            return {
+              type: 'postback',
+              label: label,
+              data: data,
+              displayText: displayText,
+            };
+          }),
+        };
+      }),
+    },
+  };
+
+  await replyMessage(replyToken, [template]);
+}
+
 // Type exports
 export type { WebhookEvent };
 
