@@ -21,6 +21,9 @@ export default function ConversationsPage() {
   // Filters
   const [activeFilter, setActiveFilter] = useState<boolean | null>(null);
   const [userIdFilter, setUserIdFilter] = useState('');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+  const [dateFilterType, setDateFilterType] = useState<'startedAt' | 'lastMessageAt'>('lastMessageAt');
   const [autoRefresh, setAutoRefresh] = useState(true);
 
   // Fetch conversations
@@ -36,6 +39,17 @@ export default function ConversationsPage() {
       }
       if (userIdFilter.trim()) {
         params.set('userId', userIdFilter.trim());
+      }
+      
+      // Date range filters
+      if (startDate) {
+        params.set('startDate', startDate);
+      }
+      if (endDate) {
+        params.set('endDate', endDate);
+      }
+      if (dateFilterType) {
+        params.set('dateFilterType', dateFilterType);
       }
 
       const response = await fetch(`/api/conversations?${params.toString()}`);
@@ -59,7 +73,7 @@ export default function ConversationsPage() {
   // Initial load
   useEffect(() => {
     fetchConversations();
-  }, [activeFilter, userIdFilter, pagination.offset]);
+  }, [activeFilter, userIdFilter, startDate, endDate, dateFilterType, pagination.offset]);
 
   // Auto-refresh every 5 seconds
   useEffect(() => {
@@ -70,7 +84,7 @@ export default function ConversationsPage() {
     }, 5000); // Refresh every 5 seconds
 
     return () => clearInterval(interval);
-  }, [autoRefresh, activeFilter, userIdFilter]);
+  }, [autoRefresh, activeFilter, userIdFilter, startDate, endDate, dateFilterType]);
 
   const handleFilterChange = (filter: 'all' | 'active' | 'inactive') => {
     if (filter === 'all') {
@@ -130,7 +144,7 @@ export default function ConversationsPage() {
 
       {/* Filters */}
       <div className="bg-white p-4 rounded-lg shadow-sm border">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Active Status Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -185,6 +199,72 @@ export default function ConversationsPage() {
               placeholder="輸入使用者 ID..."
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+          </div>
+
+          {/* Date Filter Type */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              日期篩選類型
+            </label>
+            <select
+              value={dateFilterType}
+              onChange={(e) => {
+                setDateFilterType(e.target.value as 'startedAt' | 'lastMessageAt');
+                setPagination((prev) => ({ ...prev, offset: 0 }));
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="lastMessageAt">最後訊息時間</option>
+              <option value="startedAt">開始時間</option>
+            </select>
+          </div>
+
+          {/* Start Date Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              開始日期
+            </label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => {
+                setStartDate(e.target.value);
+                setPagination((prev) => ({ ...prev, offset: 0 }));
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* End Date Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              結束日期
+            </label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => {
+                setEndDate(e.target.value);
+                setPagination((prev) => ({ ...prev, offset: 0 }));
+              }}
+              min={startDate || undefined}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* Clear Date Filters */}
+          <div className="flex items-end">
+            <button
+              onClick={() => {
+                setStartDate('');
+                setEndDate('');
+                setPagination((prev) => ({ ...prev, offset: 0 }));
+              }}
+              disabled={!startDate && !endDate}
+              className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+            >
+              清除日期篩選
+            </button>
           </div>
         </div>
       </div>

@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { withDatabase } from '@/lib/utils/withDatabase';
 import { Conversation, Message } from '@/lib/models';
 import { successResponse, errorResponse } from '@/lib/utils/apiResponse';
-import { validateInt, validateBoolean, validateString, withValidation } from '@/lib/utils/requestValidator';
+import { validateInt, validateBoolean, validateString, validateDate, withValidation } from '@/lib/utils/requestValidator';
 import type {
   ConversationListResponse,
   ConversationQueryParams,
@@ -33,6 +33,20 @@ export async function GET(request: NextRequest) {
       const userId = validateString(searchParams.get('userId'), 'userId', {
         required: false,
       });
+      
+      // Date range filters
+      const startDate = validateDate(searchParams.get('startDate'), 'startDate', {
+        required: false,
+      });
+      const endDate = validateDate(searchParams.get('endDate'), 'endDate', {
+        required: false,
+      });
+      
+      // Date filter type: 'startedAt' (default) or 'lastMessageAt'
+      const dateFilterType = validateString(searchParams.get('dateFilterType'), 'dateFilterType', {
+        required: false,
+        defaultValue: 'lastMessageAt',
+      });
 
       // Build query
       const query: Record<string, unknown> = {};
@@ -41,6 +55,26 @@ export async function GET(request: NextRequest) {
       }
       if (userId) {
         query.lineUserId = userId;
+      }
+      
+      // Add date range filter
+      if (startDate || endDate) {
+        const dateField = dateFilterType === 'startedAt' ? 'startedAt' : 'lastMessageAt';
+        const dateQuery: Record<string, unknown> = {};
+        
+        if (startDate) {
+          dateQuery.$gte = startDate;
+        }
+        if (endDate) {
+          // Add one day to endDate to include the entire end date
+          const endDateInclusive = new Date(endDate);
+          endDateInclusive.setHours(23, 59, 59, 999);
+          dateQuery.$lte = endDateInclusive;
+        }
+        
+        if (Object.keys(dateQuery).length > 0) {
+          query[dateField] = dateQuery;
+        }
       }
 
       // Get conversations
