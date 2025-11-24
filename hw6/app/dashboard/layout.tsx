@@ -24,6 +24,12 @@ export default function DashboardLayout({
                 對話紀錄
               </Link>
               <Link
+                href="/dashboard/knowledge-base"
+                className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+              >
+                知識庫檢視
+              </Link>
+              <Link
                 href="/"
                 className="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium"
               >
