@@ -257,13 +257,18 @@ export async function processPostback(event: WebhookEvent): Promise<void> {
           }
         }
       } catch (error) {
-        logger.warn('Error extracting question text from postback', error, { postbackData });
+        logger.warn('Error extracting question text from postback', {
+          error: error instanceof Error ? error.message : String(error),
+          postbackData,
+        });
       }
 
       // Save postback as user message - use question text if available
       // LINE's postback.displayText will show in chat, but we save the question text to DB
+      // Note: displayText is optional in LINE SDK types but may exist at runtime
+      const postback = event.postback as { data: string; displayText?: string };
       const userMessageText = questionText || 
-        (event.postback.displayText) || 
+        postback.displayText || 
         `[按鈕點擊] ${postbackData}`;
       await saveMessage(conversation._id, userMessageText, 'user', 'text');
 

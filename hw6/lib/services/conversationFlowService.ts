@@ -224,7 +224,9 @@ ${rawAnswer}
       });
     } catch (error) {
       // If LLM fails, use raw answer as fallback
-      logger.warn('Failed to refine answer with LLM, using raw answer', error);
+      logger.warn('Failed to refine answer with LLM, using raw answer', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       refinedAnswer = rawAnswer;
     }
 

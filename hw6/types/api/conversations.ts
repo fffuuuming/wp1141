@@ -1,4 +1,5 @@
 import type { IConversation, IMessage } from '@/lib/models';
+import type { PaginationInfo } from './common';
 
 /**
  * Conversation list item (for API responses)
@@ -52,15 +53,8 @@ export interface ConversationUpdateRequest {
   isActive?: boolean;
 }
 
-/**
- * Pagination info
- */
-export interface PaginationInfo {
-  total: number;
-  limit: number;
-  offset: number;
-  hasMore: boolean;
-}
+// Re-export PaginationInfo for convenience
+export type { PaginationInfo };
 
 /**
  * Conversation list response

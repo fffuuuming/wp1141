@@ -77,8 +77,13 @@ class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
       }).exec();
 
       // Calculate similarity for each item
+      type SimilarityResult = {
+        item: typeof allItems[0];
+        similarity: number;
+      };
+      
       const itemsWithSimilarity = allItems
-        .map((item) => {
+        .map((item): SimilarityResult | null => {
           if (!item.embedding || item.embedding.length === 0) {
             return null;
           }
@@ -99,12 +104,12 @@ class KnowledgeBaseRepository implements IKnowledgeBaseRepository {
           }
         })
         .filter(
-          (result): result is { item: IKnowledgeBase; similarity: number } =>
+          (result): result is SimilarityResult =>
             result !== null && result.similarity >= threshold
         )
         .sort((a, b) => b.similarity - a.similarity)
         .slice(0, limit)
-        .map((result) => result.item);
+        .map((result) => result.item as IKnowledgeBase);
 
       return itemsWithSimilarity;
     })();

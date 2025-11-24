@@ -1,4 +1,8 @@
 import type { IKnowledgeBase, KnowledgeBaseCategory } from '@/lib/models/KnowledgeBase';
+import type { PaginationInfo } from './common';
+
+// Re-export for convenience
+export type { KnowledgeBaseCategory };
 
 /**
  * Knowledge base item for API responses (excludes embedding for security/performance)
@@ -58,15 +62,8 @@ export interface UpdateKnowledgeBaseRequest {
   };
 }
 
-/**
- * Pagination info
- */
-export interface PaginationInfo {
-  total: number;
-  limit: number;
-  offset: number;
-  hasMore: boolean;
-}
+// Re-export PaginationInfo for convenience
+export type { PaginationInfo };
 
 /**
  * Knowledge base list response
