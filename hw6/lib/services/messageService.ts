@@ -1,6 +1,7 @@
 import { withDatabase } from '@/lib/utils/withDatabase';
 import { sendTextMessage, type WebhookEvent } from './lineService';
 import { llmService } from './llmService';
+import { ragService } from './ragService';
 import { isCommand, handleCommand } from './botLogicService';
 import {
   getOrCreateUser,
@@ -91,7 +92,11 @@ export async function processMessage(event: WebhookEvent): Promise<void> {
 }
 
 /**
- * Generate reply message using LLM with fallback
+ * Generate reply message using RAG with fallback to direct LLM
+ * RAG workflow:
+ * 1. Try RAG (knowledge base + LLM)
+ * 2. If RAG fails, fallback to direct LLM
+ * 3. If direct LLM fails, use fallback responses
  */
 async function generateReply(
   userMessage: string,
@@ -99,35 +104,52 @@ async function generateReply(
 ): Promise<string> {
   // Commands are already handled before this function is called
 
-  // Try to generate response using LLM
+  // Step 1: Try RAG first (knowledge base + LLM)
   try {
-    const response = await llmService.generateResponse(userMessage, conversationHistory);
-    return response.content;
-  } catch (error) {
-    logger.error('LLM error', error, { userMessage: userMessage.substring(0, 50) });
+    logger.debug('Attempting RAG response', { userMessage: userMessage.substring(0, 50) });
+    const ragResponse = await ragService.generateRAGResponse(userMessage, conversationHistory);
+    return ragResponse;
+  } catch (ragError) {
+    logger.warn('RAG failed, falling back to direct LLM', {
+      error: ragError instanceof Error ? ragError.message : String(ragError),
+      userMessage: userMessage.substring(0, 50),
+    });
 
-    // Handle different error types
-    if (error instanceof LLMError) {
-      // For retryable errors, use fallback
-      // Error details are already logged above, don't expose to users
-      if (error.retryable) {
+    // Step 2: Fallback to direct LLM if RAG fails
+    try {
+      logger.debug('Attempting direct LLM response', { userMessage: userMessage.substring(0, 50) });
+      const response = await llmService.generateResponse(userMessage, conversationHistory);
+      return response.content;
+    } catch (llmError) {
+      logger.error('Direct LLM also failed', {
+        ragError: ragError instanceof Error ? ragError.message : String(ragError),
+        llmError: llmError instanceof Error ? llmError.message : String(llmError),
+        userMessage: userMessage.substring(0, 50),
+      });
+
+      // Step 3: Handle different error types and use fallback responses
+      if (llmError instanceof LLMError) {
+        // For retryable errors, use fallback
+        // Error details are already logged above, don't expose to users
+        if (llmError.retryable) {
+          return getFallbackResponse(userMessage);
+        }
+
+        // For non-retryable errors (quota, auth), return user-facing message only
+        // Developer error details are already logged above
+        if (llmError.code === 'QUOTA_EXCEEDED' || llmError.code === 'AUTH_ERROR') {
+          return ERROR_MESSAGES.LLM_ERROR;
+        }
+
+        // For other errors, use fallback
+        // Error details are already logged above, don't expose to users
         return getFallbackResponse(userMessage);
       }
 
-      // For non-retryable errors (quota, auth), return user-facing message only
-      // Developer error details are already logged above
-      if (error.code === 'QUOTA_EXCEEDED' || error.code === 'AUTH_ERROR') {
-        return ERROR_MESSAGES.LLM_ERROR;
-      }
-
-      // For other errors, use fallback
+      // Unknown error, use fallback
       // Error details are already logged above, don't expose to users
       return getFallbackResponse(userMessage);
     }
-
-    // Unknown error, use fallback
-    // Error details are already logged above, don't expose to users
-    return getFallbackResponse(userMessage);
   }
 }
 

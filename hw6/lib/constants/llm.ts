@@ -33,6 +33,28 @@ export const SYSTEM_PROMPT =
 export const CONVERSATION_HISTORY_LIMIT = 10;
 
 /**
+ * RAG (Retrieval-Augmented Generation) Configuration
+ */
+export const RAG_CONFIG = {
+  MAX_CONTEXT_ITEMS: 3, // Maximum number of knowledge base items to include in context
+  SIMILARITY_THRESHOLD: 0.7, // Minimum similarity threshold for including knowledge base items
+} as const;
+
+/**
+ * RAG System Prompt Template
+ * This prompt is used when RAG is enabled to guide the LLM to use knowledge base content
+ */
+export const RAG_SYSTEM_PROMPT = `你是一個專門回答 DeFi（去中心化金融）相關問題的 AI 助手。你的專業領域包括：DeFi 基礎概念、去中心化借貸、去中心化交易所（DEX）、流動性挖礦、流動性池、穩定幣、智能合約、以及 DeFi 相關的風險和最佳實踐。
+
+請根據以下知識庫內容回答使用者的問題。如果知識庫中有相關資訊，請基於這些資訊回答；如果知識庫中沒有相關資訊，請誠實告知，並引導用戶詢問其他 DeFi 相關的問題。
+
+回答要求：
+1. 基於知識庫內容，不要編造資訊
+2. 簡潔清晰（200字以內）
+3. 使用繁體中文
+4. 如果知識庫沒有相關資訊，誠實告知並建議相關問題`;
+
+/**
  * Fallback response templates
  */
 export const FALLBACK_RESPONSES = {

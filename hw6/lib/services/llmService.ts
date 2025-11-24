@@ -48,12 +48,16 @@ class LLMService {
 
   /**
    * Generate response using OpenAI
+   * @param prompt - User's prompt/question
+   * @param conversationHistory - Previous conversation messages
+   * @param systemPrompt - Optional custom system prompt (defaults to SYSTEM_PROMPT)
    */
   async generateResponse(
     prompt: string,
-    conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>
+    conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>,
+    systemPrompt?: string
   ): Promise<LLMResponse> {
-    return this.callOpenAI(prompt, conversationHistory);
+    return this.callOpenAI(prompt, conversationHistory, systemPrompt);
   }
 
   /**
@@ -61,12 +65,13 @@ class LLMService {
    */
   private async callOpenAI(
     prompt: string,
-    conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>
+    conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>,
+    systemPrompt?: string
   ): Promise<LLMResponse> {
     const messages: Array<{ role: string; content: string }> = [
       {
         role: 'system',
-        content: SYSTEM_PROMPT,
+        content: systemPrompt || SYSTEM_PROMPT,
       },
     ];
 
