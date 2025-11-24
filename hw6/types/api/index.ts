@@ -5,4 +5,5 @@
 export * from './conversations';
 export * from './stats';
 export * from './webhook';
+export * from './knowledge-base';
 
