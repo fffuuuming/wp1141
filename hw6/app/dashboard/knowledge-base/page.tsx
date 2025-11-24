@@ -109,11 +109,14 @@ export default function KnowledgeBasePage() {
               setCategoryFilter(e.target.value as KnowledgeBaseCategory | '');
               setPagination((prev) => ({ ...prev, offset: 0 }));
             }}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
+            style={{
+              color: '#111827',
+            }}
           >
-            <option value="">全部</option>
+            <option value="" style={{ color: '#111827' }}>全部</option>
             {Object.entries(categoryLabels).map(([value, label]) => (
-              <option key={value} value={value}>
+              <option key={value} value={value} style={{ color: '#111827' }}>
                 {label}
               </option>
             ))}
