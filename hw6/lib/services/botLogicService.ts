@@ -158,6 +158,62 @@ export const handleCommand = withDatabase(async (
     return INFO_MESSAGE;
   }
 
+  // Menu command - show root menu with category buttons
+  if (commandType === 'menu') {
+    try {
+      // Get or create user and conversation
+      const user = await getOrCreateUser(userId);
+      const conversation = await getOrCreateActiveConversation(user._id, userId);
+
+      // Get root node
+      const rootNode = conversationGraphService.getRootNode();
+
+      // Build buttons message
+      if (rootNode.children && rootNode.children.length > 0) {
+        const buttons = rootNode.children.slice(0, 4).map((child) => ({
+          label: child.title,
+          data: child.id,
+        }));
+
+        const buttonsMessage: Message = {
+          type: 'template',
+          altText: '請選擇您想了解的類別',
+          template: {
+            type: 'buttons',
+            text: '請選擇您想了解的類別：',
+            actions: buttons.map((button) => {
+              const label = button.label.length > 20 ? button.label.substring(0, 17) + '...' : button.label;
+              const data = button.data.length > 300 ? button.data.substring(0, 297) + '...' : button.data;
+              return {
+                type: 'postback',
+                label: label,
+                data: data,
+                displayText: button.label,
+              };
+            }),
+          },
+        };
+
+        // Send buttons template
+        await replyMessage(replyToken, [buttonsMessage]);
+
+        // Update conversation current node
+        await Conversation.findByIdAndUpdate(conversation._id, {
+          currentNodeId: rootNode.id,
+        });
+
+        logger.info('Menu command processed', { userId });
+        // Return null to indicate message already sent
+        return null;
+      } else {
+        return '目前沒有可用的類別。';
+      }
+    } catch (error) {
+      logger.error('Error handling menu command', error, { userId });
+      return '無法顯示主選單，請稍後再試。';
+    }
+  }
+
   // Unknown command
   return null;
 });

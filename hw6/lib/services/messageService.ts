@@ -3,6 +3,7 @@ import { sendTextMessage, type WebhookEvent } from './lineService';
 import { llmService } from './llmService';
 import { ragService } from './ragService';
 import { isCommand, handleCommand } from './botLogicService';
+import { getCommandType } from '@/lib/constants/commands';
 import { conversationFlowService } from './conversationFlowService';
 import {
   getOrCreateUser,
@@ -64,6 +65,13 @@ export async function processMessage(event: WebhookEvent): Promise<void> {
           await sendTextMessage(replyToken, commandReply);
           logger.info('Command processed', { userId, command: messageText });
           return;
+        } else {
+          // Command was handled but returned null (e.g., menu command sends buttons directly)
+          // Check if it's a menu command to return early
+          if (getCommandType(messageText) === 'menu') {
+            logger.info('Menu command processed', { userId });
+            return;
+          }
         }
       }
 

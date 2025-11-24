@@ -46,6 +46,7 @@ export const HELP_MESSAGE = `📖 使用說明
 • help / 幫助 - 顯示此說明
 • stats / 統計 - 查看你的統計資訊
 • info / 資訊 - 關於此助手
+• menu / 主選單 - 顯示主選單（類別按鈕）
 
 直接輸入 DeFi 相關問題，我會盡力回答你！`;
 

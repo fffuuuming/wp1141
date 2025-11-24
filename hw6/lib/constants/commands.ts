@@ -8,6 +8,7 @@ export const COMMANDS = {
   CLEAR: ['clear', '清除', '重置'],
   STATS: ['stats', '統計'],
   INFO: ['info', '資訊'],
+  MENU: ['主選單', 'menu', '選單'],
 } as const;
 
 /**
@@ -18,6 +19,7 @@ export const ALL_COMMANDS = [
   ...COMMANDS.CLEAR,
   ...COMMANDS.STATS,
   ...COMMANDS.INFO,
+  ...COMMANDS.MENU,
 ] as const;
 
 /**
@@ -33,7 +35,7 @@ export function isCommandString(message: string): boolean {
 /**
  * Get command type from message
  */
-export function getCommandType(message: string): 'help' | 'stats' | 'info' | null {
+export function getCommandType(message: string): 'help' | 'stats' | 'info' | 'menu' | null {
   const lowerMessage = message.toLowerCase().trim();
 
   if (COMMANDS.HELP.some((cmd) => lowerMessage === cmd || lowerMessage.startsWith(cmd + ' '))) {
@@ -46,6 +48,10 @@ export function getCommandType(message: string): 'help' | 'stats' | 'info' | nul
 
   if (COMMANDS.INFO.some((cmd) => lowerMessage === cmd || lowerMessage.startsWith(cmd + ' '))) {
     return 'info';
+  }
+
+  if (COMMANDS.MENU.some((cmd) => lowerMessage === cmd || lowerMessage.startsWith(cmd + ' '))) {
+    return 'menu';
   }
 
   return null;
