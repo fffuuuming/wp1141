@@ -33,17 +33,31 @@ export interface LLMErrorInterface {
  * LLM Service for OpenAI
  */
 class LLMService {
-  private apiKey: string;
-  private maxRetries: number;
-  private retryDelay: number;
+  private apiKey!: string; // Definite assignment - initialized in initialize()
+  private maxRetries!: number; // Definite assignment - initialized in initialize()
+  private retryDelay!: number; // Definite assignment - initialized in initialize()
+  private initialized = false;
 
   constructor() {
+    // Don't initialize in constructor - do it lazily when first used
+  }
+
+  /**
+   * Initialize the service (lazy initialization)
+   * This allows the module to be imported during build without failing
+   */
+  private initialize() {
+    if (this.initialized) {
+      return;
+    }
+
     if (!config.OPENAI_API_KEY) {
       throw new Error('OPENAI_API_KEY is required');
     }
     this.apiKey = config.OPENAI_API_KEY;
     this.maxRetries = config.LLM_MAX_RETRIES;
     this.retryDelay = config.LLM_RETRY_DELAY;
+    this.initialized = true;
   }
 
   /**
@@ -57,6 +71,7 @@ class LLMService {
     conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>,
     systemPrompt?: string
   ): Promise<LLMResponse> {
+    this.initialize(); // Lazy initialization
     return this.callOpenAI(prompt, conversationHistory, systemPrompt);
   }
 
