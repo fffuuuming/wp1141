@@ -125,12 +125,14 @@ class ConversationFlowService {
       const buttons = node.children.map((child) => ({
         label: child.title.length > 20 ? child.title.substring(0, 17) + '...' : child.title,
         data: child.id,
+        displayText: child.title, // Store full title for history
       }));
 
       // Add back button (max 4 buttons total)
       buttons.push({
         label: '返回主選單',
         data: 'back-to-root',
+        displayText: '返回主選單',
       });
 
       await sendButtonsTemplate(
@@ -181,6 +183,7 @@ class ConversationFlowService {
       .map((child) => ({
         label: child.title,
         data: child.id,
+        displayText: child.title, // Store title for history
       }));
 
     const allButtons = [...buttons, ...navButtons].slice(0, 4);

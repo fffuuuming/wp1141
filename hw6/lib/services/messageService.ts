@@ -5,6 +5,7 @@ import { ragService } from './ragService';
 import { isCommand, handleCommand } from './botLogicService';
 import { getCommandType } from '@/lib/constants/commands';
 import { conversationFlowService } from './conversationFlowService';
+import { conversationGraphService } from './conversationGraphService';
 import {
   getOrCreateUser,
   incrementUserMessageCount,
@@ -297,7 +298,30 @@ export async function processPostback(event: WebhookEvent): Promise<void> {
 
       // After sending response, save message and update counts (non-blocking)
       const postback = event.postback as { data: string; displayText?: string };
-      const userMessageText = postback.displayText || `[按鈕點擊] ${postbackData}`;
+      
+      // Get display text - should always be set now since we set it on all buttons
+      // If missing (edge case), look up node title asynchronously
+      let userMessageText = postback.displayText;
+      if (!userMessageText) {
+        // Rare case: displayText missing, look up node (non-blocking)
+        conversationGraphService.navigateToNode(postbackData)
+          .then((node) => {
+            return node?.title || postbackData;
+          })
+          .catch(() => postbackData)
+          .then((text) => {
+            return Promise.all([
+              saveMessage(conversation._id, text, 'user', 'text'),
+              incrementConversationMessageCount(conversation._id),
+            ]);
+          })
+          .catch((error) => {
+            logger.error('Error saving postback message', error, { userId, postbackData });
+          });
+        
+        logger.info('Postback processed (displayText was missing)', { userId, postbackData });
+        return;
+      }
 
       // Save postback as user message (non-blocking, happens after response sent)
       Promise.all([

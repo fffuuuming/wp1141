@@ -133,28 +133,28 @@ class ConversationGraphService {
         itemCount: items.length 
       });
       
-      const questions = items.map((item, index) => ({
+      const questions: ConversationNode[] = items.map((item, index) => ({
         id: `question-${category}-${index}`,
-        type: 'question',
+        type: 'question' as const,
         title: item.question,
         questionId: item._id.toString(),
         children: [
           {
             id: `answer-${category}-${index}`,
-            type: 'answer',
+            type: 'answer' as const,
             title: '查看答案',
             questionId: item._id.toString(), // Store questionId for easier lookup
             // Content will be loaded when navigating to this node
           },
           {
             id: `back-to-category-${category}`,
-            type: 'category',
+            type: 'category' as const,
             title: '返回類別',
             category: category,
           },
           {
             id: 'back-to-root',
-            type: 'root',
+            type: 'root' as const,
             title: '返回主選單',
           },
         ],
