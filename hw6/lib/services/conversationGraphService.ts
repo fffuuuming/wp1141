@@ -1,4 +1,5 @@
 import { knowledgeBaseService } from './knowledgeBaseService';
+import { knowledgeBaseRepository } from '@/lib/repositories/mongoose';
 import type { KnowledgeBaseCategory } from '@/lib/models/KnowledgeBase';
 import { logger } from '@/lib/utils/logger';
 
@@ -26,6 +27,13 @@ export interface ConversationNode {
  * Manages the graph-based conversation flow
  */
 class ConversationGraphService {
+  // Cache for category questions (in-memory cache)
+  private categoryQuestionsCache = new Map<KnowledgeBaseCategory, {
+    questions: ConversationNode[];
+    timestamp: number;
+  }>();
+  private readonly CACHE_TTL = 1000 * 60 * 5; // 5 minutes cache
+
   /**
    * Get the root node (main menu)
    */
@@ -101,17 +109,31 @@ class ConversationGraphService {
 
   /**
    * Get questions for a category
+   * Uses caching to avoid repeated database queries
    */
   async getCategoryQuestions(category: KnowledgeBaseCategory): Promise<ConversationNode[]> {
     try {
+      // Check cache first
+      const cached = this.categoryQuestionsCache.get(category);
+      const now = Date.now();
+      
+      if (cached && (now - cached.timestamp) < this.CACHE_TTL) {
+        logger.debug('Using cached category questions', { 
+          category, 
+          itemCount: cached.questions.length 
+        });
+        return cached.questions;
+      }
+
+      // Fetch from database
       const items = await knowledgeBaseService.getByCategory(category);
       
-      logger.debug('Getting category questions', { 
+      logger.debug('Getting category questions from database', { 
         category, 
         itemCount: items.length 
       });
       
-      return items.map((item, index) => ({
+      const questions = items.map((item, index) => ({
         id: `question-${category}-${index}`,
         type: 'question',
         title: item.question,
@@ -137,9 +159,40 @@ class ConversationGraphService {
           },
         ],
       }));
+
+      // Cache the results
+      this.categoryQuestionsCache.set(category, {
+        questions,
+        timestamp: now,
+      });
+
+      // Clean up old cache entries if cache is too large
+      if (this.categoryQuestionsCache.size > 10) {
+        for (const [key, value] of this.categoryQuestionsCache.entries()) {
+          if (now - value.timestamp >= this.CACHE_TTL) {
+            this.categoryQuestionsCache.delete(key);
+          }
+        }
+      }
+
+      return questions;
     } catch (error) {
       logger.error('Error getting category questions', error, { category });
       return [];
+    }
+  }
+
+  /**
+   * Clear category questions cache
+   * Useful when knowledge base is updated
+   */
+  clearCategoryCache(category?: KnowledgeBaseCategory): void {
+    if (category) {
+      this.categoryQuestionsCache.delete(category);
+      logger.debug('Cleared cache for category', { category });
+    } else {
+      this.categoryQuestionsCache.clear();
+      logger.debug('Cleared all category cache');
     }
   }
 
@@ -148,9 +201,8 @@ class ConversationGraphService {
    */
   async getAnswerNode(questionId: string): Promise<ConversationNode | null> {
     try {
-      // Get all knowledge base items to find the question
-      const allItems = await knowledgeBaseService.getAll();
-      const item = allItems.find((i) => i._id.toString() === questionId);
+      // Use findById instead of getAll() - much more efficient
+      const item = await knowledgeBaseRepository.findById(questionId);
 
       if (!item) {
         return null;

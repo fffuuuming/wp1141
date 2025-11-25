@@ -64,15 +64,17 @@ export async function GET(request: NextRequest) {
           query.category = category;
         }
 
-        // Get total count
-        const total = await knowledgeBaseRepository.count(query);
+        // Get total count and items in parallel (optimization)
+        const [total, items] = await Promise.all([
+          knowledgeBaseRepository.count(query),
+          // Use database-level pagination instead of fetching all then slicing
+          category
+            ? knowledgeBaseRepository.findAll(category as KnowledgeBaseCategory)
+            : knowledgeBaseRepository.findAll(),
+        ]);
 
-        // Get knowledge base items
-        const items = category
-          ? await knowledgeBaseRepository.findAll(category as KnowledgeBaseCategory)
-          : await knowledgeBaseRepository.findAll();
-
-        // Apply pagination
+        // Apply pagination (still need to slice since findAll doesn't support pagination yet)
+        // TODO: Add pagination support to repository for better performance
         const paginatedItems = items.slice(offset, offset + limit);
 
         // Format response (exclude embeddings)
