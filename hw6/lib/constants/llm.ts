@@ -7,17 +7,21 @@
  * OpenAI model configuration
  * 
  * Available models (as of 2024):
- * - gpt-5-nano: Fastest and cheapest, good for simple tasks
- * - gpt-4o-mini: Fast and cost-effective, good balance
- * - gpt-3.5-turbo: Legacy model, still supported
- * - gpt-4o: More capable but more expensive
+ * - gpt-3.5-turbo: FASTEST, cheapest, good for simple tasks (recommended for speed)
+ * - gpt-4o-mini: Fast, cost-effective, better quality than 3.5-turbo (current)
+ * - gpt-4o: More capable but slower and more expensive
+ * 
+ * Speed comparison (typical latency):
+ * - gpt-3.5-turbo: ~500-800ms (fastest)
+ * - gpt-4o-mini: ~800-1200ms (current)
+ * - gpt-4o: ~1500-2500ms (slowest)
  * 
  * Pricing reference: https://openai.com/zh-Hant/api/pricing/
  */
 export const OPENAI_CONFIG = {
-  MODEL: 'gpt-4o-mini', // Fast and cost-effective
+  MODEL: 'gpt-3.5-turbo', // Fast and cost-effective (use 'gpt-3.5-turbo' for maximum speed)
   TEMPERATURE: 0.7,
-  MAX_TOKENS: 300, // Reduced for faster responses (was 500)
+  MAX_TOKENS: 500, // Reduced for faster responses
   TIMEOUT: 20000, // 20 seconds (reduced from 30 for faster timeout)
 } as const;
 

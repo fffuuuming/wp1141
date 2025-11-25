@@ -1,6 +1,6 @@
 import { withDatabase } from '@/lib/utils/withDatabase';
 import { Conversation } from '@/lib/models';
-import { sendTextMessage, getUserProfile, replyMessage } from './lineService';
+import { sendTextMessage, getUserProfile, replyMessage, sendCarouselTemplate } from './lineService';
 import { conversationFlowService } from './conversationFlowService';
 import { conversationGraphService } from './conversationGraphService';
 import { getOrCreateUser, getUserByLineId } from './userService';
@@ -47,34 +47,69 @@ export const handleFollowEvent = withDatabase(async (
       },
     ];
 
-    // Add category buttons (always use buttons template, max 4 buttons)
+    // Add category menu (use carousel if more than 4 categories, otherwise buttons)
     if (rootNode.children && rootNode.children.length > 0) {
-      // LINE buttons template supports max 4 buttons
-      const buttons = rootNode.children.slice(0, 4).map((child) => ({
-        label: child.title,
-        data: child.id,
-      }));
+      if (rootNode.children.length > 4) {
+        // Use carousel for more than 4 categories
+        const carouselItems = rootNode.children.map((child) => ({
+          title: child.title,
+          text: '點擊查看此類別的問題',
+          actions: [
+            {
+              label: '查看問題',
+              data: child.id,
+              displayText: child.title,
+            },
+          ],
+        }));
 
-      const buttonsMessage: Message = {
-        type: 'template',
-        altText: '請選擇您想了解的類別',
-        template: {
-          type: 'buttons',
-          text: '請選擇您想了解的類別：',
-          actions: buttons.map((button) => {
-            const label = button.label.length > 20 ? button.label.substring(0, 17) + '...' : button.label;
-            const data = button.data.length > 300 ? button.data.substring(0, 297) + '...' : button.data;
-            return {
-              type: 'postback',
-              label: label,
-              data: data,
-              displayText: button.label,
-            };
-          }),
-        },
-      };
+        const carouselMessage: Message = {
+          type: 'template',
+          altText: '請選擇您想了解的類別',
+          template: {
+            type: 'carousel',
+            columns: carouselItems.map((item) => ({
+              title: item.title.length > 40 ? item.title.substring(0, 37) + '...' : item.title,
+              text: item.text,
+              actions: item.actions.map((action) => ({
+                type: 'postback',
+                label: action.label,
+                data: action.data.length > 300 ? action.data.substring(0, 297) + '...' : action.data,
+                displayText: action.displayText || action.label,
+              })),
+            })),
+          },
+        };
 
-      messages.push(buttonsMessage);
+        messages.push(carouselMessage);
+      } else {
+        // Use buttons template for 4 or fewer categories
+        const buttons = rootNode.children.map((child) => ({
+          label: child.title,
+          data: child.id,
+        }));
+
+        const buttonsMessage: Message = {
+          type: 'template',
+          altText: '請選擇您想了解的類別',
+          template: {
+            type: 'buttons',
+            text: '請選擇您想了解的類別：',
+            actions: buttons.map((button) => {
+              const label = button.label.length > 20 ? button.label.substring(0, 17) + '...' : button.label;
+              const data = button.data.length > 300 ? button.data.substring(0, 297) + '...' : button.data;
+              return {
+                type: 'postback',
+                label: label,
+                data: data,
+                displayText: button.label,
+              };
+            }),
+          },
+        };
+
+        messages.push(buttonsMessage);
+      }
     }
 
     // Send all messages in one reply (reply token used only once)
@@ -167,34 +202,51 @@ export async function handleCommand(
       // Get root node
       const rootNode = conversationGraphService.getRootNode();
 
-      // Build buttons message
+      // Build menu message (use carousel if more than 4 categories, otherwise buttons)
       if (rootNode.children && rootNode.children.length > 0) {
-        const buttons = rootNode.children.slice(0, 4).map((child) => ({
-          label: child.title,
-          data: child.id,
-        }));
+        if (rootNode.children.length > 4) {
+          // Use carousel for more than 4 categories
+          const carouselItems = rootNode.children.map((child) => ({
+            title: child.title,
+            text: '點擊查看此類別的問題',
+            actions: [
+              {
+                label: '查看問題',
+                data: child.id,
+                displayText: child.title,
+              },
+            ],
+          }));
 
-        const buttonsMessage: Message = {
-          type: 'template',
-          altText: '請選擇您想了解的類別',
-          template: {
-            type: 'buttons',
-            text: '請選擇您想了解的類別：',
-            actions: buttons.map((button) => {
-              const label = button.label.length > 20 ? button.label.substring(0, 17) + '...' : button.label;
-              const data = button.data.length > 300 ? button.data.substring(0, 297) + '...' : button.data;
-              return {
-                type: 'postback',
-                label: label,
-                data: data,
-                displayText: button.label,
-              };
-            }),
-          },
-        };
+          await sendCarouselTemplate(replyToken, carouselItems);
+        } else {
+          // Use buttons template for 4 or fewer categories
+          const buttons = rootNode.children.map((child) => ({
+            label: child.title,
+            data: child.id,
+          }));
 
-        // Send buttons template
-        await replyMessage(replyToken, [buttonsMessage]);
+          const buttonsMessage: Message = {
+            type: 'template',
+            altText: '請選擇您想了解的類別',
+            template: {
+              type: 'buttons',
+              text: '請選擇您想了解的類別：',
+              actions: buttons.map((button) => {
+                const label = button.label.length > 20 ? button.label.substring(0, 17) + '...' : button.label;
+                const data = button.data.length > 300 ? button.data.substring(0, 297) + '...' : button.data;
+                return {
+                  type: 'postback',
+                  label: label,
+                  data: data,
+                  displayText: button.label,
+                };
+              }),
+            },
+          };
+
+          await replyMessage(replyToken, [buttonsMessage]);
+        }
 
         // Update conversation current node
         await Conversation.findByIdAndUpdate(conversation._id, {
