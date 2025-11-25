@@ -18,6 +18,7 @@ import {
 import { LLMError } from '@/lib/errors';
 import { logger } from '@/lib/utils/logger';
 import { FALLBACK_RESPONSES, ERROR_MESSAGES } from '@/lib/constants';
+import { HELP_MESSAGE, INFO_MESSAGE } from '@/lib/constants/bot';
 
 /**
  * Process incoming message from Line
@@ -36,25 +37,31 @@ export async function processMessage(event: WebhookEvent): Promise<void> {
   const messageText = event.message.text;
   const replyToken = event.replyToken;
 
+  // Check if message is a simple command first (before DB operations)
+  // Simple commands don't need to save messages or update counts
+  const commandType = isCommand(messageText) ? getCommandType(messageText) : null;
+  const isSimpleCommand = commandType === 'help' || commandType === 'info';
+
   // Use withDatabase wrapper for the entire processing
   await withDatabase(async () => {
     try {
+      // For simple commands, skip unnecessary DB operations
+      if (isSimpleCommand) {
+        const commandReply = await handleCommandSimple(messageText, userId, replyToken);
+        if (commandReply) {
+          await sendTextMessage(replyToken, commandReply);
+          logger.info('Simple command processed', { userId, command: messageText });
+        }
+        return;
+      }
+
       // Get or create user (automatically updates last active time)
       const user = await getOrCreateUser(userId);
 
       // Get or create active conversation
       const conversation = await getOrCreateActiveConversation(user._id, userId);
 
-      // Save incoming message
-      await saveMessage(conversation._id, messageText, 'user', 'text');
-
-      // Update conversation message count and last message time
-      await incrementConversationMessageCount(conversation._id);
-
-      // Update user message count
-      await incrementUserMessageCount(userId);
-
-      // Check if message is a command
+      // Check if message is a command (non-simple commands like menu, stats)
       if (isCommand(messageText)) {
         const commandReply = await handleCommand(messageText, userId, replyToken);
         if (commandReply) {
@@ -74,6 +81,15 @@ export async function processMessage(event: WebhookEvent): Promise<void> {
           }
         }
       }
+
+      // Save incoming message (only for non-command messages)
+      await saveMessage(conversation._id, messageText, 'user', 'text');
+
+      // Update conversation message count and last message time
+      await incrementConversationMessageCount(conversation._id);
+
+      // Update user message count
+      await incrementUserMessageCount(userId);
 
       // Try conversation flow service first (for navigation commands)
       const handledByFlow = await conversationFlowService.handleTextMessage(
@@ -202,6 +218,30 @@ function getFallbackResponse(userMessage: string): string {
 }
 
 /**
+ * Handle simple commands (help, info) without database operations
+ * These commands don't need to save messages or update counts
+ */
+async function handleCommandSimple(
+  command: string,
+  userId: string,
+  replyToken: string
+): Promise<string | null> {
+  const commandType = getCommandType(command);
+
+  // Help command
+  if (commandType === 'help') {
+    return HELP_MESSAGE;
+  }
+
+  // Info command
+  if (commandType === 'info') {
+    return INFO_MESSAGE;
+  }
+
+  return null;
+}
+
+/**
  * Process postback event (button click)
  */
 export async function processPostback(event: WebhookEvent): Promise<void> {
@@ -221,68 +261,72 @@ export async function processPostback(event: WebhookEvent): Promise<void> {
   // Use withDatabase wrapper for the entire processing
   await withDatabase(async () => {
     try {
-      // Get or create user
-      const user = await getOrCreateUser(userId);
+      // Get or create user and conversation in parallel (optimization)
+      const [user, questionText] = await Promise.all([
+        getOrCreateUser(userId),
+        // Get question text from the node before navigating (if needed)
+        (async () => {
+          try {
+            // If postback data is an answer node, find the question
+            if (postbackData.startsWith('answer-')) {
+              const { conversationGraphService } = await import('./conversationGraphService');
+              // Navigate to the node to get the question text
+              const node = await conversationGraphService.navigateToNode(postbackData);
+              if (node && node.type === 'answer') {
+                // Answer node's title contains the question
+                return node.title;
+              } else {
+                // Fallback: parse answer node ID to get question
+                const parts = postbackData.split('-');
+                if (parts.length >= 3) {
+                  const category = parts.slice(1, -1).join('-');
+                  const questionIndex = parseInt(parts[parts.length - 1]);
+                  if (!isNaN(questionIndex)) {
+                    const questions = await conversationGraphService.getCategoryQuestions(
+                      category as any
+                    );
+                    if (questions[questionIndex]) {
+                      return questions[questionIndex].title;
+                    }
+                  }
+                }
+              }
+            }
+          } catch (error) {
+            logger.warn('Error extracting question text from postback', {
+              error: error instanceof Error ? error.message : String(error),
+              postbackData,
+            });
+          }
+          return null;
+        })(),
+      ]);
 
       // Get or create active conversation
       const conversation = await getOrCreateActiveConversation(user._id, userId);
 
-      // Get question text from the node before navigating
-      // This will be used to save as user message
-      let questionText: string | null = null;
-      try {
-        // If postback data is an answer node, find the question
-        if (postbackData.startsWith('answer-')) {
-          const { conversationGraphService } = await import('./conversationGraphService');
-          // Navigate to the node to get the question text
-          const node = await conversationGraphService.navigateToNode(postbackData);
-          if (node && node.type === 'answer') {
-            // Answer node's title contains the question
-            questionText = node.title;
-          } else {
-            // Fallback: parse answer node ID to get question
-            const parts = postbackData.split('-');
-            if (parts.length >= 3) {
-              const category = parts.slice(1, -1).join('-');
-              const questionIndex = parseInt(parts[parts.length - 1]);
-              if (!isNaN(questionIndex)) {
-                const questions = await conversationGraphService.getCategoryQuestions(
-                  category as any
-                );
-                if (questions[questionIndex]) {
-                  questionText = questions[questionIndex].title;
-                }
-              }
-            }
-          }
-        }
-      } catch (error) {
-        logger.warn('Error extracting question text from postback', {
-          error: error instanceof Error ? error.message : String(error),
-          postbackData,
-        });
-      }
-
-      // Save postback as user message - use question text if available
-      // LINE's postback.displayText will show in chat, but we save the question text to DB
-      // Note: displayText is optional in LINE SDK types but may exist at runtime
+      // Prepare user message text
       const postback = event.postback as { data: string; displayText?: string };
       const userMessageText = questionText || 
         postback.displayText || 
         `[按鈕點擊] ${postbackData}`;
-      await saveMessage(conversation._id, userMessageText, 'user', 'text');
 
-      // Update conversation message count
-      await incrementConversationMessageCount(conversation._id);
-
-      // Handle postback using conversation flow service
-      // Note: replyToken can only be used once, so we don't catch errors here
-      // to avoid trying to use the token again after it's been used
+      // Handle postback and save message in parallel (optimization)
+      // Note: replyToken can only be used once, so handlePostback must complete first
       await conversationFlowService.handlePostback(
         postbackData,
         replyToken,
         conversation._id.toString()
       );
+
+      // Save postback as user message after handling (non-blocking)
+      // This doesn't block the response to user
+      Promise.all([
+        saveMessage(conversation._id, userMessageText, 'user', 'text'),
+        incrementConversationMessageCount(conversation._id),
+      ]).catch((error) => {
+        logger.error('Error saving postback message', error, { userId, postbackData });
+      });
 
       logger.info('Postback processed', { userId, postbackData });
     } catch (error) {
