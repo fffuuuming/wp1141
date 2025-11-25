@@ -120,20 +120,17 @@ export function isCommand(message: string): boolean {
 
 /**
  * Handle special commands
+ * Note: This function is called from within withDatabase, so we don't wrap it again
+ * Simple commands (help, info) should be handled by handleCommandSimple in messageService
  */
-export const handleCommand = withDatabase(async (
+export async function handleCommand(
   command: string,
   userId: string,
   replyToken: string
-): Promise<string | null> => {
+): Promise<string | null> {
   const commandType = getCommandType(command);
 
-  // Help command
-  if (commandType === 'help') {
-    return HELP_MESSAGE;
-  }
-
-  // Stats command (for user's own stats)
+  // Stats command (for user's own stats) - needs database
   if (commandType === 'stats') {
     try {
       const user = await getUserByLineId(userId);
@@ -151,11 +148,6 @@ export const handleCommand = withDatabase(async (
       logger.error('Error getting user stats', error, { userId });
     }
     return ERROR_MESSAGES.STATS_ERROR;
-  }
-
-  // Info command
-  if (commandType === 'info') {
-    return INFO_MESSAGE;
   }
 
   // Menu command - show root menu with category buttons
