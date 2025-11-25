@@ -101,6 +101,22 @@ export async function sendTextMessage(
   ]);
 }
 
+// Helper function to push text message (for sending messages after webhook response)
+export async function pushTextMessage(
+  userId: string,
+  text: string
+): Promise<void> {
+  try {
+    await lineClient.pushMessage(userId, {
+      type: 'text',
+      text: text,
+    });
+  } catch (error) {
+    logger.error('Error pushing message', error, { userId });
+    throw new LineAPIError('Failed to push message', 500, { originalError: error });
+  }
+}
+
 // Helper function to get user profile
 export async function getUserProfile(userId: string) {
   try {
