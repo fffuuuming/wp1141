@@ -15,10 +15,10 @@
  * Pricing reference: https://openai.com/zh-Hant/api/pricing/
  */
 export const OPENAI_CONFIG = {
-  MODEL: 'gpt-4o-mini', // Using GPT-5 Nano for cost efficiency
+  MODEL: 'gpt-4o-mini', // Fast and cost-effective
   TEMPERATURE: 0.7,
-  MAX_TOKENS: 500,
-  TIMEOUT: 30000, // 30 seconds
+  MAX_TOKENS: 300, // Reduced for faster responses (was 500)
+  TIMEOUT: 20000, // 20 seconds (reduced from 30 for faster timeout)
 } as const;
 
 /**
