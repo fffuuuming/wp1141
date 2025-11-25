@@ -119,9 +119,16 @@ export function isCommand(message: string): boolean {
 }
 
 /**
- * Handle special commands
- * Note: This function is called from within withDatabase, so we don't wrap it again
+ * Handle special commands that require database access
+ * 
+ * Note: This function is called from within withDatabase context in processMessage,
+ * so we don't wrap it with withDatabase again. However, the service functions it calls
+ * (getUserByLineId, getOrCreateUser, etc.) have their own withDatabase wrappers.
+ * This is fine because connectDB() uses connection caching - nested calls will reuse
+ * the existing connection without creating new ones.
+ * 
  * Simple commands (help, info) should be handled by handleCommandSimple in messageService
+ * to avoid any database operations.
  */
 export async function handleCommand(
   command: string,
@@ -208,5 +215,5 @@ export async function handleCommand(
 
   // Unknown command
   return null;
-});
+}
 
