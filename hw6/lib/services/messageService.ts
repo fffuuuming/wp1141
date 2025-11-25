@@ -1,5 +1,5 @@
 import { withDatabase } from '@/lib/utils/withDatabase';
-import { sendTextMessage, type WebhookEvent } from './lineService';
+import { sendTextMessage, pushTextMessage, type WebhookEvent } from './lineService';
 import { llmService } from './llmService';
 import { ragService } from './ragService';
 import { isCommand, handleCommand } from './botLogicService';
@@ -104,16 +104,18 @@ export async function processMessage(event: WebhookEvent): Promise<void> {
         return;
       }
 
-      // Get conversation history for context
-      const conversationHistory = await getConversationHistory(conversation._id);
+      // Get conversation history for context (limited to 5 for faster processing)
+      const conversationHistory = await getConversationHistory(conversation._id, 5);
 
-      // Generate reply using LLM with fallback
+      // Generate reply using LLM with fallback (optimized for speed)
       const replyText = await generateReply(messageText, conversationHistory);
 
-      // Save bot reply
-      await saveMessage(conversation._id, replyText, 'bot', 'text');
+      // Save bot reply (non-blocking - don't wait for it to complete)
+      saveMessage(conversation._id, replyText, 'bot', 'text').catch((error) => {
+        logger.error('Error saving bot reply', error, { userId });
+      });
 
-      // Send reply to user
+      // Send reply to user immediately
       await sendTextMessage(replyToken, replyText);
 
       logger.info('Message processed', { userId, messageLength: messageText.length });
@@ -132,9 +134,10 @@ export async function processMessage(event: WebhookEvent): Promise<void> {
 /**
  * Generate reply message using RAG with fallback to direct LLM
  * RAG workflow:
- * 1. Try RAG (knowledge base + LLM)
- * 2. If RAG fails, fallback to direct LLM
- * 3. If direct LLM fails, use fallback responses
+ * 1. For short/simple questions, skip RAG and use direct LLM (faster)
+ * 2. For longer questions, try RAG first (knowledge base + LLM)
+ * 3. If RAG fails, fallback to direct LLM
+ * 4. If direct LLM fails, use fallback responses
  */
 async function generateReply(
   userMessage: string,
@@ -142,7 +145,26 @@ async function generateReply(
 ): Promise<string> {
   // Commands are already handled before this function is called
 
-  // Step 1: Try RAG first (knowledge base + LLM)
+  // Skip RAG for very short messages (< 10 chars) - use direct LLM for speed
+  const isShortMessage = userMessage.trim().length < 10;
+  
+  if (isShortMessage) {
+    logger.debug('Short message detected, skipping RAG for speed', { 
+      userMessage: userMessage.substring(0, 50) 
+    });
+    try {
+      const response = await llmService.generateResponse(userMessage, conversationHistory);
+      return response.content;
+    } catch (llmError) {
+      logger.error('Direct LLM failed for short message', {
+        llmError: llmError instanceof Error ? llmError.message : String(llmError),
+        userMessage: userMessage.substring(0, 50),
+      });
+      return getFallbackResponse(userMessage);
+    }
+  }
+
+  // Step 1: Try RAG first (knowledge base + LLM) for longer questions
   try {
     logger.debug('Attempting RAG response', { userMessage: userMessage.substring(0, 50) });
     const ragResponse = await ragService.generateRAGResponse(userMessage, conversationHistory);
