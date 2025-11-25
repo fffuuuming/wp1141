@@ -20,13 +20,7 @@ class ConversationFlowService {
     replyToken: string,
     conversationId?: string
   ): Promise<void> {
-    // Update conversation current node if conversationId is provided
-    if (conversationId) {
-      await Conversation.findByIdAndUpdate(conversationId, {
-        currentNodeId: node.id,
-      });
-    }
-
+    // Send message first (user-facing, must be fast)
     switch (node.type) {
       case 'root':
         await this.renderRootNode(node, replyToken);
@@ -43,6 +37,15 @@ class ConversationFlowService {
       default:
         logger.warn('Unknown node type', { nodeType: node.type, nodeId: node.id });
         await sendTextMessage(replyToken, '發生錯誤，請重新開始。');
+    }
+
+    // Update conversation current node AFTER sending message (non-blocking)
+    if (conversationId) {
+      Conversation.findByIdAndUpdate(conversationId, {
+        currentNodeId: node.id,
+      }).catch((error) => {
+        logger.error('Error updating conversation node', error, { conversationId, nodeId: node.id });
+      });
     }
   }
 
