@@ -29,6 +29,9 @@ interface HealthCheckResponse {
 
 const startTime = Date.now();
 
+// Force dynamic rendering - this route uses database connections and timestamps
+export const dynamic = 'force-dynamic';
+
 /**
  * Check MongoDB connection health
  */

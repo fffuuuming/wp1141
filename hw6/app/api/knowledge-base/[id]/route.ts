@@ -12,6 +12,9 @@ import { LLMError } from '@/lib/errors';
 import { logger } from '@/lib/utils/logger';
 import type { KnowledgeBaseCategory } from '@/lib/models/KnowledgeBase';
 
+// Force dynamic rendering - this route uses dynamic route parameters and database connections
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/knowledge-base/[id]
  * Get a specific knowledge base item

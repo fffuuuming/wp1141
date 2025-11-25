@@ -11,6 +11,9 @@ import type {
 } from '@/types/api/conversations';
 import type mongoose from 'mongoose';
 
+// Force dynamic rendering - this route uses searchParams and database connections
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/conversations
  * Get list of conversations with optional filters

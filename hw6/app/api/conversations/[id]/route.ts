@@ -5,6 +5,9 @@ import { successResponse, errorResponse } from '@/lib/utils/apiResponse';
 import type { ConversationDetail, MessageListItem } from '@/types/api/conversations';
 import type mongoose from 'mongoose';
 
+// Force dynamic rendering - this route uses dynamic route parameters and database connections
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/conversations/[id]
  * Get a specific conversation with all messages

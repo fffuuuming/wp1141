@@ -9,6 +9,9 @@ import {
 import { successResponse, errorResponse } from '@/lib/utils/apiResponse';
 import { validateString, validateInt, validateDate, withValidation } from '@/lib/utils/requestValidator';
 
+// Force dynamic rendering - this route uses searchParams and database connections
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/conversations/stats
  * Get conversation statistics

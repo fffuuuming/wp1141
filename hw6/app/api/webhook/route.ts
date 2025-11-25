@@ -33,6 +33,9 @@ function verifySignature(
   return hash === signature;
 }
 
+// Force dynamic rendering - this route handles webhook requests and uses request bodies
+export const dynamic = 'force-dynamic';
+
 /**
  * Line Webhook endpoint
  * POST /api/webhook

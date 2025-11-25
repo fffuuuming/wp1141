@@ -5,6 +5,9 @@ import User from '@/lib/models/User';
 import Conversation from '@/lib/models/Conversation';
 import Message from '@/lib/models/Message';
 
+// Force dynamic rendering - this route uses database connections
+export const dynamic = 'force-dynamic';
+
 /**
  * Test endpoint to verify database connection and models
  * GET /api/test-db
