@@ -283,66 +283,23 @@ export async function processPostback(event: WebhookEvent): Promise<void> {
   // Use withDatabase wrapper for the entire processing
   await withDatabase(async () => {
     try {
-      // Get or create user and conversation in parallel (optimization)
-      const [user, questionText] = await Promise.all([
-        getOrCreateUser(userId),
-        // Get question text from the node before navigating (if needed)
-        (async () => {
-          try {
-            // If postback data is an answer node, find the question
-            if (postbackData.startsWith('answer-')) {
-              const { conversationGraphService } = await import('./conversationGraphService');
-              // Navigate to the node to get the question text
-              const node = await conversationGraphService.navigateToNode(postbackData);
-              if (node && node.type === 'answer') {
-                // Answer node's title contains the question
-                return node.title;
-              } else {
-                // Fallback: parse answer node ID to get question
-                const parts = postbackData.split('-');
-                if (parts.length >= 3) {
-                  const category = parts.slice(1, -1).join('-');
-                  const questionIndex = parseInt(parts[parts.length - 1]);
-                  if (!isNaN(questionIndex)) {
-                    const questions = await conversationGraphService.getCategoryQuestions(
-                      category as any
-                    );
-                    if (questions[questionIndex]) {
-                      return questions[questionIndex].title;
-                    }
-                  }
-                }
-              }
-            }
-          } catch (error) {
-            logger.warn('Error extracting question text from postback', {
-              error: error instanceof Error ? error.message : String(error),
-              postbackData,
-            });
-          }
-          return null;
-        })(),
-      ]);
-
-      // Get or create active conversation
+      // Get or create user and conversation (minimal operations before sending response)
+      const user = await getOrCreateUser(userId);
       const conversation = await getOrCreateActiveConversation(user._id, userId);
 
-      // Prepare user message text
-      const postback = event.postback as { data: string; displayText?: string };
-      const userMessageText = questionText || 
-        postback.displayText || 
-        `[按鈕點擊] ${postbackData}`;
-
-      // Handle postback and save message in parallel (optimization)
-      // Note: replyToken can only be used once, so handlePostback must complete first
+      // Handle postback immediately (send response to user first)
+      // This is the most important operation - user sees response quickly
       await conversationFlowService.handlePostback(
         postbackData,
         replyToken,
         conversation._id.toString()
       );
 
-      // Save postback as user message after handling (non-blocking)
-      // This doesn't block the response to user
+      // After sending response, save message and update counts (non-blocking)
+      const postback = event.postback as { data: string; displayText?: string };
+      const userMessageText = postback.displayText || `[按鈕點擊] ${postbackData}`;
+
+      // Save postback as user message (non-blocking, happens after response sent)
       Promise.all([
         saveMessage(conversation._id, userMessageText, 'user', 'text'),
         incrementConversationMessageCount(conversation._id),
