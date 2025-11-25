@@ -152,7 +152,12 @@ export function withValidation<T extends (...args: any[]) => Promise<any>>(
       if (error instanceof ValidationError) {
         return errorResponse(error, 400);
       }
-      throw error;
+      // If the error is already a NextResponse (from withDatabase), return it
+      if (error && typeof error === 'object' && 'status' in error && 'json' in error) {
+        return error;
+      }
+      // Otherwise, wrap it in an error response
+      return errorResponse(error);
     }
   }) as T;
 }

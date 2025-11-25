@@ -1,4 +1,6 @@
 import connectDB from './mongodb';
+import { errorResponse } from './apiResponse';
+import { logger } from './logger';
 
 /**
  * Higher-order function to automatically handle database connection
@@ -19,10 +21,17 @@ export function withDatabase<T extends (...args: any[]) => Promise<any>>(
   fn: T
 ): T {
   return (async (...args: Parameters<T>) => {
-    // Ensure database is connected
-    await connectDB();
-    // Execute the wrapped function
-    return await fn(...args);
+    try {
+      // Ensure database is connected
+      await connectDB();
+      // Execute the wrapped function
+      return await fn(...args);
+    } catch (error) {
+      // Log the error for debugging
+      logger.error('Database operation error', error);
+      // Return a proper error response
+      return errorResponse(error);
+    }
   }) as T;
 }
 
